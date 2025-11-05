@@ -4,7 +4,8 @@ import { Button } from "@/components/ui/button";
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from "@/components/ui/card";
 import { Badge } from "@/components/ui/badge";
 import { Progress } from "@/components/ui/progress";
-import { ArrowLeft, Calendar, DollarSign, Users, Settings, UserPlus, CheckCircle2 } from "lucide-react";
+import { Table, TableBody, TableCell, TableHead, TableHeader, TableRow } from "@/components/ui/table";
+import { ArrowLeft, Calendar, DollarSign, Users, Settings, UserPlus, CheckCircle2, Plus } from "lucide-react";
 import ConfirmationModal from "@/components/ConfirmationModal";
 
 const GroupDashboard = () => {
@@ -12,13 +13,16 @@ const GroupDashboard = () => {
   const [showConfirmation, setShowConfirmation] = useState(true);
   const [groupData, setGroupData] = useState<any>({});
   const [members, setMembers] = useState<any[]>([]);
+  const [contributions, setContributions] = useState<any[]>([]);
 
   useEffect(() => {
     const storedGroup = sessionStorage.getItem("ajorGroup");
     const storedMembers = sessionStorage.getItem("ajorMembers");
+    const storedContributions = sessionStorage.getItem("contributions");
     
     if (storedGroup) setGroupData(JSON.parse(storedGroup));
     if (storedMembers) setMembers(JSON.parse(storedMembers));
+    if (storedContributions) setContributions(JSON.parse(storedContributions));
   }, []);
 
   const totalAmount = parseFloat(groupData.contributionAmount || 0) * parseInt(groupData.numberOfMembers || 0);
@@ -28,6 +32,17 @@ const GroupDashboard = () => {
   if (groupData.frequency === "weekly") nextPayoutDate.setDate(nextPayoutDate.getDate() + 7);
   else if (groupData.frequency === "biweekly") nextPayoutDate.setDate(nextPayoutDate.getDate() + 14);
   else nextPayoutDate.setMonth(nextPayoutDate.getMonth() + 1);
+
+  // Calculate contribution stats
+  const totalCollected = contributions.reduce((sum, c) => sum + c.amount, 0);
+  const expectedPerCycle = parseFloat(groupData.contributionAmount || 0) * members.length;
+  const contributionProgress = expectedPerCycle > 0 ? (totalCollected / expectedPerCycle) * 100 : 0;
+
+  // Get member contribution status
+  const getMemberStatus = (memberId: string) => {
+    const memberContributions = contributions.filter(c => c.memberId === memberId);
+    return memberContributions.length > 0 ? "Paid" : "Pending";
+  };
 
   return (
     <div className="min-h-screen bg-gradient-to-b from-background to-secondary/30 py-8 md:py-12">
@@ -102,24 +117,96 @@ const GroupDashboard = () => {
           </Card>
         </div>
 
-        {/* Progress Tracker */}
+        {/* Contribution Ledger */}
         <Card className="shadow-[var(--shadow-medium)] mb-8">
           <CardHeader>
-            <CardTitle className="text-xl">Group Setup Progress</CardTitle>
-            <CardDescription>Complete your group setup to start saving</CardDescription>
+            <div className="flex items-center justify-between">
+              <div>
+                <CardTitle className="text-xl">Contribution Ledger</CardTitle>
+                <CardDescription>Track all member contributions for this cycle</CardDescription>
+              </div>
+              <Button onClick={() => navigate("/record-contribution")} size="sm">
+                <Plus className="mr-2 h-4 w-4" />
+                Record Contribution
+              </Button>
+            </div>
           </CardHeader>
           <CardContent className="space-y-4">
             <div className="space-y-2">
               <div className="flex items-center justify-between text-sm">
-                <span className="font-medium">Members Added</span>
+                <span className="font-medium">Current Cycle Progress</span>
                 <span className="text-muted-foreground">
-                  {members.length} of {groupData.numberOfMembers}
+                  ${totalCollected.toFixed(2)} of ${expectedPerCycle.toFixed(2)}
                 </span>
               </div>
-              <Progress value={currentProgress} className="h-3" />
+              <Progress value={contributionProgress} className="h-3" />
             </div>
-            
-            {members.length < parseInt(groupData.numberOfMembers || 0) && (
+
+            {/* Contribution Table */}
+            {contributions.length > 0 ? (
+              <div className="border rounded-lg overflow-hidden">
+                <Table>
+                  <TableHeader>
+                    <TableRow>
+                      <TableHead>Member</TableHead>
+                      <TableHead>Cycle</TableHead>
+                      <TableHead>Amount</TableHead>
+                      <TableHead>Date</TableHead>
+                      <TableHead>Status</TableHead>
+                    </TableRow>
+                  </TableHeader>
+                  <TableBody>
+                    {contributions.map((contribution) => (
+                      <TableRow key={contribution.id}>
+                        <TableCell className="font-medium">{contribution.memberName}</TableCell>
+                        <TableCell>{contribution.cycleLabel}</TableCell>
+                        <TableCell>${contribution.amount.toFixed(2)}</TableCell>
+                        <TableCell>
+                          {new Date(contribution.date).toLocaleDateString("en-US", { 
+                            month: "short", 
+                            day: "numeric" 
+                          })}
+                        </TableCell>
+                        <TableCell>
+                          <Badge variant="default" className="bg-green-600">
+                            {contribution.status}
+                          </Badge>
+                        </TableCell>
+                      </TableRow>
+                    ))}
+                  </TableBody>
+                </Table>
+              </div>
+            ) : (
+              <div className="text-center py-8 text-muted-foreground">
+                <p className="mb-4">No contributions recorded yet</p>
+                <Button onClick={() => navigate("/record-contribution")} variant="outline">
+                  <Plus className="mr-2 h-4 w-4" />
+                  Record First Contribution
+                </Button>
+              </div>
+            )}
+          </CardContent>
+        </Card>
+
+        {/* Group Setup Progress */}
+        {members.length < parseInt(groupData.numberOfMembers || 0) && (
+          <Card className="shadow-[var(--shadow-medium)] mb-8">
+            <CardHeader>
+              <CardTitle className="text-xl">Group Setup Progress</CardTitle>
+              <CardDescription>Complete your group setup to start saving</CardDescription>
+            </CardHeader>
+            <CardContent className="space-y-4">
+              <div className="space-y-2">
+                <div className="flex items-center justify-between text-sm">
+                  <span className="font-medium">Members Added</span>
+                  <span className="text-muted-foreground">
+                    {members.length} of {groupData.numberOfMembers}
+                  </span>
+                </div>
+                <Progress value={currentProgress} className="h-3" />
+              </div>
+              
               <Button 
                 variant="outline" 
                 className="w-full"
@@ -128,9 +215,9 @@ const GroupDashboard = () => {
                 <UserPlus className="mr-2 h-4 w-4" />
                 Invite More Members
               </Button>
-            )}
-          </CardContent>
-        </Card>
+            </CardContent>
+          </Card>
+        )}
 
         {/* Members List & Rotation Order */}
         <Card className="shadow-[var(--shadow-medium)]">
@@ -160,6 +247,12 @@ const GroupDashboard = () => {
                     </div>
                   </div>
                   <div className="flex items-center gap-2">
+                    <Badge 
+                      variant={getMemberStatus(member.id) === "Paid" ? "default" : "outline"}
+                      className={getMemberStatus(member.id) === "Paid" ? "bg-green-600" : ""}
+                    >
+                      {getMemberStatus(member.id)}
+                    </Badge>
                     <Badge variant={member.role === "Host" ? "default" : "outline"}>
                       {member.role}
                     </Badge>

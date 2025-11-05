@@ -4,7 +4,8 @@ import { Button } from "@/components/ui/button";
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from "@/components/ui/card";
 import { Badge } from "@/components/ui/badge";
 import { Progress } from "@/components/ui/progress";
-import { ArrowLeft, Calendar, DollarSign, Users, Clock, CheckCircle } from "lucide-react";
+import { Table, TableBody, TableCell, TableHead, TableHeader, TableRow } from "@/components/ui/table";
+import { ArrowLeft, Calendar, DollarSign, Users, Clock, CheckCircle, Plus } from "lucide-react";
 
 const MemberDashboard = () => {
   const navigate = useNavigate();
@@ -31,6 +32,22 @@ const MemberDashboard = () => {
   const nextPayoutDate = new Date(groupData.nextPayoutDate);
   const memberPosition = groupData.currentMembers + 1; // New member position
   const cyclesUntilPayout = memberPosition - 1;
+
+  // Load contributions from sessionStorage
+  const [contributions, setContributions] = useState<any[]>([]);
+
+  useEffect(() => {
+    const storedContributions = sessionStorage.getItem("contributions");
+    if (storedContributions) {
+      setContributions(JSON.parse(storedContributions));
+    }
+  }, []);
+
+  // Calculate member's contribution progress
+  const memberContributions = contributions.filter(c => c.memberId === memberData?.id);
+  const totalPaid = memberContributions.reduce((sum, c) => sum + c.amount, 0);
+  const expectedContributions = 3; // Show 3 cycles for demo
+  const contributionProgress = (memberContributions.length / expectedContributions) * 100;
 
   // Mock existing members
   const allMembers = [
@@ -127,26 +144,74 @@ const MemberDashboard = () => {
         {/* Contribution Tracker */}
         <Card className="shadow-[var(--shadow-medium)] mb-8">
           <CardHeader>
-            <CardTitle className="text-xl">Current Cycle Progress</CardTitle>
-            <CardDescription>Track your contribution status</CardDescription>
+            <div className="flex items-center justify-between">
+              <div>
+                <CardTitle className="text-xl">Your Contributions</CardTitle>
+                <CardDescription>Track your payment status and history</CardDescription>
+              </div>
+              <Button onClick={() => navigate("/record-contribution")} size="sm">
+                <Plus className="mr-2 h-4 w-4" />
+                Add Contribution
+              </Button>
+            </div>
           </CardHeader>
           <CardContent className="space-y-4">
             <div className="space-y-2">
               <div className="flex items-center justify-between text-sm">
-                <span className="font-medium">Next Contribution Due</span>
+                <span className="font-medium">Contribution Progress</span>
                 <span className="text-muted-foreground">
-                  {nextPayoutDate.toLocaleDateString("en-US", { month: "short", day: "numeric" })}
+                  {memberContributions.length} of {expectedContributions} cycles
                 </span>
               </div>
-              <Progress value={0} className="h-3" />
+              <Progress value={contributionProgress} className="h-3" />
               <p className="text-sm text-muted-foreground">
-                No contributions recorded yet
+                Total paid: ${totalPaid.toFixed(2)}
               </p>
             </div>
-            
-            <Button variant="default" className="w-full" disabled>
-              Record Contribution (Coming Soon)
-            </Button>
+
+            {/* Contribution History */}
+            {memberContributions.length > 0 ? (
+              <div className="border rounded-lg overflow-hidden">
+                <Table>
+                  <TableHeader>
+                    <TableRow>
+                      <TableHead>Cycle</TableHead>
+                      <TableHead>Amount</TableHead>
+                      <TableHead>Date</TableHead>
+                      <TableHead>Status</TableHead>
+                    </TableRow>
+                  </TableHeader>
+                  <TableBody>
+                    {memberContributions.map((contribution) => (
+                      <TableRow key={contribution.id}>
+                        <TableCell className="font-medium">{contribution.cycleLabel}</TableCell>
+                        <TableCell>${contribution.amount.toFixed(2)}</TableCell>
+                        <TableCell>
+                          {new Date(contribution.date).toLocaleDateString("en-US", { 
+                            month: "short", 
+                            day: "numeric",
+                            year: "numeric"
+                          })}
+                        </TableCell>
+                        <TableCell>
+                          <Badge variant="default" className="bg-green-600">
+                            {contribution.status}
+                          </Badge>
+                        </TableCell>
+                      </TableRow>
+                    ))}
+                  </TableBody>
+                </Table>
+              </div>
+            ) : (
+              <div className="text-center py-8 text-muted-foreground">
+                <p className="mb-4">No contributions recorded yet</p>
+                <Button onClick={() => navigate("/record-contribution")} variant="outline">
+                  <Plus className="mr-2 h-4 w-4" />
+                  Record Your First Contribution
+                </Button>
+              </div>
+            )}
           </CardContent>
         </Card>
 

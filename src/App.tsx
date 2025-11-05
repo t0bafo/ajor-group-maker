@@ -10,6 +10,7 @@ import GroupDashboard from "./pages/GroupDashboard";
 import JoinGroup from "./pages/JoinGroup";
 import GroupOverview from "./pages/GroupOverview";
 import MemberDashboard from "./pages/MemberDashboard";
+import RecordContribution from "./pages/RecordContribution";
 import NotFound from "./pages/NotFound";
 
 const queryClient = new QueryClient();

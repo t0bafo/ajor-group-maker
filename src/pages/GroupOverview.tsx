@@ -57,7 +57,7 @@ const GroupOverview = () => {
 
   const handleSuccessClose = () => {
     setShowSuccess(false);
-    navigate("/member/dashboard");
+    navigate("/group-dashboard");
   };
 
   if (!groupInfo) {

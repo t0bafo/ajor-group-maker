@@ -11,6 +11,7 @@ import JoinGroup from "./pages/JoinGroup";
 import GroupOverview from "./pages/GroupOverview";
 import MemberDashboard from "./pages/MemberDashboard";
 import RecordContribution from "./pages/RecordContribution";
+import PayoutManagement from "./pages/PayoutManagement";
 import NotFound from "./pages/NotFound";
 
 const queryClient = new QueryClient();
@@ -30,6 +31,7 @@ const App = () => (
           <Route path="/join/overview" element={<GroupOverview />} />
           <Route path="/member/dashboard" element={<MemberDashboard />} />
           <Route path="/record-contribution" element={<RecordContribution />} />
+          <Route path="/payout-management" element={<PayoutManagement />} />
           {/* ADD ALL CUSTOM ROUTES ABOVE THE CATCH-ALL "*" ROUTE */}
           <Route path="*" element={<NotFound />} />
         </Routes>

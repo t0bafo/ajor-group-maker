@@ -5,7 +5,7 @@ import { Card, CardContent, CardDescription, CardHeader, CardTitle } from "@/com
 import { Badge } from "@/components/ui/badge";
 import { Progress } from "@/components/ui/progress";
 import { Table, TableBody, TableCell, TableHead, TableHeader, TableRow } from "@/components/ui/table";
-import { ArrowLeft, Calendar, DollarSign, Users, Settings, UserPlus, CheckCircle2, Plus } from "lucide-react";
+import { ArrowLeft, Calendar, DollarSign, Users, Settings, UserPlus, CheckCircle2, Plus, TrendingUp } from "lucide-react";
 import ConfirmationModal from "@/components/ConfirmationModal";
 
 const GroupDashboard = () => {
@@ -14,15 +14,18 @@ const GroupDashboard = () => {
   const [groupData, setGroupData] = useState<any>({});
   const [members, setMembers] = useState<any[]>([]);
   const [contributions, setContributions] = useState<any[]>([]);
+  const [payouts, setPayouts] = useState<any[]>([]);
 
   useEffect(() => {
     const storedGroup = sessionStorage.getItem("ajorGroup");
     const storedMembers = sessionStorage.getItem("ajorMembers");
     const storedContributions = sessionStorage.getItem("contributions");
+    const storedPayouts = sessionStorage.getItem("payouts");
     
     if (storedGroup) setGroupData(JSON.parse(storedGroup));
     if (storedMembers) setMembers(JSON.parse(storedMembers));
     if (storedContributions) setContributions(JSON.parse(storedContributions));
+    if (storedPayouts) setPayouts(JSON.parse(storedPayouts));
   }, []);
 
   const totalAmount = parseFloat(groupData.contributionAmount || 0) * parseInt(groupData.numberOfMembers || 0);
@@ -37,6 +40,10 @@ const GroupDashboard = () => {
   const totalCollected = contributions.reduce((sum, c) => sum + c.amount, 0);
   const expectedPerCycle = parseFloat(groupData.contributionAmount || 0) * members.length;
   const contributionProgress = expectedPerCycle > 0 ? (totalCollected / expectedPerCycle) * 100 : 0;
+
+  // Calculate payout stats
+  const totalPayouts = payouts.length;
+  const payoutProgress = members.length > 0 ? (totalPayouts / members.length) * 100 : 0;
 
   // Get member contribution status
   const getMemberStatus = (memberId: string) => {
@@ -85,16 +92,14 @@ const GroupDashboard = () => {
           <Card className="shadow-[var(--shadow-soft)]">
             <CardHeader className="flex flex-row items-center justify-between pb-2">
               <CardTitle className="text-sm font-medium text-muted-foreground">
-                Next Payout
+                Payout Progress
               </CardTitle>
-              <Calendar className="h-5 w-5 text-accent" />
+              <TrendingUp className="h-5 w-5 text-accent" />
             </CardHeader>
             <CardContent>
-              <div className="text-3xl font-bold">
-                {nextPayoutDate.toLocaleDateString("en-US", { month: "short", day: "numeric" })}
-              </div>
+              <div className="text-3xl font-bold">{totalPayouts}</div>
               <p className="text-sm text-muted-foreground mt-1">
-                ${totalAmount || 0} total payout
+                of {members.length} payouts made
               </p>
             </CardContent>
           </Card>
@@ -117,7 +122,53 @@ const GroupDashboard = () => {
           </Card>
         </div>
 
-        {/* Contribution Ledger */}
+        {/* Payout Tracking Card */}
+        <Card className="shadow-[var(--shadow-medium)] mb-8">
+          <CardHeader>
+            <div className="flex items-center justify-between">
+              <div>
+                <CardTitle className="text-xl">Payout Tracking</CardTitle>
+                <CardDescription>Monitor payout completion and rotation progress</CardDescription>
+              </div>
+              <Button onClick={() => navigate("/payout-management")} size="sm">
+                Manage Payouts
+              </Button>
+            </div>
+          </CardHeader>
+          <CardContent className="space-y-4">
+            <div className="space-y-2">
+              <div className="flex items-center justify-between text-sm">
+                <span className="font-medium">Cycle Progress</span>
+                <span className="text-muted-foreground">
+                  {totalPayouts} of {members.length} members paid
+                </span>
+              </div>
+              <Progress value={payoutProgress} className="h-3" />
+            </div>
+
+            {payoutProgress === 100 ? (
+              <div className="p-4 bg-green-50 dark:bg-green-950 rounded-lg border border-green-200 dark:border-green-800">
+                <p className="text-sm font-semibold text-green-900 dark:text-green-100">
+                  ✅ Cycle Complete! All members have received their payouts.
+                </p>
+              </div>
+            ) : totalPayouts > 0 ? (
+              <div className="p-4 bg-accent/10 rounded-lg border border-accent/20">
+                <p className="text-sm text-muted-foreground">
+                  <strong>Next:</strong> {members.length - totalPayouts} member(s) remaining to receive payouts
+                </p>
+              </div>
+            ) : (
+              <div className="text-center py-4 text-muted-foreground">
+                <p className="mb-4">No payouts recorded yet</p>
+                <Button onClick={() => navigate("/payout-management")} variant="outline" size="sm">
+                  Start Recording Payouts
+                </Button>
+              </div>
+            )}
+          </CardContent>
+        </Card>
+
         <Card className="shadow-[var(--shadow-medium)] mb-8">
           <CardHeader>
             <div className="flex items-center justify-between">

@@ -11,6 +11,7 @@ const MemberDashboard = () => {
   const navigate = useNavigate();
   const [groupData, setGroupData] = useState<any>(null);
   const [memberData, setMemberData] = useState<any>(null);
+  const [contributions, setContributions] = useState<any[]>([]);
 
   useEffect(() => {
     const storedGroup = sessionStorage.getItem("currentGroup");
@@ -24,24 +25,21 @@ const MemberDashboard = () => {
     }
   }, [navigate]);
 
-  if (!groupData || !memberData) {
-    return null;
-  }
-
-  const totalAmount = parseFloat(groupData.contributionAmount) * parseInt(groupData.numberOfMembers);
-  const nextPayoutDate = new Date(groupData.nextPayoutDate);
-  const memberPosition = groupData.currentMembers + 1; // New member position
-  const cyclesUntilPayout = memberPosition - 1;
-
-  // Load contributions from sessionStorage
-  const [contributions, setContributions] = useState<any[]>([]);
-
   useEffect(() => {
     const storedContributions = sessionStorage.getItem("contributions");
     if (storedContributions) {
       setContributions(JSON.parse(storedContributions));
     }
   }, []);
+
+  if (!groupData || !memberData) {
+    return null;
+  }
+
+  const totalAmount = parseFloat(groupData.contributionAmount) * parseInt(groupData.numberOfMembers);
+  const nextPayoutDate = new Date(groupData.nextPayoutDate);
+  const memberPosition = groupData.currentMembers + 1;
+  const cyclesUntilPayout = memberPosition - 1;
 
   // Calculate member's contribution progress
   const memberContributions = contributions.filter(c => c.memberId === memberData?.id);

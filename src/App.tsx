@@ -29,6 +29,7 @@ const App = () => (
           <Route path="/join" element={<JoinGroup />} />
           <Route path="/join/overview" element={<GroupOverview />} />
           <Route path="/member/dashboard" element={<MemberDashboard />} />
+          <Route path="/record-contribution" element={<RecordContribution />} />
           {/* ADD ALL CUSTOM ROUTES ABOVE THE CATCH-ALL "*" ROUTE */}
           <Route path="*" element={<NotFound />} />
         </Routes>

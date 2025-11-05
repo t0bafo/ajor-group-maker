@@ -162,10 +162,10 @@ const GroupDashboard = () => {
   // Latest payout info
   const latestPayout = payouts.length > 0 ? payouts[0] : null; // Already sorted by created_at desc
 
-  // Get member contribution status
+  // Get member payout status - check if they've received a payout
   const getMemberStatus = (memberId: string) => {
-    const memberContributions = contributions.filter(c => c.memberId === memberId);
-    return memberContributions.length > 0 ? "Paid" : "Pending";
+    const memberPayouts = payouts.filter(p => p.memberId === memberId);
+    return memberPayouts.length > 0 ? "Paid" : "Pending";
   };
 
   return (

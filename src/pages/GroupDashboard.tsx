@@ -5,8 +5,10 @@ import { Card, CardContent, CardDescription, CardHeader, CardTitle } from "@/com
 import { Badge } from "@/components/ui/badge";
 import { Progress } from "@/components/ui/progress";
 import { Table, TableBody, TableCell, TableHead, TableHeader, TableRow } from "@/components/ui/table";
-import { ArrowLeft, Calendar, DollarSign, Users, Settings, UserPlus, CheckCircle2, Plus, TrendingUp } from "lucide-react";
+import { Calendar, DollarSign, Users, Settings, UserPlus, Plus, TrendingUp } from "lucide-react";
 import ConfirmationModal from "@/components/ConfirmationModal";
+import AppNavigation from "@/components/AppNavigation";
+import { supabase } from "@/integrations/supabase/client";
 
 const GroupDashboard = () => {
   const navigate = useNavigate();
@@ -15,8 +17,14 @@ const GroupDashboard = () => {
   const [members, setMembers] = useState<any[]>([]);
   const [contributions, setContributions] = useState<any[]>([]);
   const [payouts, setPayouts] = useState<any[]>([]);
+  const [user, setUser] = useState<any>(null);
 
   useEffect(() => {
+    // Get current user
+    supabase.auth.getUser().then(({ data: { user } }) => {
+      setUser(user);
+    });
+
     const storedGroup = sessionStorage.getItem("ajorGroup");
     const storedMembers = sessionStorage.getItem("ajorMembers");
     const storedContributions = sessionStorage.getItem("contributions");
@@ -52,18 +60,15 @@ const GroupDashboard = () => {
   };
 
   return (
-    <div className="min-h-screen bg-gradient-to-b from-background to-secondary/30 py-8 md:py-12">
-      <div className="container max-w-6xl mx-auto px-4">
+    <div className="min-h-screen bg-gradient-to-b from-background to-secondary/30">
+      <AppNavigation 
+        userEmail={user?.email} 
+        userName={user?.user_metadata?.full_name}
+      />
+      
+      <div className="container max-w-6xl mx-auto px-4 py-8">
         <div className="flex items-center justify-between mb-8">
           <div>
-            <Button 
-              variant="ghost" 
-              onClick={() => navigate("/")}
-              className="mb-2 -ml-4"
-            >
-              <ArrowLeft className="mr-2 h-4 w-4" />
-              Back to Home
-            </Button>
             <h1 className="text-3xl md:text-4xl font-bold">{groupData.groupName || "Your Ajor Group"}</h1>
             <p className="text-muted-foreground mt-1">{groupData.description}</p>
           </div>

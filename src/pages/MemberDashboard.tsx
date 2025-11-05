@@ -21,7 +21,7 @@ const MemberDashboard = () => {
       setGroupData(JSON.parse(storedGroup));
       setMemberData(JSON.parse(storedMember));
     } else {
-      navigate("/join");
+      navigate("/join-group");
     }
   }, [navigate]);
 

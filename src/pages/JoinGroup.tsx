@@ -80,7 +80,7 @@ const JoinGroup = () => {
     
     // Store invite info for the overview page
     sessionStorage.setItem("joinGroupInfo", JSON.stringify(groupInfo));
-    navigate("/join/overview");
+    navigate("/group-overview");
   };
 
   return (
@@ -88,11 +88,11 @@ const JoinGroup = () => {
       <div className="container max-w-2xl mx-auto px-4">
         <Button 
           variant="ghost" 
-          onClick={() => navigate("/")}
+          onClick={() => navigate("/dashboard")}
           className="mb-6"
         >
           <ArrowLeft className="mr-2 h-4 w-4" />
-          Back to Home
+          Back to Dashboard
         </Button>
 
         <Card className="shadow-[var(--shadow-medium)]">

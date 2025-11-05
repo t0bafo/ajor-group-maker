@@ -25,7 +25,7 @@ const GroupOverview = () => {
         description: "Please enter an invite code first",
         variant: "destructive",
       });
-      navigate("/join");
+      navigate("/join-group");
     }
   }, [navigate]);
 
@@ -72,7 +72,7 @@ const GroupOverview = () => {
       <div className="container max-w-4xl mx-auto px-4">
         <Button 
           variant="ghost" 
-          onClick={() => navigate("/join")}
+          onClick={() => navigate("/join-group")}
           className="mb-6"
         >
           <ArrowLeft className="mr-2 h-4 w-4" />
@@ -201,7 +201,7 @@ const GroupOverview = () => {
             variant="outline"
             size="lg"
             className="flex-1"
-            onClick={() => navigate("/join")}
+            onClick={() => navigate("/join-group")}
           >
             Cancel
           </Button>

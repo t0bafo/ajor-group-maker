@@ -5,6 +5,7 @@ import { QueryClient, QueryClientProvider } from "@tanstack/react-query";
 import { BrowserRouter, Routes, Route } from "react-router-dom";
 import Index from "./pages/Index";
 import Auth from "./pages/Auth";
+import Dashboard from "./pages/Dashboard";
 import GroupSetup from "./pages/GroupSetup";
 import InviteMembers from "./pages/InviteMembers";
 import GroupDashboard from "./pages/GroupDashboard";
@@ -26,12 +27,13 @@ const App = () => (
         <Routes>
           <Route path="/" element={<Index />} />
           <Route path="/auth" element={<Auth />} />
-          <Route path="/setup" element={<GroupSetup />} />
-          <Route path="/invite" element={<InviteMembers />} />
-          <Route path="/dashboard" element={<GroupDashboard />} />
-          <Route path="/join" element={<JoinGroup />} />
-          <Route path="/join/overview" element={<GroupOverview />} />
-          <Route path="/member/dashboard" element={<MemberDashboard />} />
+          <Route path="/dashboard" element={<Dashboard />} />
+          <Route path="/group-setup" element={<GroupSetup />} />
+          <Route path="/invite-members" element={<InviteMembers />} />
+          <Route path="/group-dashboard" element={<GroupDashboard />} />
+          <Route path="/join-group" element={<JoinGroup />} />
+          <Route path="/group-overview" element={<GroupOverview />} />
+          <Route path="/member-dashboard" element={<MemberDashboard />} />
           <Route path="/record-contribution" element={<RecordContribution />} />
           <Route path="/payout-management" element={<PayoutManagement />} />
           {/* ADD ALL CUSTOM ROUTES ABOVE THE CATCH-ALL "*" ROUTE */}

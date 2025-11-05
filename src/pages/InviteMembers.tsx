@@ -172,7 +172,7 @@ const InviteMembers = () => {
             variant="outline"
             size="lg"
             className="flex-1"
-            onClick={() => navigate("/setup")}
+            onClick={() => navigate("/group-setup")}
           >
             Back to Setup
           </Button>

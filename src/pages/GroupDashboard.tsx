@@ -261,7 +261,7 @@ const GroupDashboard = () => {
               <Button 
                 variant="outline" 
                 className="w-full"
-                onClick={() => navigate("/invite")}
+                onClick={() => navigate("/invite-members")}
               >
                 <UserPlus className="mr-2 h-4 w-4" />
                 Invite More Members

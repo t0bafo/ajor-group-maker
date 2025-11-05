@@ -16,7 +16,8 @@ const RecordContribution = () => {
   const navigate = useNavigate();
   const { toast } = useToast();
   const [groupData, setGroupData] = useState<any>(null);
-  const [currentMember, setCurrentMember] = useState<any>(null);
+  const [members, setMembers] = useState<any[]>([]);
+  const [selectedMemberId, setSelectedMemberId] = useState("");
   const [amount, setAmount] = useState("");
   const [cycle, setCycle] = useState("");
   const [note, setNote] = useState("");
@@ -68,15 +69,14 @@ const RecordContribution = () => {
 
         setIsHost(true);
 
-        // Fetch current member
-        const { data: member, error: memberError } = await supabase
+        // Fetch all members
+        const { data: membersData, error: membersError } = await supabase
           .from('members')
           .select('*')
           .eq('group_id', groupId)
-          .eq('user_id', user.id)
-          .single();
+          .order('position');
 
-        if (memberError) throw memberError;
+        if (membersError) throw membersError;
 
         setGroupData({
           id: group.id,
@@ -84,7 +84,7 @@ const RecordContribution = () => {
           contributionAmount: group.contribution_amount,
           frequency: group.frequency,
         });
-        setCurrentMember(member);
+        setMembers(membersData || []);
         setAmount(group.contribution_amount.toString());
       } catch (error: any) {
         console.error('Error loading data:', error);
@@ -128,6 +128,15 @@ const RecordContribution = () => {
   const validateForm = async () => {
     const newErrors: any = {};
     
+    if (!selectedMemberId) {
+      newErrors.member = "Please select a member.";
+      toast({
+        title: "Validation Error",
+        description: "Please select a member.",
+        variant: "destructive",
+      });
+    }
+    
     // Validate with zod
     const validationResult = contributionSchema.safeParse({
       amount: parseFloat(amount),
@@ -149,20 +158,20 @@ const RecordContribution = () => {
     }
     
     // Check for duplicate entries in database
-    if (groupData && currentMember && cycle) {
+    if (groupData && selectedMemberId && cycle) {
       const { data: existingContribution } = await supabase
         .from('contributions')
         .select('id')
         .eq('group_id', groupData.id)
-        .eq('member_id', currentMember.id)
+        .eq('member_id', selectedMemberId)
         .eq('cycle', parseInt(cycle))
-        .single();
+        .maybeSingle();
 
       if (existingContribution) {
-        newErrors.duplicate = "Contribution already logged for this cycle.";
+        newErrors.duplicate = "Contribution already logged for this member and cycle.";
         toast({
           title: "Duplicate Entry",
-          description: "You have already recorded a contribution for this cycle.",
+          description: "This member already has a contribution recorded for this cycle.",
           variant: "destructive",
         });
       }
@@ -183,13 +192,14 @@ const RecordContribution = () => {
   const confirmContribution = async () => {
     try {
       const selectedCycle = generateCycles().find(c => c.id.toString() === cycle);
+      const selectedMember = members.find(m => m.id === selectedMemberId);
       
       // Save contribution to database
       const { error } = await supabase
         .from('contributions')
         .insert({
           group_id: groupData.id,
-          member_id: currentMember.id,
+          member_id: selectedMemberId,
           amount: parseFloat(amount),
           cycle: parseInt(cycle),
           cycle_label: selectedCycle?.label || `Cycle ${cycle}`,
@@ -203,7 +213,7 @@ const RecordContribution = () => {
       
       toast({
         title: "✅ Contribution Recorded!",
-        description: `Your contribution of $${amount} has been successfully logged.`,
+        description: `Contribution of $${amount} for ${selectedMember?.name} has been successfully logged.`,
       });
       
       // Navigate back to group dashboard
@@ -239,6 +249,7 @@ const RecordContribution = () => {
 
   const cycles = generateCycles();
   const selectedCycle = cycles.find(c => c.id.toString() === cycle);
+  const selectedMember = members.find(m => m.id === selectedMemberId);
 
   return (
     <div className="min-h-screen bg-gradient-to-b from-background to-secondary/30 py-8 md:py-12">
@@ -255,7 +266,7 @@ const RecordContribution = () => {
         <div className="mb-8">
           <h1 className="text-3xl md:text-4xl font-bold mb-2">Record Contribution</h1>
           <p className="text-muted-foreground">
-            Log your {groupData.frequency} contribution for {groupData.groupName}
+            Log a member's {groupData.frequency} contribution for {groupData.groupName}
           </p>
         </div>
 
@@ -263,11 +274,31 @@ const RecordContribution = () => {
           <CardHeader>
             <CardTitle className="text-xl">Contribution Details</CardTitle>
             <CardDescription>
-              Enter your contribution information for this cycle
+              Record which member made their contribution payment
             </CardDescription>
           </CardHeader>
           <CardContent>
             <form onSubmit={handleSubmit} className="space-y-6">
+              {/* Member Selection */}
+              <div className="space-y-2">
+                <Label htmlFor="member">Member *</Label>
+                <Select value={selectedMemberId} onValueChange={setSelectedMemberId}>
+                  <SelectTrigger id="member">
+                    <SelectValue placeholder="Select a member" />
+                  </SelectTrigger>
+                  <SelectContent>
+                    {members.map((member) => (
+                      <SelectItem key={member.id} value={member.id}>
+                        {member.name} - {member.email}
+                      </SelectItem>
+                    ))}
+                  </SelectContent>
+                </Select>
+                {errors.member && (
+                  <p className="text-sm text-destructive">{errors.member}</p>
+                )}
+              </div>
+
               {/* Amount */}
               <div className="space-y-2">
                 <Label htmlFor="amount">Contribution Amount *</Label>
@@ -321,10 +352,14 @@ const RecordContribution = () => {
               </div>
 
               {/* Summary Card */}
-              {amount && cycle && (
+              {amount && cycle && selectedMemberId && (
                 <div className="p-4 bg-gradient-to-r from-primary/10 via-accent/10 to-secondary/20 border border-primary/20 rounded-lg space-y-2 animate-fade-in">
                   <p className="text-sm font-semibold text-foreground">Summary</p>
                   <div className="space-y-1 text-sm">
+                    <div className="flex justify-between">
+                      <span className="text-muted-foreground">Member:</span>
+                      <span className="font-semibold">{selectedMember?.name}</span>
+                    </div>
                     <div className="flex justify-between">
                       <span className="text-muted-foreground">Amount:</span>
                       <span className="font-semibold">${parseFloat(amount).toFixed(2)}</span>
@@ -361,6 +396,10 @@ const RecordContribution = () => {
               </DialogDescription>
             </DialogHeader>
             <div className="space-y-3 py-4">
+              <div className="flex justify-between items-center p-3 bg-secondary/50 rounded-lg">
+                <span className="text-sm text-muted-foreground">Member</span>
+                <span className="font-semibold">{selectedMember?.name}</span>
+              </div>
               <div className="flex justify-between items-center p-3 bg-secondary/50 rounded-lg">
                 <span className="text-sm text-muted-foreground">Amount</span>
                 <span className="font-semibold text-lg">${parseFloat(amount || "0").toFixed(2)}</span>

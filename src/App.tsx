@@ -10,6 +10,7 @@ import GroupSetup from "./pages/GroupSetup";
 import InviteMembers from "./pages/InviteMembers";
 import GroupDashboard from "./pages/GroupDashboard";
 import JoinGroup from "./pages/JoinGroup";
+import JoinViaLink from "./pages/JoinViaLink";
 import GroupOverview from "./pages/GroupOverview";
 import MemberDashboard from "./pages/MemberDashboard";
 import RecordContribution from "./pages/RecordContribution";
@@ -32,6 +33,7 @@ const App = () => (
           <Route path="/invite-members" element={<InviteMembers />} />
           <Route path="/group-dashboard" element={<GroupDashboard />} />
           <Route path="/join-group" element={<JoinGroup />} />
+          <Route path="/join/:code" element={<JoinViaLink />} />
           <Route path="/group-overview" element={<GroupOverview />} />
           <Route path="/member-dashboard" element={<MemberDashboard />} />
           <Route path="/record-contribution" element={<RecordContribution />} />

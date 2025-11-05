@@ -101,93 +101,101 @@ const JoinGroup = () => {
   };
 
   return (
-    <div className="min-h-screen bg-gradient-to-b from-background to-secondary/30 py-8 md:py-12">
+    <div className="min-h-screen bg-gradient-to-b from-background via-secondary/20 to-accent/5 py-8 md:py-12">
       <div className="container max-w-2xl mx-auto px-4">
         <Button 
           variant="ghost" 
           onClick={() => navigate("/dashboard")}
-          className="mb-6"
+          className="mb-6 hover:bg-gold/10"
         >
           <ArrowLeft className="mr-2 h-4 w-4" />
           Back to Dashboard
         </Button>
 
-        <Card className="shadow-[var(--shadow-medium)]">
-          <CardHeader className="text-center">
-            <div className="mx-auto w-16 h-16 rounded-full bg-gradient-to-br from-primary to-accent flex items-center justify-center mb-4">
-              <Users className="h-8 w-8 text-primary-foreground" />
+        <Card className="shadow-[var(--shadow-elegant)] border-gold/20 backdrop-blur-sm">
+          <CardHeader className="text-center pb-6">
+            <div className="mx-auto w-20 h-20 rounded-full bg-gradient-to-br from-primary via-accent to-primary/80 flex items-center justify-center mb-4 shadow-[var(--shadow-glow)] animate-scale-in">
+              <Users className="h-10 w-10 text-white" />
             </div>
-            <CardTitle className="text-3xl">Join an Ajor Group</CardTitle>
-            <CardDescription className="text-base">
-              Enter your invite code to view group details and join
+            <CardTitle className="text-3xl md:text-4xl font-bold">Join with a Code</CardTitle>
+            <CardDescription className="text-base mt-2">
+              Enter your invite code to view group details
             </CardDescription>
           </CardHeader>
           <CardContent className="space-y-6">
-            <div className="space-y-2">
-              <Label htmlFor="inviteCode">Invite Code</Label>
+            <div className="space-y-3">
+              <Label htmlFor="inviteCode" className="text-sm font-semibold uppercase tracking-wide text-muted-foreground">
+                Enter Code
+              </Label>
               <div className="flex gap-2">
                 <Input
                   id="inviteCode"
-                  placeholder="Enter invite code (e.g., abc123xyz)"
+                  placeholder="e.g., abc123xyz"
                   value={inviteCode}
                   onChange={(e) => setInviteCode(e.target.value)}
-                  className="text-base font-mono"
+                  className="text-lg font-mono tracking-wider text-center bg-background/80 border-gold/20"
                   onKeyDown={(e) => {
                     if (e.key === "Enter") handleVerifyCode();
                   }}
                 />
-                <Button onClick={handleVerifyCode} className="shrink-0">
+                <Button 
+                  onClick={handleVerifyCode} 
+                  className="shrink-0 bg-gradient-to-r from-accent to-primary hover:opacity-90"
+                  disabled={!inviteCode.trim()}
+                >
                   Verify
                 </Button>
               </div>
-              <p className="text-sm text-muted-foreground">
-                Enter the invite code shared by your group host
+              <p className="text-sm text-muted-foreground text-center">
+                Ask your host for the group code
               </p>
             </div>
 
             {groupInfo && (
               <div className="animate-fade-in space-y-4">
-                <div className="h-px bg-border"></div>
+                <div className="h-px bg-gradient-to-r from-transparent via-border to-transparent"></div>
                 
-                <div className="bg-secondary/50 rounded-xl p-6 space-y-4">
+                <div className="bg-gradient-to-br from-concrete/30 to-concrete/10 border border-gold/20 rounded-xl p-6 space-y-4">
                   <div className="flex items-start justify-between">
                     <div>
-                      <h3 className="text-xl font-semibold mb-1">{groupInfo.groupName}</h3>
-                      <p className="text-sm text-muted-foreground">{groupInfo.description}</p>
+                      <h3 className="text-2xl font-bold mb-1">{groupInfo.groupName}</h3>
+                      {groupInfo.description && (
+                        <p className="text-sm text-muted-foreground">{groupInfo.description}</p>
+                      )}
                     </div>
-                    <Badge variant="secondary" className="ml-2">
+                    <Badge variant="secondary" className="ml-2 bg-gold/10 border-gold/20">
                       {groupInfo.currentMembers}/{groupInfo.numberOfMembers} Members
                     </Badge>
                   </div>
 
                   <div className="grid grid-cols-2 gap-4 pt-2">
-                    <div className="flex items-center gap-3">
+                    <div className="flex items-center gap-3 p-3 rounded-lg bg-background/50">
                       <div className="w-10 h-10 rounded-lg bg-primary/10 flex items-center justify-center">
                         <DollarSign className="h-5 w-5 text-primary" />
                       </div>
                       <div>
-                        <p className="text-sm text-muted-foreground">Contribution</p>
-                        <p className="font-semibold">${groupInfo.contributionAmount}</p>
+                        <p className="text-xs text-muted-foreground">Contribution</p>
+                        <p className="font-bold text-lg">${groupInfo.contributionAmount}</p>
                       </div>
                     </div>
 
-                    <div className="flex items-center gap-3">
+                    <div className="flex items-center gap-3 p-3 rounded-lg bg-background/50">
                       <div className="w-10 h-10 rounded-lg bg-accent/10 flex items-center justify-center">
                         <Calendar className="h-5 w-5 text-accent" />
                       </div>
                       <div>
-                        <p className="text-sm text-muted-foreground">Frequency</p>
-                        <p className="font-semibold capitalize">{groupInfo.frequency}</p>
+                        <p className="text-xs text-muted-foreground">Frequency</p>
+                        <p className="font-bold capitalize">{groupInfo.frequency}</p>
                       </div>
                     </div>
 
-                    <div className="flex items-center gap-3 col-span-2">
-                      <div className="w-10 h-10 rounded-lg bg-primary/10 flex items-center justify-center">
-                        <User className="h-5 w-5 text-primary" />
+                    <div className="flex items-center gap-3 p-3 rounded-lg bg-background/50 col-span-2">
+                      <div className="w-10 h-10 rounded-lg bg-emerald/10 flex items-center justify-center">
+                        <User className="h-5 w-5 text-emerald" />
                       </div>
                       <div>
-                        <p className="text-sm text-muted-foreground">Hosted by</p>
-                        <p className="font-semibold">{groupInfo.hostName}</p>
+                        <p className="text-xs text-muted-foreground">Hosted by</p>
+                        <p className="font-bold">{groupInfo.hostName}</p>
                       </div>
                     </div>
                   </div>
@@ -196,7 +204,7 @@ const JoinGroup = () => {
                 <Button 
                   variant="hero" 
                   size="lg" 
-                  className="w-full"
+                  className="w-full text-lg h-14 shadow-[var(--shadow-soft)]"
                   onClick={handleJoinGroup}
                 >
                   Join This Ajor
@@ -207,9 +215,9 @@ const JoinGroup = () => {
           </CardContent>
         </Card>
 
-        <div className="mt-6 p-4 bg-accent/10 rounded-lg border border-accent/20">
-          <p className="text-sm text-muted-foreground">
-            <strong>Note:</strong> Only join groups with people you trust. Make sure you understand 
+        <div className="mt-6 p-4 bg-gradient-to-r from-accent/10 via-gold/5 to-accent/10 rounded-lg border border-gold/20">
+          <p className="text-sm text-muted-foreground text-center">
+            <strong className="text-foreground">Note:</strong> Only join groups with people you trust. Make sure you understand 
             the contribution schedule and rotation order before joining.
           </p>
         </div>

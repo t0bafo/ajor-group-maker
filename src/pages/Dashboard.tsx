@@ -8,6 +8,7 @@ import { supabase } from "@/integrations/supabase/client";
 import { UserPlus, Users, DollarSign, Calendar, TrendingUp } from "lucide-react";
 import { useToast } from "@/hooks/use-toast";
 import AppNavigation from "@/components/AppNavigation";
+import InviteMembersModal from "@/components/InviteMembersModal";
 
 const Dashboard = () => {
   const navigate = useNavigate();
@@ -15,6 +16,8 @@ const Dashboard = () => {
   const [user, setUser] = useState<any>(null);
   const [isLoading, setIsLoading] = useState(true);
   const [userGroups, setUserGroups] = useState<any[]>([]);
+  const [inviteModalOpen, setInviteModalOpen] = useState(false);
+  const [selectedGroup, setSelectedGroup] = useState<{ name: string; code: string } | null>(null);
 
   useEffect(() => {
     // Check authentication and load user-specific data
@@ -119,6 +122,7 @@ const Dashboard = () => {
               month: "short", 
               day: "numeric" 
             }),
+            inviteCode: group.invite_code,
           };
         }));
 
@@ -135,6 +139,12 @@ const Dashboard = () => {
       });
       setUserGroups([]);
     }
+  };
+
+  const handleInviteMembers = (groupName: string, inviteCode: string, e: React.MouseEvent) => {
+    e.stopPropagation(); // Prevent card click
+    setSelectedGroup({ name: groupName, code: inviteCode });
+    setInviteModalOpen(true);
   };
 
 
@@ -228,7 +238,7 @@ const Dashboard = () => {
                   {userGroups.map((group) => (
                     <Card 
                       key={group.id}
-                      className="hover:shadow-[var(--shadow-medium)] transition-all cursor-pointer"
+                      className="hover:shadow-[var(--shadow-medium)] transition-all cursor-pointer border-gold/10"
                       onClick={() => {
                         // Store current group ID for the group dashboard
                         sessionStorage.setItem("currentGroupId", group.id);
@@ -240,12 +250,21 @@ const Dashboard = () => {
                           <div className="flex-1">
                             <div className="flex items-center gap-3 mb-2">
                               <CardTitle className="text-xl">{group.groupName}</CardTitle>
-                              <Badge variant={group.status === "Active" ? "default" : "secondary"}>
+                              <Badge variant={group.status === "Active" ? "default" : "secondary"} className={group.status === "Active" ? "bg-emerald/20 text-emerald" : ""}>
                                 {group.status}
                               </Badge>
                             </div>
                             <CardDescription>{group.description}</CardDescription>
                           </div>
+                          <Button
+                            variant="outline"
+                            size="sm"
+                            className="border-gold/20 hover:bg-gold/10"
+                            onClick={(e) => handleInviteMembers(group.groupName, group.inviteCode, e)}
+                          >
+                            <UserPlus className="h-4 w-4 mr-2" />
+                            Invite
+                          </Button>
                         </div>
                       </CardHeader>
                       <CardContent className="space-y-4">
@@ -348,6 +367,16 @@ const Dashboard = () => {
           )}
         </div>
       </main>
+
+      {/* Invite Members Modal */}
+      {selectedGroup && (
+        <InviteMembersModal
+          open={inviteModalOpen}
+          onOpenChange={setInviteModalOpen}
+          groupName={selectedGroup.name}
+          inviteCode={selectedGroup.code}
+        />
+      )}
     </div>
   );
 };

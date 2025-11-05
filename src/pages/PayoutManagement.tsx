@@ -83,13 +83,9 @@ const PayoutManagement = () => {
         if (payoutsError) throw payoutsError;
         setPayouts(payoutsData || []);
 
-        // Calculate current cycle based on payouts
-        const membersCount = membersData?.length || 0;
-        if (membersCount > 0) {
-          const totalPayouts = payoutsData?.length || 0;
-          const calculatedCycle = Math.floor(totalPayouts / membersCount) + 1;
-          setCurrentCycle(calculatedCycle);
-        }
+        // Each payout = one cycle. Next cycle to pay out is totalPayouts + 1
+        const totalPayouts = payoutsData?.length || 0;
+        setCurrentCycle(totalPayouts + 1);
       } catch (error: any) {
         console.error('Error loading data:', error);
         toast({
@@ -110,35 +106,24 @@ const PayoutManagement = () => {
     parseFloat(groupData?.contribution_amount || 0) *
     parseInt(groupData?.number_of_members || 0);
 
-  const currentPayoutMember = (() => {
-    // Get payouts for current cycle
-    const currentCyclePayouts = payouts.filter(p => p.cycle === currentCycle);
-    
-    // If all members paid in current cycle, no current member
-    if (currentCyclePayouts.length >= members.length) {
-      return null;
-    }
-    
-    // Find the next member who hasn't been paid in this cycle
-    return members.find(member => 
-      !currentCyclePayouts.some(p => p.member_id === member.id)
-    );
-  })();
+  // Current cycle is the next payout to be made
+  // Find next member in rotation based on position
+  const currentPayoutMember = members.length > 0 
+    ? members[(payouts.length % members.length)]
+    : null;
 
+  // Progress based on current rotation (0 to members.length)
+  const payoutsInCurrentRotation = payouts.length % members.length;
   const payoutProgress = members.length > 0 
-    ? (payouts.filter(p => p.cycle === currentCycle).length / members.length) * 100 
+    ? (payoutsInCurrentRotation / members.length) * 100 
     : 0;
 
   const handleRecordPayout = (member: any) => {
-    // Check if payout already recorded
-    const existingPayout = payouts.find(
-      (p) => p.member_id === member.id && p.cycle === currentCycle
-    );
-
-    if (existingPayout) {
+    // Only allow recording payout for the current member in rotation
+    if (member.id !== currentPayoutMember?.id) {
       toast({
-        title: "Payout Already Recorded",
-        description: "This member has already received their payout for this cycle.",
+        title: "Wrong Rotation Order",
+        description: "Please pay members in their rotation order.",
         variant: "destructive",
       });
       return;
@@ -170,16 +155,15 @@ const PayoutManagement = () => {
 
       const updatedPayouts = [...payouts, newPayout];
       setPayouts(updatedPayouts);
+      
+      // Increment to next cycle
+      setCurrentCycle(currentCycle + 1);
 
-      // Check if cycle is complete
-      const payoutsInCurrentCycle = updatedPayouts.filter(p => p.cycle === currentCycle);
-      if (payoutsInCurrentCycle.length === members.length) {
-        // All members paid in this cycle, increment cycle
-        setCurrentCycle(currentCycle + 1);
-        
+      // Check if rotation is complete (all members paid once)
+      if (updatedPayouts.length % members.length === 0) {
         toast({
-          title: "Cycle Complete! 🎉",
-          description: `All members have been paid for Cycle ${currentCycle}. Starting Cycle ${currentCycle + 1}.`,
+          title: "Rotation Complete! 🎉",
+          description: `All ${members.length} members have received a payout. Starting new rotation.`,
         });
       } else {
         toast({
@@ -198,10 +182,8 @@ const PayoutManagement = () => {
   };
 
   const getMemberPayoutStatus = (memberId: string | number) => {
-    const payout = payouts.find(
-      (p) => p.member_id === memberId && p.cycle === currentCycle
-    );
-    return payout ? "Paid" : "Pending";
+    // Check if this member is the current one to be paid
+    return memberId === currentPayoutMember?.id ? "Current" : "Pending";
   };
 
   if (loading) {
@@ -274,9 +256,9 @@ const PayoutManagement = () => {
               <CheckCircle2 className="h-5 w-5 text-primary" />
             </CardHeader>
             <CardContent>
-              <div className="text-3xl font-bold">{payouts.filter(p => p.cycle === currentCycle).length}</div>
+              <div className="text-3xl font-bold">{payoutsInCurrentRotation}</div>
               <p className="text-sm text-muted-foreground mt-1">
-                of {members.length} members
+                of {members.length} in current rotation
               </p>
             </CardContent>
           </Card>
@@ -290,9 +272,9 @@ const PayoutManagement = () => {
             </CardHeader>
             <CardContent>
               <div className="text-3xl font-bold">
-                ${(payouts.filter(p => p.cycle === currentCycle).length * totalAmount).toFixed(2)}
+                ${(payouts.length * totalAmount).toFixed(2)}
               </div>
-              <p className="text-sm text-muted-foreground mt-1">Cycle {currentCycle}</p>
+              <p className="text-sm text-muted-foreground mt-1">Total distributed</p>
             </CardContent>
           </Card>
 
@@ -319,9 +301,9 @@ const PayoutManagement = () => {
           <CardContent>
             <div className="space-y-2 mb-4">
               <div className="flex items-center justify-between text-sm">
-                <span className="font-medium">Current Cycle</span>
+                <span className="font-medium">Current Rotation</span>
                 <span className="text-muted-foreground">
-                  {payouts.filter(p => p.cycle === currentCycle).length} / {members.length} paid
+                  {payoutsInCurrentRotation} / {members.length} paid
                 </span>
               </div>
               <Progress value={payoutProgress} className="h-3" />
@@ -373,13 +355,13 @@ const PayoutManagement = () => {
                     </div>
                     <div className="flex items-center gap-3">
                       <Badge
-                        variant={status === "Paid" ? "default" : "outline"}
-                        className={status === "Paid" ? "bg-green-600" : ""}
+                        variant={status === "Current" ? "default" : "outline"}
+                        className={status === "Current" ? "bg-primary" : ""}
                       >
-                        {status === "Paid" ? (
+                        {status === "Current" ? (
                           <>
-                            <CheckCircle2 className="mr-1 h-3 w-3" />
-                            Paid
+                            <DollarSign className="mr-1 h-3 w-3" />
+                            Current
                           </>
                         ) : (
                           <>
@@ -388,7 +370,7 @@ const PayoutManagement = () => {
                           </>
                         )}
                       </Badge>
-                      {isCurrent && status === "Pending" && (
+                      {isCurrent && (
                         <Button
                           size="sm"
                           onClick={() => handleRecordPayout(member)}
@@ -402,27 +384,26 @@ const PayoutManagement = () => {
               })}
             </div>
 
-            {payoutProgress === 100 && (
+            {payoutProgress === 0 && payouts.length > 0 && payouts.length % members.length === 0 && (
               <div className="mt-6 p-4 bg-green-50 dark:bg-green-950 rounded-lg border border-green-200 dark:border-green-800 flex items-start gap-3">
                 <CheckCircle2 className="h-5 w-5 text-green-600 mt-0.5 shrink-0" />
                 <div>
                   <p className="font-semibold text-green-900 dark:text-green-100">
-                    Cycle Complete!
+                    Rotation Complete!
                   </p>
                   <p className="text-sm text-green-700 dark:text-green-300 mt-1">
-                    All members have received their payouts for Cycle {currentCycle}.
+                    All {members.length} members have received a payout. Starting new rotation.
                   </p>
                 </div>
               </div>
             )}
 
-            {payoutProgress > 0 && payoutProgress < 100 && (
+            {currentPayoutMember && (
               <div className="mt-6 p-4 bg-accent/10 rounded-lg border border-accent/20 flex items-start gap-3">
                 <AlertCircle className="h-5 w-5 text-accent mt-0.5 shrink-0" />
                 <div>
                   <p className="text-sm text-muted-foreground">
-                    <strong>Reminder:</strong> You must complete the current payout before
-                    proceeding to the next member in rotation.
+                    <strong>Next:</strong> Pay {currentPayoutMember.name} ${totalAmount.toFixed(2)} (Cycle {currentCycle})
                   </p>
                 </div>
               </div>

@@ -145,20 +145,22 @@ const GroupDashboard = () => {
   const expectedPerCycle = parseFloat(groupData.contributionAmount || 0) * members.length;
   const contributionProgress = expectedPerCycle > 0 ? (totalCollected / expectedPerCycle) * 100 : 0;
 
-  // Calculate current cycle and payout stats
+  // Calculate payout stats - each payout is one cycle
   const totalPayouts = payouts.length;
-  const latestCycle = payouts.length > 0 ? Math.max(...payouts.map(p => p.cycle)) : 1;
-  const currentCycle = latestCycle;
-  const payoutsInCurrentCycle = payouts.filter(p => p.cycle === currentCycle).length;
+  const currentCycle = totalPayouts + 1; // Next cycle to be paid
+  const latestCompletedCycle = totalPayouts; // Last cycle that was paid
   
-  // In Ajor, only ONE member receives payout per cycle (the full pot)
-  // So we check if the current cycle payout is complete (should be 1, not members.length)
-  const isCurrentCycleComplete = payoutsInCurrentCycle >= 1;
-  const payoutProgress = isCurrentCycleComplete ? 100 : 0;
+  // Progress in current rotation (0 to members.length)
+  const payoutsInCurrentRotation = members.length > 0 ? totalPayouts % members.length : 0;
+  const rotationProgress = members.length > 0 ? (payoutsInCurrentRotation / members.length) * 100 : 0;
   
-  const nextPayoutMember = !isCurrentCycleComplete ? members.find(member => 
-    !payouts.some(p => p.memberId === member.id && p.cycle === currentCycle)
-  ) : null;
+  // Next member to receive payout
+  const nextPayoutMember = members.length > 0 
+    ? members[payoutsInCurrentRotation]
+    : null;
+  
+  // Latest payout info
+  const latestPayout = payouts.length > 0 ? payouts[0] : null; // Already sorted by created_at desc
 
   // Get member contribution status
   const getMemberStatus = (memberId: string) => {
@@ -209,9 +211,9 @@ const GroupDashboard = () => {
               <TrendingUp className="h-5 w-5 text-accent" />
             </CardHeader>
             <CardContent>
-              <div className="text-3xl font-bold">{payoutsInCurrentCycle > 0 ? '1' : '0'}</div>
+              <div className="text-3xl font-bold">{totalPayouts}</div>
               <p className="text-sm text-muted-foreground mt-1">
-                payout made in Cycle {currentCycle}
+                total payouts made
               </p>
             </CardContent>
           </Card>
@@ -250,37 +252,39 @@ const GroupDashboard = () => {
           <CardContent className="space-y-4">
             <div className="space-y-2">
               <div className="flex items-center justify-between text-sm">
-                <span className="font-medium">Cycle {currentCycle} Payout</span>
+                <span className="font-medium">Rotation Progress</span>
                 <span className="text-muted-foreground">
-                  {isCurrentCycleComplete ? 'Complete' : 'Pending'}
+                  {payoutsInCurrentRotation} of {members.length} paid
                 </span>
               </div>
-              <Progress value={payoutProgress} className="h-3" />
+              <Progress value={rotationProgress} className="h-3" />
             </div>
 
-            {payoutProgress === 100 ? (
+            {latestPayout ? (
               <div className="p-4 bg-green-50 dark:bg-green-950 rounded-lg border border-green-200 dark:border-green-800">
                 <p className="text-sm font-semibold text-green-900 dark:text-green-100">
-                  ✅ Cycle {currentCycle} payout complete! 
-                  {payouts.find(p => p.cycle === currentCycle) && 
-                    ` ${members.find(m => m.id === payouts.find(p => p.cycle === currentCycle)?.memberId)?.name} received ${totalAmount.toFixed(0)} AWG.`
+                  ✅ Latest: Cycle {latestCompletedCycle}
+                  {latestPayout && 
+                    ` - ${members.find(m => m.id === latestPayout.memberId)?.name} received ${totalAmount.toFixed(0)} AWG`
                   }
                 </p>
               </div>
-            ) : nextPayoutMember ? (
+            ) : null}
+            
+            {nextPayoutMember ? (
               <div className="p-4 bg-accent/10 rounded-lg border border-accent/20">
                 <p className="text-sm text-muted-foreground">
-                  <strong>Next:</strong> {nextPayoutMember.name} to receive {totalAmount.toFixed(0)} AWG
+                  <strong>Next (Cycle {currentCycle}):</strong> {nextPayoutMember.name} to receive {totalAmount.toFixed(0)} AWG
                 </p>
               </div>
-            ) : (
+            ) : totalPayouts === 0 ? (
               <div className="text-center py-4 text-muted-foreground">
                 <p className="mb-4">No payouts recorded yet</p>
                 <Button onClick={() => navigate("/payout-management")} variant="outline" size="sm">
                   Start Recording Payouts
                 </Button>
               </div>
-            )}
+            ) : null}
           </CardContent>
         </Card>
 

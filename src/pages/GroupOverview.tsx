@@ -53,25 +53,6 @@ const GroupOverview = () => {
         return;
       }
 
-      // Check if user is already a member
-      const { data: existingMember } = await supabase
-        .from('members')
-        .select('id')
-        .eq('group_id', groupInfo.id)
-        .eq('user_id', user.id)
-        .single();
-
-      if (existingMember) {
-        toast({
-          title: "Already a Member",
-          description: "You are already a member of this group",
-          variant: "destructive",
-        });
-        sessionStorage.setItem("currentGroupId", groupInfo.id);
-        navigate("/group-dashboard");
-        return;
-      }
-
       // Get next position
       const { count: memberCount } = await supabase
         .from('members')

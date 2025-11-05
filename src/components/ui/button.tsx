@@ -10,12 +10,13 @@ const buttonVariants = cva(
     variants: {
       variant: {
         default: "bg-primary text-primary-foreground hover:bg-[hsl(var(--primary-hover))] shadow-[var(--shadow-soft)] hover:shadow-[var(--shadow-medium)]",
-        destructive: "bg-destructive text-destructive-foreground hover:bg-destructive/90",
-        outline: "border border-border bg-card hover:bg-secondary hover:text-secondary-foreground",
-        secondary: "bg-secondary text-secondary-foreground hover:bg-secondary/80",
-        ghost: "hover:bg-accent hover:text-accent-foreground",
+        destructive: "bg-destructive text-destructive-foreground hover:bg-destructive/90 shadow-[var(--shadow-soft)]",
+        outline: "border border-border bg-transparent hover:bg-secondary hover:text-secondary-foreground shadow-[var(--shadow-soft)]",
+        secondary: "bg-secondary text-secondary-foreground hover:bg-secondary/80 shadow-[var(--shadow-soft)]",
+        ghost: "hover:bg-accent/10 hover:text-accent-foreground",
         link: "text-primary underline-offset-4 hover:underline",
-        hero: "bg-gradient-to-r from-primary to-accent text-primary-foreground hover:shadow-[var(--shadow-glow)] font-semibold",
+        hero: "bg-gradient-to-r from-primary via-cta to-accent text-card font-semibold shadow-[var(--shadow-medium)] hover:shadow-[var(--shadow-glow-gold)] hover:scale-[1.02] transition-all",
+        cta: "bg-cta text-cta-foreground hover:opacity-90 shadow-[var(--shadow-medium)] hover:shadow-[var(--shadow-glow-terracotta)] font-semibold",
       },
       size: {
         default: "h-11 px-6 py-2",

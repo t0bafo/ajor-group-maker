@@ -150,21 +150,21 @@ const Dashboard = () => {
   }
 
   return (
-    <div className="min-h-screen bg-gradient-to-b from-background to-secondary/30">
+    <div className="min-h-screen bg-gradient-to-b from-background via-muted/20 to-background">
       <AppNavigation 
         userEmail={user?.email} 
         userName={user?.user_metadata?.full_name}
       />
 
       {/* Main Content */}
-      <main className="container mx-auto px-4 py-8 md:py-12">
-        <div className="max-w-6xl mx-auto space-y-8">
+      <main className="container mx-auto px-4 py-12 md:py-16">
+        <div className="max-w-6xl mx-auto space-y-10">
           {/* Welcome Section */}
-          <div className="space-y-2">
-            <h1 className="text-3xl md:text-4xl font-bold">
+          <div className="space-y-3">
+            <h1 className="text-4xl md:text-5xl font-bold tracking-tight">
               {userGroups.length > 0 ? "Your Dashboard" : "Welcome to Ajor"}
             </h1>
-            <p className="text-lg text-muted-foreground">
+            <p className="text-lg md:text-xl text-muted-foreground">
               {userGroups.length > 0 
                 ? "Manage your savings groups and track your progress" 
                 : "Start saving together with your trusted community"}
@@ -176,39 +176,39 @@ const Dashboard = () => {
             <>
               {/* Summary Metrics */}
               <div className="grid grid-cols-1 md:grid-cols-3 gap-4">
-                <Card>
-                  <CardHeader className="pb-2">
-                    <CardDescription className="flex items-center gap-2">
-                      <DollarSign className="h-4 w-4 text-primary" />
+                <Card className="shadow-[var(--shadow-medium)] border-border/50">
+                  <CardHeader className="pb-3">
+                    <CardDescription className="flex items-center gap-2 text-base">
+                      <DollarSign className="h-5 w-5 text-primary" />
                       Total Savings
                     </CardDescription>
                   </CardHeader>
                   <CardContent>
-                    <div className="text-2xl font-bold">
+                    <div className="text-3xl font-bold">
                       ${userGroups.reduce((sum, g) => sum + (parseFloat(g.contributionAmount) * g.memberCount), 0).toFixed(0)}
                     </div>
                   </CardContent>
                 </Card>
-                <Card>
-                  <CardHeader className="pb-2">
-                    <CardDescription className="flex items-center gap-2">
-                      <Users className="h-4 w-4 text-accent" />
+                <Card className="shadow-[var(--shadow-medium)] border-border/50">
+                  <CardHeader className="pb-3">
+                    <CardDescription className="flex items-center gap-2 text-base">
+                      <Users className="h-5 w-5 text-accent" />
                       Active Groups
                     </CardDescription>
                   </CardHeader>
                   <CardContent>
-                    <div className="text-2xl font-bold">{userGroups.length}</div>
+                    <div className="text-3xl font-bold">{userGroups.length}</div>
                   </CardContent>
                 </Card>
-                <Card>
-                  <CardHeader className="pb-2">
-                    <CardDescription className="flex items-center gap-2">
-                      <TrendingUp className="h-4 w-4 text-primary" />
+                <Card className="shadow-[var(--shadow-medium)] border-border/50">
+                  <CardHeader className="pb-3">
+                    <CardDescription className="flex items-center gap-2 text-base">
+                      <TrendingUp className="h-5 w-5 text-emerald" />
                       Total Members
                     </CardDescription>
                   </CardHeader>
                   <CardContent>
-                    <div className="text-2xl font-bold">
+                    <div className="text-3xl font-bold">
                       {userGroups.reduce((sum, g) => sum + g.memberCount, 0)}
                     </div>
                   </CardContent>

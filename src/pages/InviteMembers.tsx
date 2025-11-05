@@ -52,7 +52,7 @@ const InviteMembers = () => {
 
   const handleContinue = () => {
     sessionStorage.setItem("ajorMembers", JSON.stringify(members));
-    navigate("/dashboard");
+    navigate("/group-dashboard");
   };
 
   return (

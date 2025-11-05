@@ -5,9 +5,10 @@ import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from "@/components/ui/card";
 import { Badge } from "@/components/ui/badge";
-import { Copy, Mail, Plus, Check, ArrowRight, Users } from "lucide-react";
+import { Copy, Mail, Plus, Check, ArrowRight, Users, Sparkles } from "lucide-react";
 import { toast } from "@/hooks/use-toast";
 import { supabase } from "@/integrations/supabase/client";
+import { celebrationConfetti } from "@/lib/confetti";
 
 const InviteMembers = () => {
   const navigate = useNavigate();
@@ -66,6 +67,11 @@ const InviteMembers = () => {
         // Set invite link
         const baseUrl = window.location.origin;
         setInviteLink(`${baseUrl}/join/${group.invite_code}`);
+        
+        // Celebration confetti on mount
+        setTimeout(() => {
+          celebrationConfetti();
+        }, 400);
       } catch (error: any) {
         console.error('Error loading group data:', error);
         toast({
@@ -178,11 +184,12 @@ const InviteMembers = () => {
       <div className="container max-w-3xl mx-auto px-4">
         {/* Header with celebration */}
         <div className="mb-8 text-center animate-fade-in">
-          <div className="inline-flex items-center justify-center w-20 h-20 rounded-full bg-gradient-to-br from-primary via-accent to-primary/80 mb-4 shadow-[var(--shadow-glow)] animate-scale-in">
-            <Check className="h-10 w-10 text-white" />
+          <div className="inline-flex items-center justify-center w-24 h-24 rounded-full bg-gradient-to-br from-primary via-accent to-primary/80 mb-4 shadow-[var(--shadow-glow-gold)] animate-scale-in relative">
+            <Check className="h-12 w-12 text-white" />
+            <Sparkles className="h-6 w-6 text-primary absolute -top-1 -right-1 animate-pulse" />
           </div>
           <h1 className="text-4xl md:text-5xl font-bold mb-3 bg-gradient-to-r from-primary via-accent to-primary bg-clip-text text-transparent">
-            Your Ajor is Ready 🎉
+            Your Ajor is Ready! 🎉
           </h1>
           <p className="text-muted-foreground text-lg max-w-2xl mx-auto">
             Share your link or code so your trusted circle can join and start saving with you.

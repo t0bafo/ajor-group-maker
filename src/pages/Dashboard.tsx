@@ -5,10 +5,11 @@ import { Card, CardContent, CardDescription, CardHeader, CardTitle } from "@/com
 import { Badge } from "@/components/ui/badge";
 import { Progress } from "@/components/ui/progress";
 import { supabase } from "@/integrations/supabase/client";
-import { UserPlus, Users, DollarSign, Calendar, TrendingUp } from "lucide-react";
+import { UserPlus, Users, DollarSign, Calendar, TrendingUp, Plus } from "lucide-react";
 import { useToast } from "@/hooks/use-toast";
 import AppNavigation from "@/components/AppNavigation";
 import InviteMembersModal from "@/components/InviteMembersModal";
+import EmptyState from "@/components/EmptyState";
 
 const Dashboard = () => {
   const navigate = useNavigate();

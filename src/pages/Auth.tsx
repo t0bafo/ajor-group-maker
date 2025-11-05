@@ -22,29 +22,38 @@ const Auth = () => {
   });
 
   useEffect(() => {
-    // Check if there's a pending invite code
+    // Check for redirect paths
     const pendingInviteCode = sessionStorage.getItem("pendingInviteCode");
     const returnToJoin = sessionStorage.getItem("returnToJoin");
+    const redirectTo = sessionStorage.getItem("redirectTo");
     
-    // Only clear sessionStorage if NOT returning from join flow
-    if (!returnToJoin && !pendingInviteCode) {
+    // Only clear sessionStorage if NOT returning from a flow
+    if (!returnToJoin && !pendingInviteCode && !redirectTo) {
       sessionStorage.clear();
     }
 
     // Check if user is already logged in
     supabase.auth.getSession().then(({ data: { session } }) => {
       if (session) {
-        // If there's a pending invite code, redirect to join via link
+        // Priority 1: Pending invite code
         if (pendingInviteCode) {
           const code = pendingInviteCode;
           sessionStorage.removeItem("pendingInviteCode");
           navigate(`/join/${code}`);
         }
-        // If returning from join flow, go to group overview
+        // Priority 2: Return to join flow
         else if (returnToJoin) {
           sessionStorage.removeItem("returnToJoin");
           navigate("/group-overview");
-        } else {
+        }
+        // Priority 3: Custom redirect
+        else if (redirectTo) {
+          const path = redirectTo;
+          sessionStorage.removeItem("redirectTo");
+          navigate(path);
+        }
+        // Default: Dashboard
+        else {
           navigate("/dashboard");
         }
       }
@@ -65,19 +74,40 @@ const Auth = () => {
         
         // Check if returning from join flow
         const isJoinFlow = sessionStorage.getItem("returnToJoin");
-        
         if (isJoinFlow) {
           sessionStorage.removeItem("returnToJoin");
           navigate("/group-overview");
-        } else {
-          sessionStorage.clear();
-          navigate("/dashboard");
+          return;
         }
+        
+        // Check for custom redirect
+        const redirect = sessionStorage.getItem("redirectTo");
+        if (redirect) {
+          sessionStorage.removeItem("redirectTo");
+          navigate(redirect);
+          return;
+        }
+        
+        // Default: Clear and go to dashboard with welcome message
+        sessionStorage.clear();
+        
+        // Check if this is first login
+        const isNewUser = event === "SIGNED_IN" && session.user.created_at === session.user.last_sign_in_at;
+        if (isNewUser) {
+          setTimeout(() => {
+            toast({
+              title: "Welcome to Ajor",
+              description: "Where community meets savings.",
+            });
+          }, 500);
+        }
+        
+        navigate("/dashboard");
       }
     });
 
     return () => subscription.unsubscribe();
-  }, [navigate]);
+  }, [navigate, toast]);
 
   const handleSignUp = async (e: React.FormEvent) => {
     e.preventDefault();

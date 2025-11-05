@@ -12,6 +12,7 @@ import { supabase } from "@/integrations/supabase/client";
 import StepIndicator from "@/components/StepIndicator";
 import CulturalTooltip from "@/components/CulturalTooltip";
 import { celebrationConfetti } from "@/lib/confetti";
+import { groupSchema } from "@/lib/validation";
 
 const GroupSetup = () => {
   const navigate = useNavigate();
@@ -49,10 +50,18 @@ const GroupSetup = () => {
     }
     
     if (currentStep === 1) {
-      if (!formData.contributionAmount || !formData.frequency || !formData.numberOfMembers) {
+      // Validate with zod
+      const validationResult = groupSchema.safeParse({
+        groupName: formData.groupName,
+        contributionAmount: parseFloat(formData.contributionAmount),
+        numberOfMembers: parseInt(formData.numberOfMembers),
+        description: formData.description || undefined
+      });
+
+      if (!validationResult.success) {
         toast({
-          title: "Missing Information",
-          description: "Please fill in all financial details",
+          title: "Validation Error",
+          description: validationResult.error.errors[0].message,
           variant: "destructive",
         });
         return;

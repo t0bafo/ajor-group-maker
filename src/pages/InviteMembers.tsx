@@ -9,6 +9,7 @@ import { Copy, Mail, Plus, Check, ArrowRight, Users, Sparkles } from "lucide-rea
 import { toast } from "@/hooks/use-toast";
 import { supabase } from "@/integrations/supabase/client";
 import { celebrationConfetti } from "@/lib/confetti";
+import { emailSchema } from "@/lib/validation";
 
 const InviteMembers = () => {
   const navigate = useNavigate();
@@ -97,7 +98,21 @@ const InviteMembers = () => {
 
   const handleSendInvite = async (e: React.FormEvent) => {
     e.preventDefault();
-    if (!inviteEmail || !groupData) return;
+    if (!groupData) return;
+
+    const trimmedEmail = inviteEmail.trim();
+    
+    // Validate email with zod
+    const validationResult = emailSchema.safeParse(trimmedEmail);
+    
+    if (!validationResult.success) {
+      toast({
+        title: "Invalid Email",
+        description: validationResult.error.errors[0].message,
+        variant: "destructive",
+      });
+      return;
+    }
 
     try {
       // Add member to database
@@ -105,8 +120,8 @@ const InviteMembers = () => {
         .from('members')
         .insert({
           group_id: groupData.id,
-          name: inviteEmail.split("@")[0],
-          email: inviteEmail,
+          name: trimmedEmail.split("@")[0],
+          email: trimmedEmail,
           role: "Member",
           position: members.length + 1,
         })
@@ -125,10 +140,9 @@ const InviteMembers = () => {
       
       toast({
         title: "Invite Sent!",
-        description: `Invitation sent to ${inviteEmail}`,
+        description: `Invitation sent to ${trimmedEmail}`,
       });
     } catch (error: any) {
-      console.error('Error sending invite:', error);
       toast({
         title: "Error Sending Invite",
         description: error.message || "Failed to send invite",

@@ -1,10 +1,17 @@
 import { serve } from "https://deno.land/std@0.168.0/http/server.ts";
 import { createClient } from "https://esm.sh/@supabase/supabase-js@2.7.1";
+import { z } from "https://deno.land/x/zod@v3.22.4/mod.ts";
 
 const corsHeaders = {
-  "Access-Control-Allow-Origin": "*",
-  "Access-Control-Allow-Headers": "authorization, x-client-info, apikey, content-type",
+  'Access-Control-Allow-Origin': '*',
+  'Access-Control-Allow-Headers': 'authorization, x-client-info, apikey, content-type',
 };
+
+// Invite code validation schema
+const inviteCodeSchema = z.string()
+  .trim()
+  .length(9, { message: "Invite code must be 9 characters" })
+  .regex(/^[a-z0-9]+$/, { message: "Invalid code format" });
 
 serve(async (req) => {
   if (req.method === "OPTIONS") {
@@ -14,9 +21,12 @@ serve(async (req) => {
   try {
     const { inviteCode } = await req.json();
 
-    if (!inviteCode) {
+    // Validate invite code format
+    const validationResult = inviteCodeSchema.safeParse(inviteCode);
+    
+    if (!validationResult.success) {
       return new Response(
-        JSON.stringify({ error: "Invite code is required" }),
+        JSON.stringify({ error: validationResult.error.errors[0].message }),
         { status: 400, headers: { ...corsHeaders, "Content-Type": "application/json" } }
       );
     }
@@ -31,7 +41,7 @@ serve(async (req) => {
     const { data: group, error: groupError } = await supabaseAdmin
       .from("groups")
       .select("id, group_name, description, contribution_amount, frequency, number_of_members, rotation_order, status")
-      .eq("invite_code", inviteCode)
+      .eq("invite_code", validationResult.data)
       .eq("status", "active")
       .single();
 
@@ -73,7 +83,6 @@ serve(async (req) => {
       { status: 200, headers: { ...corsHeaders, "Content-Type": "application/json" } }
     );
   } catch (error) {
-    console.error("Error validating invite:", error);
     return new Response(
       JSON.stringify({ error: "Failed to validate invite code" }),
       { status: 500, headers: { ...corsHeaders, "Content-Type": "application/json" } }

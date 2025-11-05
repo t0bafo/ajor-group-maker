@@ -8,6 +8,7 @@ import { Badge } from "@/components/ui/badge";
 import { ArrowLeft, ArrowRight, Users, DollarSign, Calendar, User } from "lucide-react";
 import { toast } from "@/hooks/use-toast";
 import { supabase } from "@/integrations/supabase/client";
+import { inviteCodeSchema } from "@/lib/validation";
 
 const JoinGroup = () => {
   const navigate = useNavigate();
@@ -21,10 +22,13 @@ const JoinGroup = () => {
   const handleVerifyCode = async () => {
     const trimmedCode = inviteCode.trim();
     
-    if (!trimmedCode) {
+    // Validate invite code format with zod
+    const validationResult = inviteCodeSchema.safeParse(trimmedCode);
+    
+    if (!validationResult.success) {
       toast({
-        title: "Enter Invite Code",
-        description: "Please enter a valid invite code",
+        title: "Invalid Code Format",
+        description: validationResult.error.errors[0].message,
         variant: "destructive",
       });
       return;

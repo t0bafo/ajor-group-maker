@@ -10,6 +10,7 @@ import { Dialog, DialogContent, DialogDescription, DialogFooter, DialogHeader, D
 import { ArrowLeft, DollarSign, Calendar } from "lucide-react";
 import { useToast } from "@/hooks/use-toast";
 import { supabase } from "@/integrations/supabase/client";
+import { contributionSchema } from "@/lib/validation";
 
 const RecordContribution = () => {
   const navigate = useNavigate();
@@ -110,8 +111,20 @@ const RecordContribution = () => {
   const validateForm = async () => {
     const newErrors: any = {};
     
-    if (!amount || parseFloat(amount) <= 0) {
-      newErrors.amount = "Please enter a valid amount.";
+    // Validate with zod
+    const validationResult = contributionSchema.safeParse({
+      amount: parseFloat(amount),
+      cycle: parseInt(cycle),
+      note: note.trim() || undefined
+    });
+
+    if (!validationResult.success) {
+      newErrors.validation = validationResult.error.errors[0].message;
+      toast({
+        title: "Validation Error",
+        description: validationResult.error.errors[0].message,
+        variant: "destructive",
+      });
     }
     
     if (!cycle) {
@@ -119,7 +132,7 @@ const RecordContribution = () => {
     }
     
     // Check for duplicate entries in database
-    if (groupData && currentMember) {
+    if (groupData && currentMember && cycle) {
       const { data: existingContribution } = await supabase
         .from('contributions')
         .select('id')

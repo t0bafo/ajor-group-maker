@@ -22,13 +22,24 @@ const Auth = () => {
   });
 
   useEffect(() => {
-    // Clear any old session data when visiting auth page
-    sessionStorage.clear();
+    // Check if this is a return from join flow
+    const returnToJoin = sessionStorage.getItem("returnToJoin");
+    
+    // Only clear sessionStorage if NOT returning from join flow
+    if (!returnToJoin) {
+      sessionStorage.clear();
+    }
 
     // Check if user is already logged in
     supabase.auth.getSession().then(({ data: { session } }) => {
       if (session) {
-        navigate("/dashboard");
+        // If returning from join flow, go to group overview
+        if (returnToJoin) {
+          sessionStorage.removeItem("returnToJoin");
+          navigate("/group-overview");
+        } else {
+          navigate("/dashboard");
+        }
       }
     });
 
@@ -37,9 +48,16 @@ const Auth = () => {
       data: { subscription },
     } = supabase.auth.onAuthStateChange((event, session) => {
       if (event === "SIGNED_IN" && session) {
-        // Clear sessionStorage on new sign in
-        sessionStorage.clear();
-        navigate("/dashboard");
+        // Check if returning from join flow
+        const isJoinFlow = sessionStorage.getItem("returnToJoin");
+        
+        if (isJoinFlow) {
+          sessionStorage.removeItem("returnToJoin");
+          navigate("/group-overview");
+        } else {
+          sessionStorage.clear();
+          navigate("/dashboard");
+        }
       }
     });
 

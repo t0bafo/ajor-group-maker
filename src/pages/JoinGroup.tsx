@@ -92,10 +92,21 @@ const JoinGroup = () => {
     }
   };
 
-  const handleJoinGroup = () => {
+  const handleJoinGroup = async () => {
     if (!groupInfo) return;
     
-    // Store group info for the overview page
+    // Check if user is authenticated
+    const { data: { session } } = await supabase.auth.getSession();
+    
+    if (!session) {
+      // Store group info and redirect to auth
+      sessionStorage.setItem("joinGroupInfo", JSON.stringify(groupInfo));
+      sessionStorage.setItem("returnToJoin", "true");
+      navigate("/auth");
+      return;
+    }
+    
+    // User is authenticated, proceed to join
     sessionStorage.setItem("joinGroupInfo", JSON.stringify(groupInfo));
     navigate("/group-overview");
   };

@@ -7,6 +7,7 @@ import { Progress } from "@/components/ui/progress";
 import { ArrowLeft, DollarSign, CheckCircle2, Clock, AlertCircle } from "lucide-react";
 import RecordPayoutModal from "@/components/RecordPayoutModal";
 import { useToast } from "@/hooks/use-toast";
+import { supabase } from "@/integrations/supabase/client";
 
 const PayoutManagement = () => {
   const navigate = useNavigate();
@@ -17,16 +18,72 @@ const PayoutManagement = () => {
   const [selectedMember, setSelectedMember] = useState<any>(null);
   const [showPayoutModal, setShowPayoutModal] = useState(false);
   const [currentCycle, setCurrentCycle] = useState(1);
+  const [isHost, setIsHost] = useState(false);
+  const [loading, setLoading] = useState(true);
 
   useEffect(() => {
-    const storedGroup = sessionStorage.getItem("ajorGroup");
-    const storedMembers = sessionStorage.getItem("ajorMembers");
-    const storedPayouts = sessionStorage.getItem("payouts");
+    const checkHostAccess = async () => {
+      const groupId = sessionStorage.getItem("currentGroupId");
+      if (!groupId) {
+        toast({
+          title: "No Group Selected",
+          description: "Please select a group first",
+          variant: "destructive",
+        });
+        navigate("/dashboard");
+        return;
+      }
 
-    if (storedGroup) setGroupData(JSON.parse(storedGroup));
-    if (storedMembers) setMembers(JSON.parse(storedMembers));
-    if (storedPayouts) setPayouts(JSON.parse(storedPayouts));
-  }, []);
+      try {
+        const { data: { user } } = await supabase.auth.getUser();
+        if (!user) {
+          navigate("/auth");
+          return;
+        }
+
+        const { data: group, error } = await supabase
+          .from('groups')
+          .select('host_id')
+          .eq('id', groupId)
+          .single();
+
+        if (error) throw error;
+
+        if (group.host_id !== user.id) {
+          toast({
+            title: "Access Denied",
+            description: "Only the group host can manage payouts",
+            variant: "destructive",
+          });
+          navigate("/group-dashboard");
+          return;
+        }
+
+        setIsHost(true);
+        
+        // Load existing data from sessionStorage
+        const storedGroup = sessionStorage.getItem("ajorGroup");
+        const storedMembers = sessionStorage.getItem("ajorMembers");
+        const storedPayouts = sessionStorage.getItem("payouts");
+
+        if (storedGroup) setGroupData(JSON.parse(storedGroup));
+        if (storedMembers) setMembers(JSON.parse(storedMembers));
+        if (storedPayouts) setPayouts(JSON.parse(storedPayouts));
+      } catch (error: any) {
+        console.error('Error checking host access:', error);
+        toast({
+          title: "Error",
+          description: error.message || "Failed to verify access",
+          variant: "destructive",
+        });
+        navigate("/dashboard");
+      } finally {
+        setLoading(false);
+      }
+    };
+
+    checkHostAccess();
+  }, [navigate, toast]);
 
   const totalAmount =
     parseFloat(groupData?.contributionAmount || 0) *
@@ -88,6 +145,14 @@ const PayoutManagement = () => {
     );
     return payout ? "Paid" : "Pending";
   };
+
+  if (loading || !isHost) {
+    return (
+      <div className="min-h-screen flex items-center justify-center">
+        <p className="text-muted-foreground">Loading...</p>
+      </div>
+    );
+  }
 
   if (!groupData) {
     return (

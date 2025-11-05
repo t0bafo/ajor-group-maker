@@ -22,6 +22,8 @@ const RecordContribution = () => {
   const [note, setNote] = useState("");
   const [showConfirmation, setShowConfirmation] = useState(false);
   const [errors, setErrors] = useState<any>({});
+  const [isHost, setIsHost] = useState(false);
+  const [loading, setLoading] = useState(true);
 
   useEffect(() => {
     const loadData = async () => {
@@ -53,6 +55,19 @@ const RecordContribution = () => {
 
         if (groupError) throw groupError;
 
+        // Check if user is the host
+        if (group.host_id !== user.id) {
+          toast({
+            title: "Access Denied",
+            description: "Only the group host can record contributions",
+            variant: "destructive",
+          });
+          navigate("/group-dashboard");
+          return;
+        }
+
+        setIsHost(true);
+
         // Fetch current member
         const { data: member, error: memberError } = await supabase
           .from('members')
@@ -78,6 +93,8 @@ const RecordContribution = () => {
           description: error.message || "Failed to load group data",
           variant: "destructive",
         });
+      } finally {
+        setLoading(false);
       }
     };
 
@@ -203,6 +220,14 @@ const RecordContribution = () => {
       setShowConfirmation(false);
     }
   };
+
+  if (loading || !isHost) {
+    return (
+      <div className="min-h-screen flex items-center justify-center">
+        <p className="text-muted-foreground">Loading...</p>
+      </div>
+    );
+  }
 
   if (!groupData) {
     return (

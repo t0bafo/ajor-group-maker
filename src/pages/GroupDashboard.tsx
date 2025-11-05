@@ -6,7 +6,6 @@ import { Badge } from "@/components/ui/badge";
 import { Progress } from "@/components/ui/progress";
 import { Table, TableBody, TableCell, TableHead, TableHeader, TableRow } from "@/components/ui/table";
 import { Calendar, DollarSign, Users, Settings, UserPlus, Plus, TrendingUp } from "lucide-react";
-import ConfirmationModal from "@/components/ConfirmationModal";
 import AppNavigation from "@/components/AppNavigation";
 import { supabase } from "@/integrations/supabase/client";
 import { useToast } from "@/hooks/use-toast";
@@ -14,7 +13,6 @@ import { useToast } from "@/hooks/use-toast";
 const GroupDashboard = () => {
   const navigate = useNavigate();
   const { toast } = useToast();
-  const [showConfirmation, setShowConfirmation] = useState(true);
   const [groupData, setGroupData] = useState<any>({});
   const [members, setMembers] = useState<any[]>([]);
   const [contributions, setContributions] = useState<any[]>([]);
@@ -425,13 +423,6 @@ const GroupDashboard = () => {
           </CardContent>
         </Card>
       </div>
-
-      <ConfirmationModal 
-        open={showConfirmation} 
-        onOpenChange={setShowConfirmation}
-        groupData={groupData}
-        members={members}
-      />
     </div>
   );
 };

@@ -53,18 +53,34 @@ const Dashboard = () => {
 
   const loadUserGroups = async (userId: string) => {
     try {
-      // Query groups where user is host or member
-      const { data: groups, error } = await supabase
+      // Get groups where user is host
+      const { data: hostedGroups, error: hostError } = await supabase
         .from('groups')
-        .select(`
-          *,
-          members!inner(count),
-          contributions(count),
-          payouts(count)
-        `)
-        .or(`host_id.eq.${userId},members.user_id.eq.${userId}`);
+        .select('*')
+        .eq('host_id', userId);
 
-      if (error) throw error;
+      if (hostError) throw hostError;
+
+      // Get groups where user is a member
+      const { data: memberGroups, error: memberError } = await supabase
+        .from('members')
+        .select('group_id, groups(*)')
+        .eq('user_id', userId);
+
+      if (memberError) throw memberError;
+
+      // Combine and deduplicate groups
+      const allGroups = [
+        ...(hostedGroups || []),
+        ...(memberGroups?.map(m => m.groups).filter(Boolean) || [])
+      ];
+      
+      // Remove duplicates based on group id
+      const uniqueGroups = Array.from(
+        new Map(allGroups.map(g => [g.id, g])).values()
+      );
+      
+      const groups = uniqueGroups;
 
       if (groups && groups.length > 0) {
         const formattedGroups = await Promise.all(groups.map(async (group: any) => {

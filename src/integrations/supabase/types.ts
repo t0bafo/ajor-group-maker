@@ -14,13 +14,197 @@ export type Database = {
   }
   public: {
     Tables: {
-      [_ in never]: never
+      contributions: {
+        Row: {
+          amount: number
+          created_at: string | null
+          cycle: number
+          cycle_label: string
+          group_id: string
+          id: string
+          member_id: string
+          note: string | null
+          status: string
+        }
+        Insert: {
+          amount: number
+          created_at?: string | null
+          cycle: number
+          cycle_label: string
+          group_id: string
+          id?: string
+          member_id: string
+          note?: string | null
+          status?: string
+        }
+        Update: {
+          amount?: number
+          created_at?: string | null
+          cycle?: number
+          cycle_label?: string
+          group_id?: string
+          id?: string
+          member_id?: string
+          note?: string | null
+          status?: string
+        }
+        Relationships: [
+          {
+            foreignKeyName: "contributions_group_id_fkey"
+            columns: ["group_id"]
+            isOneToOne: false
+            referencedRelation: "groups"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "contributions_member_id_fkey"
+            columns: ["member_id"]
+            isOneToOne: false
+            referencedRelation: "members"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
+      groups: {
+        Row: {
+          contribution_amount: number
+          created_at: string | null
+          description: string | null
+          frequency: string
+          group_name: string
+          host_id: string
+          id: string
+          invite_code: string
+          number_of_members: number
+          rotation_order: string
+          status: string
+          updated_at: string | null
+        }
+        Insert: {
+          contribution_amount: number
+          created_at?: string | null
+          description?: string | null
+          frequency: string
+          group_name: string
+          host_id: string
+          id?: string
+          invite_code: string
+          number_of_members: number
+          rotation_order: string
+          status?: string
+          updated_at?: string | null
+        }
+        Update: {
+          contribution_amount?: number
+          created_at?: string | null
+          description?: string | null
+          frequency?: string
+          group_name?: string
+          host_id?: string
+          id?: string
+          invite_code?: string
+          number_of_members?: number
+          rotation_order?: string
+          status?: string
+          updated_at?: string | null
+        }
+        Relationships: []
+      }
+      members: {
+        Row: {
+          email: string
+          group_id: string
+          id: string
+          joined_at: string | null
+          name: string
+          position: number | null
+          role: string
+          user_id: string | null
+        }
+        Insert: {
+          email: string
+          group_id: string
+          id?: string
+          joined_at?: string | null
+          name: string
+          position?: number | null
+          role: string
+          user_id?: string | null
+        }
+        Update: {
+          email?: string
+          group_id?: string
+          id?: string
+          joined_at?: string | null
+          name?: string
+          position?: number | null
+          role?: string
+          user_id?: string | null
+        }
+        Relationships: [
+          {
+            foreignKeyName: "members_group_id_fkey"
+            columns: ["group_id"]
+            isOneToOne: false
+            referencedRelation: "groups"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
+      payouts: {
+        Row: {
+          amount: number
+          created_at: string | null
+          cycle: number
+          group_id: string
+          id: string
+          member_id: string
+          payout_date: string
+          status: string
+        }
+        Insert: {
+          amount: number
+          created_at?: string | null
+          cycle: number
+          group_id: string
+          id?: string
+          member_id: string
+          payout_date: string
+          status?: string
+        }
+        Update: {
+          amount?: number
+          created_at?: string | null
+          cycle?: number
+          group_id?: string
+          id?: string
+          member_id?: string
+          payout_date?: string
+          status?: string
+        }
+        Relationships: [
+          {
+            foreignKeyName: "payouts_group_id_fkey"
+            columns: ["group_id"]
+            isOneToOne: false
+            referencedRelation: "groups"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "payouts_member_id_fkey"
+            columns: ["member_id"]
+            isOneToOne: false
+            referencedRelation: "members"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
     }
     Views: {
       [_ in never]: never
     }
     Functions: {
-      [_ in never]: never
+      generate_invite_code: { Args: never; Returns: string }
     }
     Enums: {
       [_ in never]: never

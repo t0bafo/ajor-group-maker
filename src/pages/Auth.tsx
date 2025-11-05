@@ -114,7 +114,7 @@ const Auth = () => {
     setIsLoading(true);
 
     try {
-      const { error } = await supabase.auth.signUp({
+      const { data, error } = await supabase.auth.signUp({
         email: formData.email,
         password: formData.password,
         options: {
@@ -128,10 +128,19 @@ const Auth = () => {
 
       if (error) throw error;
 
-      toast({
-        title: "Account created!",
-        description: "Welcome to Ajor. Redirecting to your dashboard...",
-      });
+      // Check if email confirmation is required
+      if (data.user && !data.user.email_confirmed_at) {
+        navigate(`/verify-email?email=${encodeURIComponent(formData.email)}`);
+        toast({
+          title: "Check your email",
+          description: "We've sent you a verification link.",
+        });
+      } else {
+        toast({
+          title: "Account created!",
+          description: "Welcome to Ajor. Redirecting to your dashboard...",
+        });
+      }
     } catch (error: any) {
       toast({
         title: "Sign up failed",

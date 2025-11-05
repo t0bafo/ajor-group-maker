@@ -31,9 +31,8 @@ export const contributionSchema = z.object({
   cycle: z.number()
     .int()
     .positive({ message: "Cycle must be positive" }),
-  note: z.string()
-    .max(1000, { message: "Note must be less than 1000 characters" })
-    .optional()
+  paymentMethod: z.string()
+    .min(1, { message: "Payment method is required" })
 });
 
 // Invite code schema

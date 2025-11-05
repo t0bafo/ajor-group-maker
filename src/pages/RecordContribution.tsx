@@ -4,7 +4,7 @@ import { Button } from "@/components/ui/button";
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from "@/components/ui/card";
 import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
-import { Textarea } from "@/components/ui/textarea";
+
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select";
 import { Dialog, DialogContent, DialogDescription, DialogFooter, DialogHeader, DialogTitle } from "@/components/ui/dialog";
 import { ArrowLeft, DollarSign, Calendar } from "lucide-react";
@@ -20,7 +20,7 @@ const RecordContribution = () => {
   const [selectedMemberId, setSelectedMemberId] = useState("");
   const [amount, setAmount] = useState("");
   const [cycle, setCycle] = useState("");
-  const [note, setNote] = useState("");
+  const [paymentMethod, setPaymentMethod] = useState("");
   const [showConfirmation, setShowConfirmation] = useState(false);
   const [errors, setErrors] = useState<any>({});
   const [isHost, setIsHost] = useState(false);
@@ -141,7 +141,7 @@ const RecordContribution = () => {
     const validationResult = contributionSchema.safeParse({
       amount: parseFloat(amount),
       cycle: parseInt(cycle),
-      note: note.trim() || undefined
+      paymentMethod: paymentMethod
     });
 
     if (!validationResult.success) {
@@ -203,7 +203,7 @@ const RecordContribution = () => {
           amount: parseFloat(amount),
           cycle: parseInt(cycle),
           cycle_label: selectedCycle?.label || `Cycle ${cycle}`,
-          note: note,
+          payment_method: paymentMethod,
           status: 'paid',
         });
 
@@ -339,20 +339,29 @@ const RecordContribution = () => {
                 )}
               </div>
 
-              {/* Optional Note */}
+              {/* Payment Method */}
               <div className="space-y-2">
-                <Label htmlFor="note">Note (Optional)</Label>
-                <Textarea
-                  id="note"
-                  value={note}
-                  onChange={(e) => setNote(e.target.value)}
-                  placeholder="e.g., Paid via Cash App, Transferred to host..."
-                  rows={3}
-                />
+                <Label htmlFor="paymentMethod">Payment Method *</Label>
+                <Select value={paymentMethod} onValueChange={setPaymentMethod}>
+                  <SelectTrigger id="paymentMethod">
+                    <SelectValue placeholder="Select payment method" />
+                  </SelectTrigger>
+                  <SelectContent className="bg-background z-50">
+                    <SelectItem value="Cash">Cash</SelectItem>
+                    <SelectItem value="Zelle">Zelle</SelectItem>
+                    <SelectItem value="Cheque">Cheque</SelectItem>
+                    <SelectItem value="CashApp">CashApp</SelectItem>
+                    <SelectItem value="Venmo">Venmo</SelectItem>
+                    <SelectItem value="Other">Other</SelectItem>
+                  </SelectContent>
+                </Select>
+                {errors.paymentMethod && (
+                  <p className="text-sm text-destructive">{errors.paymentMethod}</p>
+                )}
               </div>
 
               {/* Summary Card */}
-              {amount && cycle && selectedMemberId && (
+              {amount && cycle && selectedMemberId && paymentMethod && (
                 <div className="p-4 bg-gradient-to-r from-primary/10 via-accent/10 to-secondary/20 border border-primary/20 rounded-lg space-y-2 animate-fade-in">
                   <p className="text-sm font-semibold text-foreground">Summary</p>
                   <div className="space-y-1 text-sm">
@@ -367,6 +376,10 @@ const RecordContribution = () => {
                     <div className="flex justify-between">
                       <span className="text-muted-foreground">Cycle:</span>
                       <span className="font-semibold">{selectedCycle?.label}</span>
+                    </div>
+                    <div className="flex justify-between">
+                      <span className="text-muted-foreground">Payment Method:</span>
+                      <span className="font-semibold">{paymentMethod}</span>
                     </div>
                     <div className="flex justify-between">
                       <span className="text-muted-foreground">Date:</span>
@@ -409,17 +422,15 @@ const RecordContribution = () => {
                 <span className="font-medium">{selectedCycle?.label}</span>
               </div>
               <div className="flex justify-between items-center p-3 bg-secondary/50 rounded-lg">
+                <span className="text-sm text-muted-foreground">Payment Method</span>
+                <span className="font-medium">{paymentMethod}</span>
+              </div>
+              <div className="flex justify-between items-center p-3 bg-secondary/50 rounded-lg">
                 <span className="text-sm text-muted-foreground">Date</span>
                 <span className="font-medium">
                   {new Date().toLocaleDateString("en-US", { month: "long", day: "numeric", year: "numeric" })}
                 </span>
               </div>
-              {note && (
-                <div className="p-3 bg-secondary/50 rounded-lg">
-                  <span className="text-sm text-muted-foreground block mb-1">Note</span>
-                  <span className="font-medium text-sm">{note}</span>
-                </div>
-              )}
             </div>
             <DialogFooter>
               <Button variant="outline" onClick={() => setShowConfirmation(false)}>

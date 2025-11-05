@@ -22,7 +22,7 @@ const PayoutManagement = () => {
   const [loading, setLoading] = useState(true);
 
   useEffect(() => {
-    const checkHostAccess = async () => {
+    const loadData = async () => {
       const groupId = sessionStorage.getItem("currentGroupId");
       if (!groupId) {
         toast({
@@ -41,13 +41,14 @@ const PayoutManagement = () => {
           return;
         }
 
-        const { data: group, error } = await supabase
+        // Fetch group data
+        const { data: group, error: groupError } = await supabase
           .from('groups')
-          .select('host_id')
+          .select('*')
           .eq('id', groupId)
           .single();
 
-        if (error) throw error;
+        if (groupError) throw groupError;
 
         if (group.host_id !== user.id) {
           toast({
@@ -60,20 +61,40 @@ const PayoutManagement = () => {
         }
 
         setIsHost(true);
-        
-        // Load existing data from sessionStorage
-        const storedGroup = sessionStorage.getItem("ajorGroup");
-        const storedMembers = sessionStorage.getItem("ajorMembers");
-        const storedPayouts = sessionStorage.getItem("payouts");
+        setGroupData(group);
 
-        if (storedGroup) setGroupData(JSON.parse(storedGroup));
-        if (storedMembers) setMembers(JSON.parse(storedMembers));
-        if (storedPayouts) setPayouts(JSON.parse(storedPayouts));
+        // Fetch members
+        const { data: membersData, error: membersError } = await supabase
+          .from('members')
+          .select('*')
+          .eq('group_id', groupId)
+          .order('position', { ascending: true });
+
+        if (membersError) throw membersError;
+        setMembers(membersData || []);
+
+        // Fetch payouts
+        const { data: payoutsData, error: payoutsError } = await supabase
+          .from('payouts')
+          .select('*')
+          .eq('group_id', groupId)
+          .order('created_at', { ascending: true });
+
+        if (payoutsError) throw payoutsError;
+        setPayouts(payoutsData || []);
+
+        // Calculate current cycle based on payouts
+        const membersCount = membersData?.length || 0;
+        if (membersCount > 0) {
+          const totalPayouts = payoutsData?.length || 0;
+          const calculatedCycle = Math.floor(totalPayouts / membersCount) + 1;
+          setCurrentCycle(calculatedCycle);
+        }
       } catch (error: any) {
-        console.error('Error checking host access:', error);
+        console.error('Error loading data:', error);
         toast({
           title: "Error",
-          description: error.message || "Failed to verify access",
+          description: error.message || "Failed to load data",
           variant: "destructive",
         });
         navigate("/dashboard");
@@ -82,23 +103,36 @@ const PayoutManagement = () => {
       }
     };
 
-    checkHostAccess();
+    loadData();
   }, [navigate, toast]);
 
   const totalAmount =
-    parseFloat(groupData?.contributionAmount || 0) *
-    parseInt(groupData?.numberOfMembers || 0);
+    parseFloat(groupData?.contribution_amount || 0) *
+    parseInt(groupData?.number_of_members || 0);
 
-  const currentPayoutMember = members.find(
-    (m, idx) => idx + 1 === (payouts.length % members.length) + 1
-  );
+  const currentPayoutMember = (() => {
+    // Get payouts for current cycle
+    const currentCyclePayouts = payouts.filter(p => p.cycle === currentCycle);
+    
+    // If all members paid in current cycle, no current member
+    if (currentCyclePayouts.length >= members.length) {
+      return null;
+    }
+    
+    // Find the next member who hasn't been paid in this cycle
+    return members.find(member => 
+      !currentCyclePayouts.some(p => p.member_id === member.id)
+    );
+  })();
 
-  const payoutProgress = members.length > 0 ? (payouts.length / members.length) * 100 : 0;
+  const payoutProgress = members.length > 0 
+    ? (payouts.filter(p => p.cycle === currentCycle).length / members.length) * 100 
+    : 0;
 
   const handleRecordPayout = (member: any) => {
     // Check if payout already recorded
     const existingPayout = payouts.find(
-      (p) => p.memberId === member.id && p.cycle === currentCycle
+      (p) => p.member_id === member.id && p.cycle === currentCycle
     );
 
     if (existingPayout) {
@@ -114,39 +148,63 @@ const PayoutManagement = () => {
     setShowPayoutModal(true);
   };
 
-  const confirmPayout = (note: string) => {
-    if (!selectedMember) return;
+  const confirmPayout = async (note: string) => {
+    if (!selectedMember || !groupData) return;
 
-    const newPayout = {
-      id: Date.now().toString(),
-      memberId: selectedMember.id,
-      memberName: selectedMember.name,
-      amount: totalAmount,
-      cycle: currentCycle,
-      date: new Date().toISOString(),
-      note: note,
-      status: "Paid",
-    };
+    try {
+      // Insert payout into database
+      const { data: newPayout, error } = await supabase
+        .from('payouts')
+        .insert({
+          group_id: groupData.id,
+          member_id: selectedMember.id,
+          amount: totalAmount,
+          cycle: currentCycle,
+          payout_date: new Date().toISOString(),
+          status: 'completed'
+        })
+        .select()
+        .single();
 
-    const updatedPayouts = [...payouts, newPayout];
-    setPayouts(updatedPayouts);
-    sessionStorage.setItem("payouts", JSON.stringify(updatedPayouts));
+      if (error) throw error;
 
-    // Notify all members
-    toast({
-      title: "Group Notified",
-      description: `All members have been notified that ${selectedMember.name} received their payout.`,
-    });
+      const updatedPayouts = [...payouts, newPayout];
+      setPayouts(updatedPayouts);
+
+      // Check if cycle is complete
+      const payoutsInCurrentCycle = updatedPayouts.filter(p => p.cycle === currentCycle);
+      if (payoutsInCurrentCycle.length === members.length) {
+        // All members paid in this cycle, increment cycle
+        setCurrentCycle(currentCycle + 1);
+        
+        toast({
+          title: "Cycle Complete! 🎉",
+          description: `All members have been paid for Cycle ${currentCycle}. Starting Cycle ${currentCycle + 1}.`,
+        });
+      } else {
+        toast({
+          title: "Payout Recorded",
+          description: `${selectedMember.name} received their payout of $${totalAmount.toFixed(2)}.`,
+        });
+      }
+    } catch (error: any) {
+      console.error('Error recording payout:', error);
+      toast({
+        title: "Error",
+        description: error.message || "Failed to record payout",
+        variant: "destructive",
+      });
+    }
   };
 
   const getMemberPayoutStatus = (memberId: string | number) => {
     const payout = payouts.find(
-      (p) => p.memberId === memberId && p.cycle === currentCycle
+      (p) => p.member_id === memberId && p.cycle === currentCycle
     );
     return payout ? "Paid" : "Pending";
   };
 
-  if (loading || !isHost) {
+  if (loading) {
     return (
       <div className="min-h-screen flex items-center justify-center">
         <p className="text-muted-foreground">Loading...</p>
@@ -173,7 +231,7 @@ const PayoutManagement = () => {
         <div className="mb-8">
           <h1 className="text-3xl md:text-4xl font-bold mb-2">Payout Management</h1>
           <p className="text-muted-foreground">
-            Track and record payouts for {groupData.groupName}
+            Track and record payouts for {groupData.group_name}
           </p>
         </div>
 
@@ -216,7 +274,7 @@ const PayoutManagement = () => {
               <CheckCircle2 className="h-5 w-5 text-primary" />
             </CardHeader>
             <CardContent>
-              <div className="text-3xl font-bold">{payouts.length}</div>
+              <div className="text-3xl font-bold">{payouts.filter(p => p.cycle === currentCycle).length}</div>
               <p className="text-sm text-muted-foreground mt-1">
                 of {members.length} members
               </p>
@@ -232,7 +290,7 @@ const PayoutManagement = () => {
             </CardHeader>
             <CardContent>
               <div className="text-3xl font-bold">
-                ${(payouts.length * totalAmount).toFixed(2)}
+                ${(payouts.filter(p => p.cycle === currentCycle).length * totalAmount).toFixed(2)}
               </div>
               <p className="text-sm text-muted-foreground mt-1">Cycle {currentCycle}</p>
             </CardContent>
@@ -263,7 +321,7 @@ const PayoutManagement = () => {
               <div className="flex items-center justify-between text-sm">
                 <span className="font-medium">Current Cycle</span>
                 <span className="text-muted-foreground">
-                  {payouts.length} / {members.length} paid
+                  {payouts.filter(p => p.cycle === currentCycle).length} / {members.length} paid
                 </span>
               </div>
               <Progress value={payoutProgress} className="h-3" />

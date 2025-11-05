@@ -28,9 +28,11 @@ const Index = () => {
                     <ArrowRight className="ml-2 h-5 w-5" />
                   </Button>
                 </Link>
-                <Button variant="outline" size="lg" className="w-full sm:w-auto">
-                  Learn More
-                </Button>
+                <Link to="/join">
+                  <Button variant="outline" size="lg" className="w-full sm:w-auto">
+                    Join a Group
+                  </Button>
+                </Link>
               </div>
             </div>
             <div className="relative">

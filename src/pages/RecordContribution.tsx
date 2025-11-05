@@ -127,13 +127,9 @@ const RecordContribution = () => {
       description: `Your contribution of $${amount} has been successfully logged.`,
     });
     
-    // Navigate back to appropriate dashboard
+    // Navigate back to group dashboard
     setTimeout(() => {
-      if (memberData) {
-        navigate("/member/dashboard");
-      } else {
-        navigate("/dashboard");
-      }
+      navigate("/group-dashboard");
     }, 1000);
   };
 

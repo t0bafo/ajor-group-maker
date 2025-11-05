@@ -27,8 +27,18 @@ const JoinViaLink = () => {
         return;
       }
 
+      // First check if user is authenticated
+      const { data: { session } } = await supabase.auth.getSession();
+      
+      if (!session) {
+        // Store the invite code and redirect to auth
+        sessionStorage.setItem("pendingInviteCode", code);
+        navigate("/auth");
+        return;
+      }
+
       try {
-        // Look up group by invite code
+        // Look up group by invite code (now authenticated)
         const { data: group, error: groupError } = await supabase
           .from('groups')
           .select('*')

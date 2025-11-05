@@ -30,8 +30,18 @@ const JoinGroup = () => {
       return;
     }
 
+    // Check if user is authenticated
+    const { data: { session } } = await supabase.auth.getSession();
+    
+    if (!session) {
+      // Store the code and redirect to auth
+      sessionStorage.setItem("pendingInviteCode", trimmedCode);
+      navigate("/auth");
+      return;
+    }
+
     try {
-      // Look up group by invite code
+      // Look up group by invite code (now authenticated)
       const { data: group, error } = await supabase
         .from('groups')
         .select(`

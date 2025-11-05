@@ -22,19 +22,26 @@ const Auth = () => {
   });
 
   useEffect(() => {
-    // Check if this is a return from join flow
+    // Check if there's a pending invite code
+    const pendingInviteCode = sessionStorage.getItem("pendingInviteCode");
     const returnToJoin = sessionStorage.getItem("returnToJoin");
     
     // Only clear sessionStorage if NOT returning from join flow
-    if (!returnToJoin) {
+    if (!returnToJoin && !pendingInviteCode) {
       sessionStorage.clear();
     }
 
     // Check if user is already logged in
     supabase.auth.getSession().then(({ data: { session } }) => {
       if (session) {
+        // If there's a pending invite code, redirect to join via link
+        if (pendingInviteCode) {
+          const code = pendingInviteCode;
+          sessionStorage.removeItem("pendingInviteCode");
+          navigate(`/join/${code}`);
+        }
         // If returning from join flow, go to group overview
-        if (returnToJoin) {
+        else if (returnToJoin) {
           sessionStorage.removeItem("returnToJoin");
           navigate("/group-overview");
         } else {
@@ -48,6 +55,14 @@ const Auth = () => {
       data: { subscription },
     } = supabase.auth.onAuthStateChange((event, session) => {
       if (event === "SIGNED_IN" && session) {
+        // Check for pending invite code first
+        const inviteCode = sessionStorage.getItem("pendingInviteCode");
+        if (inviteCode) {
+          sessionStorage.removeItem("pendingInviteCode");
+          navigate(`/join/${inviteCode}`);
+          return;
+        }
+        
         // Check if returning from join flow
         const isJoinFlow = sessionStorage.getItem("returnToJoin");
         

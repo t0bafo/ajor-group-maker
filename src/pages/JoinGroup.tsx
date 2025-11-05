@@ -41,56 +41,28 @@ const JoinGroup = () => {
     }
 
     try {
-      // Look up group by invite code (now authenticated)
-      const { data: group, error } = await supabase
-        .from('groups')
-        .select(`
-          *,
-          members(count)
-        `)
-        .eq('invite_code', trimmedCode)
-        .single();
+      // Use edge function to validate invite code and get group info
+      const { data, error: functionError } = await supabase.functions.invoke('validate-invite', {
+        body: { inviteCode: trimmedCode }
+      });
 
-      if (error || !group) {
+      if (functionError || !data || data.error) {
         toast({
           title: "Invalid Code",
-          description: "This invite code doesn't exist. Please check and try again.",
+          description: data?.error || "This invite code doesn't exist. Please check and try again.",
           variant: "destructive",
         });
         return;
       }
 
-      // Get member count
-      const { count: memberCount } = await supabase
-        .from('members')
-        .select('*', { count: 'exact', head: true })
-        .eq('group_id', group.id);
-
-      // Get host info
-      const { data: host } = await supabase
-        .from('members')
-        .select('name, email')
-        .eq('group_id', group.id)
-        .eq('role', 'Host')
-        .single();
-
       setGroupInfo({
-        id: group.id,
-        groupName: group.group_name,
-        description: group.description,
-        contributionAmount: group.contribution_amount,
-        frequency: group.frequency,
-        numberOfMembers: group.number_of_members,
-        rotationOrder: group.rotation_order,
-        hostName: host?.name || 'Unknown',
-        hostEmail: host?.email || '',
-        currentMembers: memberCount || 0,
+        ...data,
         nextPayoutDate: new Date(Date.now() + 7 * 24 * 60 * 60 * 1000),
       });
 
       toast({
         title: "Group Found!",
-        description: `You're invited to join ${group.group_name}`,
+        description: `You're invited to join ${data.groupName}`,
       });
     } catch (error: any) {
       console.error('Error verifying code:', error);

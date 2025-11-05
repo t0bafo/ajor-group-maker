@@ -38,49 +38,24 @@ const JoinViaLink = () => {
       }
 
       try {
-        // Look up group by invite code (now authenticated)
-        const { data: group, error: groupError } = await supabase
-          .from('groups')
-          .select('*')
-          .eq('invite_code', code)
-          .single();
+        // Use edge function to validate invite code and get group info
+        const { data, error: functionError } = await supabase.functions.invoke('validate-invite', {
+          body: { inviteCode: code }
+        });
 
-        if (groupError || !group) {
+        if (functionError || !data || data.error) {
           setError(true);
           toast({
             title: "Invalid or Expired Link",
-            description: "This invite link doesn't exist. Please check with your host.",
+            description: data?.error || "This invite link doesn't exist. Please check with your host.",
             variant: "destructive",
           });
           setLoading(false);
           return;
         }
 
-        // Get member count
-        const { count: memberCount } = await supabase
-          .from('members')
-          .select('*', { count: 'exact', head: true })
-          .eq('group_id', group.id);
-
-        // Get host info
-        const { data: host } = await supabase
-          .from('members')
-          .select('name, email')
-          .eq('group_id', group.id)
-          .eq('role', 'Host')
-          .single();
-
         setGroupInfo({
-          id: group.id,
-          groupName: group.group_name,
-          description: group.description,
-          contributionAmount: group.contribution_amount,
-          frequency: group.frequency,
-          numberOfMembers: group.number_of_members,
-          rotationOrder: group.rotation_order,
-          hostName: host?.name || 'Unknown',
-          hostEmail: host?.email || '',
-          currentMembers: memberCount || 0,
+          ...data,
           nextPayoutDate: new Date(Date.now() + 7 * 24 * 60 * 60 * 1000),
         });
 

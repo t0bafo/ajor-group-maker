@@ -1,4 +1,4 @@
-import { useState } from "react";
+import { useState, useEffect } from "react";
 import { useNavigate } from "react-router-dom";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
@@ -7,18 +7,77 @@ import { Card, CardContent, CardDescription, CardHeader, CardTitle } from "@/com
 import { Badge } from "@/components/ui/badge";
 import { Copy, Mail, Plus, Check, ArrowRight, Users } from "lucide-react";
 import { toast } from "@/hooks/use-toast";
+import { supabase } from "@/integrations/supabase/client";
 
 const InviteMembers = () => {
   const navigate = useNavigate();
   const [inviteEmail, setInviteEmail] = useState("");
-  const [members, setMembers] = useState([
-    { id: 1, name: "You", email: "host@example.com", role: "Host" },
-  ]);
+  const [members, setMembers] = useState<any[]>([]);
   const [copied, setCopied] = useState(false);
-  
-  const inviteLink = "https://ajor.app/join/abc123xyz";
-  
-  const groupData = JSON.parse(sessionStorage.getItem("ajorGroup") || "{}");
+  const [groupData, setGroupData] = useState<any>(null);
+  const [inviteLink, setInviteLink] = useState("");
+
+  useEffect(() => {
+    const loadGroupData = async () => {
+      const groupId = sessionStorage.getItem("currentGroupId");
+      if (!groupId) {
+        toast({
+          title: "No Group Selected",
+          description: "Please create a group first",
+          variant: "destructive",
+        });
+        navigate("/group-setup");
+        return;
+      }
+
+      try {
+        // Fetch group data
+        const { data: group, error: groupError } = await supabase
+          .from('groups')
+          .select('*')
+          .eq('id', groupId)
+          .single();
+
+        if (groupError) throw groupError;
+
+        // Fetch existing members
+        const { data: membersData, error: membersError } = await supabase
+          .from('members')
+          .select('*')
+          .eq('group_id', groupId)
+          .order('position');
+
+        if (membersError) throw membersError;
+
+        setGroupData({
+          id: group.id,
+          groupName: group.group_name,
+          numberOfMembers: group.number_of_members,
+          inviteCode: group.invite_code,
+        });
+
+        setMembers(membersData.map((m: any) => ({
+          id: m.id,
+          name: m.name,
+          email: m.email,
+          role: m.role,
+        })));
+
+        // Set invite link
+        const baseUrl = window.location.origin;
+        setInviteLink(`${baseUrl}/join-group?code=${group.invite_code}`);
+      } catch (error: any) {
+        console.error('Error loading group data:', error);
+        toast({
+          title: "Error Loading Group",
+          description: error.message || "Failed to load group data",
+          variant: "destructive",
+        });
+      }
+    };
+
+    loadGroupData();
+  }, [navigate]);
 
   const handleCopyLink = () => {
     navigator.clipboard.writeText(inviteLink);
@@ -30,30 +89,59 @@ const InviteMembers = () => {
     setTimeout(() => setCopied(false), 2000);
   };
 
-  const handleSendInvite = (e: React.FormEvent) => {
+  const handleSendInvite = async (e: React.FormEvent) => {
     e.preventDefault();
-    if (!inviteEmail) return;
+    if (!inviteEmail || !groupData) return;
 
-    const newMember = {
-      id: members.length + 1,
-      name: inviteEmail.split("@")[0],
-      email: inviteEmail,
-      role: "Member",
-    };
+    try {
+      // Add member to database
+      const { data: newMember, error } = await supabase
+        .from('members')
+        .insert({
+          group_id: groupData.id,
+          name: inviteEmail.split("@")[0],
+          email: inviteEmail,
+          role: "Member",
+          position: members.length + 1,
+        })
+        .select()
+        .single();
 
-    setMembers([...members, newMember]);
-    setInviteEmail("");
-    
-    toast({
-      title: "Invite Sent!",
-      description: `Invitation sent to ${inviteEmail}`,
-    });
+      if (error) throw error;
+
+      setMembers([...members, {
+        id: newMember.id,
+        name: newMember.name,
+        email: newMember.email,
+        role: newMember.role,
+      }]);
+      setInviteEmail("");
+      
+      toast({
+        title: "Invite Sent!",
+        description: `Invitation sent to ${inviteEmail}`,
+      });
+    } catch (error: any) {
+      console.error('Error sending invite:', error);
+      toast({
+        title: "Error Sending Invite",
+        description: error.message || "Failed to send invite",
+        variant: "destructive",
+      });
+    }
   };
 
   const handleContinue = () => {
-    sessionStorage.setItem("ajorMembers", JSON.stringify(members));
     navigate("/group-dashboard");
   };
+
+  if (!groupData) {
+    return (
+      <div className="min-h-screen flex items-center justify-center">
+        <p className="text-muted-foreground">Loading...</p>
+      </div>
+    );
+  }
 
   return (
     <div className="min-h-screen bg-gradient-to-b from-background to-secondary/30 py-8 md:py-12">

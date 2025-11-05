@@ -8,6 +8,7 @@ import { Separator } from "@/components/ui/separator";
 import { ArrowLeft, Calendar, DollarSign, Users, TrendingUp, CheckCircle2 } from "lucide-react";
 import { toast } from "@/hooks/use-toast";
 import JoinSuccessModal from "@/components/JoinSuccessModal";
+import { supabase } from "@/integrations/supabase/client";
 
 const GroupOverview = () => {
   const navigate = useNavigate();
@@ -29,7 +30,7 @@ const GroupOverview = () => {
     }
   }, [navigate]);
 
-  const handleConfirmJoin = () => {
+  const handleConfirmJoin = async () => {
     if (!agreed) {
       toast({
         title: "Agreement Required",
@@ -39,20 +40,70 @@ const GroupOverview = () => {
       return;
     }
 
-    // Simulate joining the group
-    const memberData = {
-      id: Date.now(),
-      name: "New Member",
-      email: "newmember@example.com",
-      role: "Member",
-      joinedAt: new Date().toISOString(),
-    };
+    try {
+      // Get current user
+      const { data: { user } } = await supabase.auth.getUser();
+      if (!user) {
+        toast({
+          title: "Authentication Required",
+          description: "Please log in to join a group",
+          variant: "destructive",
+        });
+        navigate("/auth");
+        return;
+      }
 
-    // Store member data
-    sessionStorage.setItem("currentMember", JSON.stringify(memberData));
-    sessionStorage.setItem("currentGroup", JSON.stringify(groupInfo));
-    
-    setShowSuccess(true);
+      // Check if user is already a member
+      const { data: existingMember } = await supabase
+        .from('members')
+        .select('id')
+        .eq('group_id', groupInfo.id)
+        .eq('user_id', user.id)
+        .single();
+
+      if (existingMember) {
+        toast({
+          title: "Already a Member",
+          description: "You are already a member of this group",
+          variant: "destructive",
+        });
+        sessionStorage.setItem("currentGroupId", groupInfo.id);
+        navigate("/group-dashboard");
+        return;
+      }
+
+      // Get next position
+      const { count: memberCount } = await supabase
+        .from('members')
+        .select('*', { count: 'exact', head: true })
+        .eq('group_id', groupInfo.id);
+
+      // Add user as member
+      const { error } = await supabase
+        .from('members')
+        .insert({
+          group_id: groupInfo.id,
+          user_id: user.id,
+          name: user.user_metadata?.full_name || user.email?.split('@')[0] || 'Member',
+          email: user.email || '',
+          role: 'Member',
+          position: (memberCount || 0) + 1,
+        });
+
+      if (error) throw error;
+
+      // Store group ID for dashboard
+      sessionStorage.setItem("currentGroupId", groupInfo.id);
+      
+      setShowSuccess(true);
+    } catch (error: any) {
+      console.error('Error joining group:', error);
+      toast({
+        title: "Error Joining Group",
+        description: error.message || "Failed to join group",
+        variant: "destructive",
+      });
+    }
   };
 
   const handleSuccessClose = () => {

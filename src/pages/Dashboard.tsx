@@ -17,13 +17,13 @@ const Dashboard = () => {
   const [userGroups, setUserGroups] = useState<any[]>([]);
 
   useEffect(() => {
-    // Check authentication
+    // Check authentication and load user-specific data
     supabase.auth.getSession().then(({ data: { session } }) => {
       if (!session) {
         navigate("/auth");
       } else {
         setUser(session.user);
-        loadUserGroups();
+        loadUserGroups(session.user.id);
         setIsLoading(false);
         
         // Show welcome toast
@@ -38,10 +38,12 @@ const Dashboard = () => {
       data: { subscription },
     } = supabase.auth.onAuthStateChange((event, session) => {
       if (event === "SIGNED_OUT") {
+        // Clear sessionStorage on signout
+        sessionStorage.clear();
         navigate("/auth");
-      } else if (session) {
+      } else if (event === "SIGNED_IN" && session) {
         setUser(session.user);
-        loadUserGroups();
+        loadUserGroups(session.user.id);
         setIsLoading(false);
       }
     });
@@ -49,34 +51,73 @@ const Dashboard = () => {
     return () => subscription.unsubscribe();
   }, [navigate]);
 
-  const loadUserGroups = () => {
-    // Load groups from sessionStorage (in real app, this would be from database)
-    const storedGroup = sessionStorage.getItem("ajorGroup");
-    const storedMembers = sessionStorage.getItem("ajorMembers");
-    const contributions = JSON.parse(sessionStorage.getItem("contributions") || "[]");
-    const payouts = JSON.parse(sessionStorage.getItem("payouts") || "[]");
-    
-    if (storedGroup) {
-      const group = JSON.parse(storedGroup);
-      const members = storedMembers ? JSON.parse(storedMembers) : [];
-      
-      // Calculate progress
-      const totalContributions = contributions.length;
-      const expectedContributions = members.length > 0 ? members.length : 1;
-      const progress = expectedContributions > 0 ? (totalContributions / expectedContributions) * 100 : 0;
-      
-      setUserGroups([{
-        ...group,
-        id: "current-group",
-        memberCount: members.length,
-        totalMembers: parseInt(group.numberOfMembers || 0),
-        progress: Math.min(progress, 100),
-        status: payouts.length === members.length ? "Completed" : "Active",
-        nextPayout: new Date(Date.now() + 7 * 24 * 60 * 60 * 1000).toLocaleDateString("en-US", { 
-          month: "short", 
-          day: "numeric" 
-        }),
-      }]);
+  const loadUserGroups = async (userId: string) => {
+    try {
+      // Query groups where user is host or member
+      const { data: groups, error } = await supabase
+        .from('groups')
+        .select(`
+          *,
+          members!inner(count),
+          contributions(count),
+          payouts(count)
+        `)
+        .or(`host_id.eq.${userId},members.user_id.eq.${userId}`);
+
+      if (error) throw error;
+
+      if (groups && groups.length > 0) {
+        const formattedGroups = await Promise.all(groups.map(async (group: any) => {
+          // Get member count
+          const { count: memberCount } = await supabase
+            .from('members')
+            .select('*', { count: 'exact', head: true })
+            .eq('group_id', group.id);
+
+          // Get contribution progress
+          const { count: contributionCount } = await supabase
+            .from('contributions')
+            .select('*', { count: 'exact', head: true })
+            .eq('group_id', group.id);
+
+          const { count: payoutCount } = await supabase
+            .from('payouts')
+            .select('*', { count: 'exact', head: true })
+            .eq('group_id', group.id);
+
+          const expectedContributions = memberCount || 1;
+          const progress = expectedContributions > 0 ? ((contributionCount || 0) / expectedContributions) * 100 : 0;
+
+          return {
+            id: group.id,
+            groupName: group.group_name,
+            description: group.description,
+            contributionAmount: group.contribution_amount,
+            frequency: group.frequency,
+            numberOfMembers: group.number_of_members,
+            memberCount: memberCount || 0,
+            totalMembers: group.number_of_members,
+            progress: Math.min(progress, 100),
+            status: payoutCount === memberCount ? "Completed" : "Active",
+            nextPayout: new Date(Date.now() + 7 * 24 * 60 * 60 * 1000).toLocaleDateString("en-US", { 
+              month: "short", 
+              day: "numeric" 
+            }),
+          };
+        }));
+
+        setUserGroups(formattedGroups);
+      } else {
+        setUserGroups([]);
+      }
+    } catch (error: any) {
+      console.error('Error loading groups:', error);
+      toast({
+        title: "Error loading groups",
+        description: error.message,
+        variant: "destructive",
+      });
+      setUserGroups([]);
     }
   };
 
@@ -172,7 +213,11 @@ const Dashboard = () => {
                     <Card 
                       key={group.id}
                       className="hover:shadow-[var(--shadow-medium)] transition-all cursor-pointer"
-                      onClick={() => navigate("/group-dashboard")}
+                      onClick={() => {
+                        // Store current group ID for the group dashboard
+                        sessionStorage.setItem("currentGroupId", group.id);
+                        navigate("/group-dashboard");
+                      }}
                     >
                       <CardHeader>
                         <div className="flex items-start justify-between">

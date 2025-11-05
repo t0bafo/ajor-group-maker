@@ -8,6 +8,7 @@ import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from "@/components/ui/card";
 import { ArrowLeft, ArrowRight } from "lucide-react";
 import { toast } from "@/hooks/use-toast";
+import { supabase } from "@/integrations/supabase/client";
 
 const GroupSetup = () => {
   const navigate = useNavigate();
@@ -24,7 +25,7 @@ const GroupSetup = () => {
     setFormData((prev) => ({ ...prev, [field]: value }));
   };
 
-  const handleSubmit = (e: React.FormEvent) => {
+  const handleSubmit = async (e: React.FormEvent) => {
     e.preventDefault();
     
     // Validation
@@ -37,18 +38,75 @@ const GroupSetup = () => {
       return;
     }
 
-    // Store group data in sessionStorage for demo purposes
-    sessionStorage.setItem("ajorGroup", JSON.stringify(formData));
-    
-    toast({
-      title: "Group Created Successfully!",
-      description: "Let's add members to your Ajor group",
-    });
+    try {
+      // Get current user
+      const { data: { user } } = await supabase.auth.getUser();
+      if (!user) {
+        toast({
+          title: "Authentication Required",
+          description: "Please log in to create a group",
+          variant: "destructive",
+        });
+        navigate("/auth");
+        return;
+      }
 
-    // Navigate to invite members page
-    setTimeout(() => {
-      navigate("/invite-members");
-    }, 800);
+      // Generate invite code
+      const { data: inviteCodeData } = await supabase.rpc('generate_invite_code');
+      const inviteCode = inviteCodeData || Math.random().toString(36).substring(2, 11);
+
+      // Create group in database
+      const { data: group, error: groupError } = await supabase
+        .from('groups')
+        .insert({
+          host_id: user.id,
+          group_name: formData.groupName,
+          description: formData.description,
+          contribution_amount: parseFloat(formData.contributionAmount),
+          frequency: formData.frequency,
+          number_of_members: parseInt(formData.numberOfMembers),
+          rotation_order: formData.rotationOrder,
+          invite_code: inviteCode,
+        })
+        .select()
+        .single();
+
+      if (groupError) throw groupError;
+
+      // Add host as first member
+      const { error: memberError } = await supabase
+        .from('members')
+        .insert({
+          group_id: group.id,
+          user_id: user.id,
+          name: user.user_metadata?.full_name || user.email?.split('@')[0] || 'Host',
+          email: user.email || '',
+          role: 'Host',
+          position: 1,
+        });
+
+      if (memberError) throw memberError;
+
+      // Store group ID for next page
+      sessionStorage.setItem("currentGroupId", group.id);
+      
+      toast({
+        title: "Group Created Successfully!",
+        description: "Let's add members to your Ajor group",
+      });
+
+      // Navigate to invite members page
+      setTimeout(() => {
+        navigate("/invite-members");
+      }, 800);
+    } catch (error: any) {
+      console.error('Error creating group:', error);
+      toast({
+        title: "Error Creating Group",
+        description: error.message || "Failed to create group",
+        variant: "destructive",
+      });
+    }
   };
 
   return (

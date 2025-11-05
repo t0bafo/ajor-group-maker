@@ -9,9 +9,11 @@ import { Calendar, DollarSign, Users, Settings, UserPlus, Plus, TrendingUp } fro
 import ConfirmationModal from "@/components/ConfirmationModal";
 import AppNavigation from "@/components/AppNavigation";
 import { supabase } from "@/integrations/supabase/client";
+import { useToast } from "@/hooks/use-toast";
 
 const GroupDashboard = () => {
   const navigate = useNavigate();
+  const { toast } = useToast();
   const [showConfirmation, setShowConfirmation] = useState(true);
   const [groupData, setGroupData] = useState<any>({});
   const [members, setMembers] = useState<any[]>([]);
@@ -25,16 +27,112 @@ const GroupDashboard = () => {
       setUser(user);
     });
 
-    const storedGroup = sessionStorage.getItem("ajorGroup");
-    const storedMembers = sessionStorage.getItem("ajorMembers");
-    const storedContributions = sessionStorage.getItem("contributions");
-    const storedPayouts = sessionStorage.getItem("payouts");
-    
-    if (storedGroup) setGroupData(JSON.parse(storedGroup));
-    if (storedMembers) setMembers(JSON.parse(storedMembers));
-    if (storedContributions) setContributions(JSON.parse(storedContributions));
-    if (storedPayouts) setPayouts(JSON.parse(storedPayouts));
-  }, []);
+    // Load group data from database
+    const loadGroupData = async () => {
+      const groupId = sessionStorage.getItem("currentGroupId");
+      if (!groupId) {
+        toast({
+          title: "No Group Selected",
+          description: "Please select a group from your dashboard",
+          variant: "destructive",
+        });
+        navigate("/dashboard");
+        return;
+      }
+
+      try {
+        // Fetch group data
+        const { data: group, error: groupError } = await supabase
+          .from('groups')
+          .select('*')
+          .eq('id', groupId)
+          .single();
+
+        if (groupError) throw groupError;
+
+        // Fetch members
+        const { data: membersData, error: membersError } = await supabase
+          .from('members')
+          .select('*')
+          .eq('group_id', groupId)
+          .order('position');
+
+        if (membersError) throw membersError;
+
+        // Fetch contributions
+        const { data: contributionsData, error: contributionsError } = await supabase
+          .from('contributions')
+          .select(`
+            *,
+            members(name)
+          `)
+          .eq('group_id', groupId)
+          .order('created_at', { ascending: false });
+
+        if (contributionsError) throw contributionsError;
+
+        // Fetch payouts
+        const { data: payoutsData, error: payoutsError } = await supabase
+          .from('payouts')
+          .select('*')
+          .eq('group_id', groupId)
+          .order('created_at', { ascending: false });
+
+        if (payoutsError) throw payoutsError;
+
+        // Format data for display
+        setGroupData({
+          id: group.id,
+          groupName: group.group_name,
+          description: group.description,
+          contributionAmount: group.contribution_amount,
+          frequency: group.frequency,
+          numberOfMembers: group.number_of_members,
+          rotationOrder: group.rotation_order,
+          inviteCode: group.invite_code,
+        });
+
+        setMembers(membersData.map((m: any) => ({
+          id: m.id,
+          name: m.name,
+          email: m.email,
+          role: m.role,
+          userId: m.user_id,
+        })));
+
+        setContributions(contributionsData.map((c: any) => ({
+          id: c.id,
+          memberId: c.member_id,
+          memberName: c.members?.name || 'Unknown',
+          amount: parseFloat(c.amount),
+          cycle: c.cycle,
+          cycleLabel: c.cycle_label,
+          date: c.created_at,
+          note: c.note,
+          status: c.status,
+        })));
+
+        setPayouts(payoutsData.map((p: any) => ({
+          id: p.id,
+          memberId: p.member_id,
+          amount: parseFloat(p.amount),
+          cycle: p.cycle,
+          date: p.payout_date,
+          status: p.status,
+        })));
+
+      } catch (error: any) {
+        console.error('Error loading group data:', error);
+        toast({
+          title: "Error Loading Group",
+          description: error.message || "Failed to load group data",
+          variant: "destructive",
+        });
+      }
+    };
+
+    loadGroupData();
+  }, [navigate, toast]);
 
   const totalAmount = parseFloat(groupData.contributionAmount || 0) * parseInt(groupData.numberOfMembers || 0);
   const currentProgress = (members.length / parseInt(groupData.numberOfMembers || 1)) * 100;

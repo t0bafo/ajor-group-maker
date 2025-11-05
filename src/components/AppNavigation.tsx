@@ -28,6 +28,8 @@ const AppNavigation = ({ userEmail, userName }: AppNavigationProps) => {
 
   const handleLogout = async () => {
     try {
+      // Clear all session storage when logging out
+      sessionStorage.clear();
       await supabase.auth.signOut();
       toast({
         title: "Logged out successfully",

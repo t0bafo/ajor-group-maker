@@ -9,12 +9,13 @@ import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@
 import { Dialog, DialogContent, DialogDescription, DialogFooter, DialogHeader, DialogTitle } from "@/components/ui/dialog";
 import { ArrowLeft, DollarSign, Calendar } from "lucide-react";
 import { useToast } from "@/hooks/use-toast";
+import { supabase } from "@/integrations/supabase/client";
 
 const RecordContribution = () => {
   const navigate = useNavigate();
   const { toast } = useToast();
   const [groupData, setGroupData] = useState<any>(null);
-  const [memberData, setMemberData] = useState<any>(null);
+  const [currentMember, setCurrentMember] = useState<any>(null);
   const [amount, setAmount] = useState("");
   const [cycle, setCycle] = useState("");
   const [note, setNote] = useState("");
@@ -22,21 +23,65 @@ const RecordContribution = () => {
   const [errors, setErrors] = useState<any>({});
 
   useEffect(() => {
-    const storedGroup = sessionStorage.getItem("currentGroup");
-    const storedMember = sessionStorage.getItem("currentMember");
-    const storedAjorGroup = sessionStorage.getItem("ajorGroup");
-    
-    const group = storedGroup ? JSON.parse(storedGroup) : (storedAjorGroup ? JSON.parse(storedAjorGroup) : null);
-    const member = storedMember ? JSON.parse(storedMember) : null;
-    
-    if (group) {
-      setGroupData(group);
-      setAmount(group.contributionAmount || "");
-    }
-    if (member) {
-      setMemberData(member);
-    }
-  }, []);
+    const loadData = async () => {
+      const groupId = sessionStorage.getItem("currentGroupId");
+      if (!groupId) {
+        toast({
+          title: "No Group Selected",
+          description: "Please select a group first",
+          variant: "destructive",
+        });
+        navigate("/dashboard");
+        return;
+      }
+
+      try {
+        // Get current user
+        const { data: { user } } = await supabase.auth.getUser();
+        if (!user) {
+          navigate("/auth");
+          return;
+        }
+
+        // Fetch group data
+        const { data: group, error: groupError } = await supabase
+          .from('groups')
+          .select('*')
+          .eq('id', groupId)
+          .single();
+
+        if (groupError) throw groupError;
+
+        // Fetch current member
+        const { data: member, error: memberError } = await supabase
+          .from('members')
+          .select('*')
+          .eq('group_id', groupId)
+          .eq('user_id', user.id)
+          .single();
+
+        if (memberError) throw memberError;
+
+        setGroupData({
+          id: group.id,
+          groupName: group.group_name,
+          contributionAmount: group.contribution_amount,
+          frequency: group.frequency,
+        });
+        setCurrentMember(member);
+        setAmount(group.contribution_amount.toString());
+      } catch (error: any) {
+        console.error('Error loading data:', error);
+        toast({
+          title: "Error Loading Data",
+          description: error.message || "Failed to load group data",
+          variant: "destructive",
+        });
+      }
+    };
+
+    loadData();
+  }, [navigate, toast]);
 
   const generateCycles = () => {
     if (!groupData) return [];
@@ -62,7 +107,7 @@ const RecordContribution = () => {
     return cycles;
   };
 
-  const validateForm = () => {
+  const validateForm = async () => {
     const newErrors: any = {};
     
     if (!amount || parseFloat(amount) <= 0) {
@@ -73,64 +118,77 @@ const RecordContribution = () => {
       newErrors.cycle = "Please select a contribution cycle.";
     }
     
-    // Check for duplicate entries
-    const contributions = JSON.parse(sessionStorage.getItem("contributions") || "[]");
-    const memberId = memberData?.id || "host";
-    const duplicate = contributions.find(
-      (c: any) => c.memberId === memberId && c.cycle === cycle
-    );
-    
-    if (duplicate) {
-      newErrors.duplicate = "Contribution already logged for this cycle.";
-      toast({
-        title: "Duplicate Entry",
-        description: "You have already recorded a contribution for this cycle.",
-        variant: "destructive",
-      });
+    // Check for duplicate entries in database
+    if (groupData && currentMember) {
+      const { data: existingContribution } = await supabase
+        .from('contributions')
+        .select('id')
+        .eq('group_id', groupData.id)
+        .eq('member_id', currentMember.id)
+        .eq('cycle', parseInt(cycle))
+        .single();
+
+      if (existingContribution) {
+        newErrors.duplicate = "Contribution already logged for this cycle.";
+        toast({
+          title: "Duplicate Entry",
+          description: "You have already recorded a contribution for this cycle.",
+          variant: "destructive",
+        });
+      }
     }
     
     setErrors(newErrors);
     return Object.keys(newErrors).length === 0;
   };
 
-  const handleSubmit = (e: React.FormEvent) => {
+  const handleSubmit = async (e: React.FormEvent) => {
     e.preventDefault();
     
-    if (validateForm()) {
+    if (await validateForm()) {
       setShowConfirmation(true);
     }
   };
 
-  const confirmContribution = () => {
-    const contributions = JSON.parse(sessionStorage.getItem("contributions") || "[]");
-    const selectedCycle = generateCycles().find(c => c.id.toString() === cycle);
-    
-    const newContribution = {
-      id: Date.now().toString(),
-      memberId: memberData?.id || "host",
-      memberName: memberData?.name || groupData?.hostName || "Host",
-      amount: parseFloat(amount),
-      cycle: cycle,
-      cycleLabel: selectedCycle?.label || `Cycle ${cycle}`,
-      date: new Date().toISOString(),
-      note: note,
-      status: "Paid"
-    };
-    
-    contributions.push(newContribution);
-    sessionStorage.setItem("contributions", JSON.stringify(contributions));
-    
-    setShowConfirmation(false);
-    
-    toast({
-      title: "✅ Contribution Recorded!",
-      description: `Your contribution of $${amount} has been successfully logged.`,
-    });
-    
-    // Navigate back to group dashboard
-    setTimeout(() => {
-      navigate("/group-dashboard");
-    }, 1000);
+  const confirmContribution = async () => {
+    try {
+      const selectedCycle = generateCycles().find(c => c.id.toString() === cycle);
+      
+      // Save contribution to database
+      const { error } = await supabase
+        .from('contributions')
+        .insert({
+          group_id: groupData.id,
+          member_id: currentMember.id,
+          amount: parseFloat(amount),
+          cycle: parseInt(cycle),
+          cycle_label: selectedCycle?.label || `Cycle ${cycle}`,
+          note: note,
+          status: 'paid',
+        });
+
+      if (error) throw error;
+
+      setShowConfirmation(false);
+      
+      toast({
+        title: "✅ Contribution Recorded!",
+        description: `Your contribution of $${amount} has been successfully logged.`,
+      });
+      
+      // Navigate back to group dashboard
+      setTimeout(() => {
+        navigate("/group-dashboard");
+      }, 1000);
+    } catch (error: any) {
+      console.error('Error recording contribution:', error);
+      toast({
+        title: "Error Recording Contribution",
+        description: error.message || "Failed to record contribution",
+        variant: "destructive",
+      });
+      setShowConfirmation(false);
+    }
   };
 
   if (!groupData) {

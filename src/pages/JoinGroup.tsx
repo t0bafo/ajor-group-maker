@@ -7,6 +7,7 @@ import { Card, CardContent, CardDescription, CardHeader, CardTitle } from "@/com
 import { Badge } from "@/components/ui/badge";
 import { ArrowLeft, ArrowRight, Users, DollarSign, Calendar, User } from "lucide-react";
 import { toast } from "@/hooks/use-toast";
+import { supabase } from "@/integrations/supabase/client";
 
 const JoinGroup = () => {
   const navigate = useNavigate();
@@ -16,37 +17,8 @@ const JoinGroup = () => {
   const [inviteCode, setInviteCode] = useState(inviteFromUrl);
   const [groupInfo, setGroupInfo] = useState<any>(null);
 
-  // Mock group data - in real app this would come from backend
-  const mockGroups: { [key: string]: any } = {
-    "abc123xyz": {
-      id: "abc123xyz",
-      groupName: "Friday Squad",
-      description: "Weekly savings with the crew",
-      contributionAmount: "100",
-      frequency: "weekly",
-      numberOfMembers: "6",
-      rotationOrder: "sequential",
-      hostName: "Sarah Johnson",
-      hostEmail: "sarah@example.com",
-      currentMembers: 4,
-      nextPayoutDate: new Date(Date.now() + 7 * 24 * 60 * 60 * 1000),
-    },
-    "xyz789abc": {
-      id: "xyz789abc",
-      groupName: "Monthly Circle",
-      description: "Building wealth together monthly",
-      contributionAmount: "250",
-      frequency: "monthly",
-      numberOfMembers: "8",
-      rotationOrder: "sequential",
-      hostName: "Michael Chen",
-      hostEmail: "michael@example.com",
-      currentMembers: 5,
-      nextPayoutDate: new Date(Date.now() + 30 * 24 * 60 * 60 * 1000),
-    },
-  };
 
-  const handleVerifyCode = () => {
+  const handleVerifyCode = async () => {
     const trimmedCode = inviteCode.trim();
     
     if (!trimmedCode) {
@@ -58,18 +30,63 @@ const JoinGroup = () => {
       return;
     }
 
-    const group = mockGroups[trimmedCode];
-    
-    if (group) {
-      setGroupInfo(group);
+    try {
+      // Look up group by invite code
+      const { data: group, error } = await supabase
+        .from('groups')
+        .select(`
+          *,
+          members(count)
+        `)
+        .eq('invite_code', trimmedCode)
+        .single();
+
+      if (error || !group) {
+        toast({
+          title: "Invalid Code",
+          description: "This invite code doesn't exist. Please check and try again.",
+          variant: "destructive",
+        });
+        return;
+      }
+
+      // Get member count
+      const { count: memberCount } = await supabase
+        .from('members')
+        .select('*', { count: 'exact', head: true })
+        .eq('group_id', group.id);
+
+      // Get host info
+      const { data: host } = await supabase
+        .from('members')
+        .select('name, email')
+        .eq('group_id', group.id)
+        .eq('role', 'Host')
+        .single();
+
+      setGroupInfo({
+        id: group.id,
+        groupName: group.group_name,
+        description: group.description,
+        contributionAmount: group.contribution_amount,
+        frequency: group.frequency,
+        numberOfMembers: group.number_of_members,
+        rotationOrder: group.rotation_order,
+        hostName: host?.name || 'Unknown',
+        hostEmail: host?.email || '',
+        currentMembers: memberCount || 0,
+        nextPayoutDate: new Date(Date.now() + 7 * 24 * 60 * 60 * 1000),
+      });
+
       toast({
         title: "Group Found!",
-        description: `You're invited to join ${group.groupName}`,
+        description: `You're invited to join ${group.group_name}`,
       });
-    } else {
+    } catch (error: any) {
+      console.error('Error verifying code:', error);
       toast({
-        title: "Invalid Code",
-        description: "This invite code doesn't exist. Please check and try again.",
+        title: "Error",
+        description: "Failed to verify invite code",
         variant: "destructive",
       });
     }
@@ -78,7 +95,7 @@ const JoinGroup = () => {
   const handleJoinGroup = () => {
     if (!groupInfo) return;
     
-    // Store invite info for the overview page
+    // Store group info for the overview page
     sessionStorage.setItem("joinGroupInfo", JSON.stringify(groupInfo));
     navigate("/group-overview");
   };
@@ -124,7 +141,7 @@ const JoinGroup = () => {
                 </Button>
               </div>
               <p className="text-sm text-muted-foreground">
-                Try: abc123xyz or xyz789abc
+                Enter the invite code shared by your group host
               </p>
             </div>
 

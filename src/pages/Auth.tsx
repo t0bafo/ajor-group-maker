@@ -22,6 +22,9 @@ const Auth = () => {
   });
 
   useEffect(() => {
+    // Clear any old session data when visiting auth page
+    sessionStorage.clear();
+
     // Check if user is already logged in
     supabase.auth.getSession().then(({ data: { session } }) => {
       if (session) {
@@ -34,6 +37,8 @@ const Auth = () => {
       data: { subscription },
     } = supabase.auth.onAuthStateChange((event, session) => {
       if (event === "SIGNED_IN" && session) {
+        // Clear sessionStorage on new sign in
+        sessionStorage.clear();
         navigate("/dashboard");
       }
     });

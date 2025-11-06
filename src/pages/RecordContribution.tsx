@@ -157,6 +157,25 @@ const RecordContribution = () => {
       newErrors.cycle = "Please select a contribution cycle.";
     }
     
+    // Check if payout has been made for this cycle (cycle is complete)
+    if (groupData && cycle) {
+      const { data: existingPayout } = await supabase
+        .from('payouts')
+        .select('id')
+        .eq('group_id', groupData.id)
+        .eq('cycle', parseInt(cycle))
+        .maybeSingle();
+
+      if (existingPayout) {
+        newErrors.cycleComplete = "This cycle is already completed with a payout.";
+        toast({
+          title: "Cycle Completed",
+          description: "Cannot record contributions for this cycle as the payout has already been made.",
+          variant: "destructive",
+        });
+      }
+    }
+    
     // Check for duplicate entries in database
     if (groupData && selectedMemberId && cycle) {
       const { data: existingContribution } = await supabase

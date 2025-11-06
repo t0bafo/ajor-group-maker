@@ -118,12 +118,29 @@ const PayoutManagement = () => {
     ? (payoutsInCurrentRotation / members.length) * 100 
     : 0;
 
-  const handleRecordPayout = (member: any) => {
+  const handleRecordPayout = async (member: any) => {
     // Only allow recording payout for the current member in rotation
     if (member.id !== currentPayoutMember?.id) {
       toast({
         title: "Wrong Rotation Order",
         description: "Please pay members in their rotation order.",
+        variant: "destructive",
+      });
+      return;
+    }
+
+    // Check if payout already exists for this cycle
+    const { data: existingPayout } = await supabase
+      .from('payouts')
+      .select('id')
+      .eq('group_id', groupData.id)
+      .eq('cycle', currentCycle)
+      .maybeSingle();
+
+    if (existingPayout) {
+      toast({
+        title: "Cycle Already Completed",
+        description: "This cycle already has a payout recorded.",
         variant: "destructive",
       });
       return;

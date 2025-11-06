@@ -152,6 +152,20 @@ const Auth = () => {
 
       if (error) throw error;
 
+      // Check if user already exists (Supabase returns user but with identities empty array)
+      if (data.user && data.user.identities && data.user.identities.length === 0) {
+        signupForm.setError("email", {
+          type: "manual",
+          message: "This email is already registered. Please log in instead.",
+        });
+        toast({
+          title: "Email already registered",
+          description: "Please use the login tab to access your account.",
+          variant: "destructive",
+        });
+        return;
+      }
+
       // Check if email confirmation is required
       if (data.user && !data.user.email_confirmed_at) {
         navigate(`/verify-email?email=${encodeURIComponent(values.email)}`);
@@ -166,11 +180,25 @@ const Auth = () => {
         });
       }
     } catch (error: any) {
-      toast({
-        title: "Sign up failed",
-        description: error.message,
-        variant: "destructive",
-      });
+      // Handle specific error cases
+      if (error.message.toLowerCase().includes("already registered") || 
+          error.message.toLowerCase().includes("already exists")) {
+        signupForm.setError("email", {
+          type: "manual",
+          message: "This email is already registered. Please log in instead.",
+        });
+        toast({
+          title: "Email already registered",
+          description: "Please use the login tab to access your account.",
+          variant: "destructive",
+        });
+      } else {
+        toast({
+          title: "Sign up failed",
+          description: error.message,
+          variant: "destructive",
+        });
+      }
     } finally {
       setIsLoading(false);
     }

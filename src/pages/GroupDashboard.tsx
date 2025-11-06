@@ -265,7 +265,7 @@ const GroupDashboard = () => {
                 <p className="text-sm font-semibold text-green-900 dark:text-green-100">
                   ✅ Latest: Cycle {latestCompletedCycle}
                   {latestPayout && 
-                    ` - ${members.find(m => m.id === latestPayout.memberId)?.name} received ${totalAmount.toFixed(0)} AWG`
+                    ` - ${members.find(m => m.id === latestPayout.memberId)?.name} received $${totalAmount.toFixed(0)}`
                   }
                 </p>
               </div>
@@ -274,7 +274,7 @@ const GroupDashboard = () => {
             {nextPayoutMember ? (
               <div className="p-4 bg-accent/10 rounded-lg border border-accent/20">
                 <p className="text-sm text-muted-foreground">
-                  <strong>Next (Cycle {currentCycle}):</strong> {nextPayoutMember.name} to receive {totalAmount.toFixed(0)} AWG
+                  <strong>Next (Cycle {currentCycle}):</strong> {nextPayoutMember.name} to receive ${totalAmount.toFixed(0)}
                 </p>
               </div>
             ) : totalPayouts === 0 ? (

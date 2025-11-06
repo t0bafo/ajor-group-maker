@@ -228,43 +228,42 @@ const PayoutManagement = () => {
         </Button>
 
         <div className="mb-8">
-          <h1 className="text-3xl md:text-4xl font-bold mb-2">Payout Management</h1>
-          <p className="text-muted-foreground">
+          <h1 className="text-2xl sm:text-3xl md:text-4xl font-bold mb-2">Payout Management</h1>
+          <p className="text-muted-foreground text-sm sm:text-base">
             Track and record payouts for {groupData.group_name}
           </p>
         </div>
 
         {/* Current Cycle Highlight */}
         {currentPayoutMember && (
-          <div className="mb-8 p-6 rounded-xl bg-gradient-to-r from-primary/10 via-accent/10 to-secondary/20 border border-primary/20 animate-fade-in">
-            <div className="flex items-start justify-between gap-4">
-              <div className="flex items-start gap-4">
-                <div className="w-12 h-12 rounded-full bg-gradient-to-br from-primary to-accent flex items-center justify-center shrink-0">
-                  <DollarSign className="h-6 w-6 text-primary-foreground" />
-                </div>
-                <div>
-                  <h2 className="text-xl font-semibold mb-2">
-                    Cycle {currentCycle}: Paying {currentPayoutMember.name}
-                  </h2>
-                  <p className="text-muted-foreground mb-4">
-                    Current payout amount: ${totalAmount.toFixed(2)}
-                  </p>
-                  {getMemberPayoutStatus(currentPayoutMember.id) === "Pending" && (
-                    <Button
-                      onClick={() => handleRecordPayout(currentPayoutMember)}
-                      size="sm"
-                    >
-                      Record Payout
-                    </Button>
-                  )}
-                </div>
+          <div className="mb-8 p-4 sm:p-6 rounded-xl bg-gradient-to-r from-primary/10 via-accent/10 to-secondary/20 border border-primary/20 animate-fade-in">
+            <div className="flex flex-col sm:flex-row items-start gap-4">
+              <div className="w-12 h-12 rounded-full bg-gradient-to-br from-primary to-accent flex items-center justify-center shrink-0">
+                <DollarSign className="h-6 w-6 text-primary-foreground" />
+              </div>
+              <div className="flex-1">
+                <h2 className="text-lg sm:text-xl font-semibold mb-2">
+                  Cycle {currentCycle}: Paying {currentPayoutMember.name}
+                </h2>
+                <p className="text-muted-foreground mb-4 text-sm sm:text-base">
+                  Current payout amount: ${totalAmount.toFixed(2)}
+                </p>
+                {getMemberPayoutStatus(currentPayoutMember.id) === "Pending" && (
+                  <Button
+                    onClick={() => handleRecordPayout(currentPayoutMember)}
+                    size="sm"
+                    className="w-full sm:w-auto"
+                  >
+                    Record Payout
+                  </Button>
+                )}
               </div>
             </div>
           </div>
         )}
 
         {/* Summary Cards */}
-        <div className="grid md:grid-cols-3 gap-6 mb-8">
+        <div className="grid grid-cols-1 sm:grid-cols-2 md:grid-cols-3 gap-4 md:gap-6 mb-8">
           <Card className="shadow-[var(--shadow-soft)]">
             <CardHeader className="flex flex-row items-center justify-between pb-2">
               <CardTitle className="text-sm font-medium text-muted-foreground">
@@ -312,8 +311,8 @@ const PayoutManagement = () => {
         {/* Progress Tracker */}
         <Card className="shadow-[var(--shadow-medium)] mb-8">
           <CardHeader>
-            <CardTitle className="text-xl">Payout Progress</CardTitle>
-            <CardDescription>Track completion of the current cycle</CardDescription>
+            <CardTitle className="text-lg sm:text-xl">Payout Progress</CardTitle>
+            <CardDescription className="text-sm">Track completion of the current cycle</CardDescription>
           </CardHeader>
           <CardContent>
             <div className="space-y-2 mb-4">
@@ -331,8 +330,8 @@ const PayoutManagement = () => {
         {/* Payout Order List */}
         <Card className="shadow-[var(--shadow-medium)]">
           <CardHeader>
-            <CardTitle className="text-xl">Payout Rotation Order</CardTitle>
-            <CardDescription>
+            <CardTitle className="text-lg sm:text-xl">Payout Rotation Order</CardTitle>
+            <CardDescription className="text-sm">
               Members receive ${totalAmount.toFixed(2)} when it's their turn
             </CardDescription>
           </CardHeader>
@@ -345,32 +344,32 @@ const PayoutManagement = () => {
                 return (
                   <div
                     key={member.id}
-                    className={`flex items-center justify-between p-4 rounded-lg transition-all ${
+                    className={`flex flex-col sm:flex-row items-start sm:items-center justify-between gap-3 p-4 rounded-lg transition-all ${
                       isCurrent
                         ? "bg-gradient-to-r from-primary/10 to-accent/10 border-2 border-primary/30"
                         : "bg-secondary/50 hover:bg-secondary"
                     }`}
                   >
-                    <div className="flex items-center gap-4">
-                      <div className="flex items-center justify-center w-10 h-10 rounded-full bg-muted text-sm font-bold">
+                    <div className="flex items-center gap-3 sm:gap-4 flex-1 w-full">
+                      <div className="flex items-center justify-center w-10 h-10 rounded-full bg-muted text-sm font-bold shrink-0">
                         #{index + 1}
                       </div>
-                      <div className="w-10 h-10 rounded-full bg-gradient-to-br from-primary to-accent flex items-center justify-center text-primary-foreground font-semibold">
+                      <div className="w-10 h-10 rounded-full bg-gradient-to-br from-primary to-accent flex items-center justify-center text-primary-foreground font-semibold shrink-0">
                         {member.name[0].toUpperCase()}
                       </div>
-                      <div>
-                        <p className="font-medium">
+                      <div className="min-w-0 flex-1">
+                        <p className="font-medium truncate">
                           {member.name}
                           {isCurrent && (
-                            <span className="ml-2 text-sm text-primary font-semibold">
+                            <span className="ml-2 text-xs sm:text-sm text-primary font-semibold">
                               (Current)
                             </span>
                           )}
                         </p>
-                        <p className="text-sm text-muted-foreground">{member.email}</p>
+                        <p className="text-xs sm:text-sm text-muted-foreground truncate">{member.email}</p>
                       </div>
                     </div>
-                    <div className="flex items-center gap-3">
+                    <div className="flex items-center gap-2 sm:gap-3 self-end sm:self-auto w-full sm:w-auto">
                       <Badge
                         variant={status === "Current" ? "default" : "outline"}
                         className={status === "Current" ? "bg-primary" : ""}
@@ -391,6 +390,7 @@ const PayoutManagement = () => {
                         <Button
                           size="sm"
                           onClick={() => handleRecordPayout(member)}
+                          className="flex-1 sm:flex-none"
                         >
                           Record Payout
                         </Button>

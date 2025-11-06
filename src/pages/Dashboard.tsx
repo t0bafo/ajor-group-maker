@@ -172,10 +172,10 @@ const Dashboard = () => {
         <div className="max-w-6xl mx-auto space-y-10">
           {/* Welcome Section */}
           <div className="space-y-3">
-            <h1 className="text-4xl md:text-5xl font-bold tracking-tight">
+            <h1 className="text-3xl sm:text-4xl md:text-5xl font-bold tracking-tight">
               {userGroups.length > 0 ? "Your Dashboard" : "Welcome to Ajor"}
             </h1>
-            <p className="text-lg md:text-xl text-muted-foreground">
+            <p className="text-base sm:text-lg md:text-xl text-muted-foreground">
               {userGroups.length > 0 
                 ? "Manage your savings groups and track your progress" 
                 : "Start saving together with your trusted community"}
@@ -228,9 +228,9 @@ const Dashboard = () => {
 
               {/* Groups List */}
               <div>
-                <div className="flex items-center justify-between mb-4">
-                  <h2 className="text-2xl font-semibold">Your Ajors</h2>
-                  <Button onClick={() => navigate("/group-setup")} size="sm">
+                <div className="flex flex-col sm:flex-row items-start sm:items-center justify-between gap-3 mb-4">
+                  <h2 className="text-xl sm:text-2xl font-semibold">Your Ajors</h2>
+                  <Button onClick={() => navigate("/group-setup")} size="sm" className="w-full sm:w-auto">
                     <UserPlus className="mr-2 h-4 w-4" />
                     Create New
                   </Button>
@@ -247,20 +247,20 @@ const Dashboard = () => {
                       }}
                     >
                       <CardHeader>
-                        <div className="flex items-start justify-between">
+                        <div className="flex flex-col sm:flex-row items-start justify-between gap-3">
                           <div className="flex-1">
-                            <div className="flex items-center gap-3 mb-2">
-                              <CardTitle className="text-xl">{group.groupName}</CardTitle>
+                            <div className="flex flex-wrap items-center gap-2 sm:gap-3 mb-2">
+                              <CardTitle className="text-lg sm:text-xl">{group.groupName}</CardTitle>
                               <Badge variant={group.status === "Active" ? "default" : "secondary"} className={group.status === "Active" ? "bg-emerald/20 text-emerald" : ""}>
                                 {group.status}
                               </Badge>
                             </div>
-                            <CardDescription>{group.description}</CardDescription>
+                            <CardDescription className="text-sm">{group.description}</CardDescription>
                           </div>
                           <Button
                             variant="outline"
                             size="sm"
-                            className="border-gold/20 hover:bg-gold/10"
+                            className="border-gold/20 hover:bg-gold/10 w-full sm:w-auto"
                             onClick={(e) => handleInviteMembers(group.groupName, group.inviteCode, e)}
                           >
                             <UserPlus className="h-4 w-4 mr-2" />
@@ -269,7 +269,7 @@ const Dashboard = () => {
                         </div>
                       </CardHeader>
                       <CardContent className="space-y-4">
-                        <div className="grid grid-cols-2 md:grid-cols-4 gap-4">
+                        <div className="grid grid-cols-2 gap-3 sm:gap-4">
                           <div className="flex items-center gap-2">
                             <DollarSign className="h-4 w-4 text-muted-foreground" />
                             <div>

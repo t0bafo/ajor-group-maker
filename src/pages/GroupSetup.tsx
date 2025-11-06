@@ -161,8 +161,8 @@ const GroupSetup = () => {
 
         <Card className="shadow-[var(--shadow-medium)] mt-8">
           <CardHeader>
-            <CardTitle className="text-3xl">Create Your Ajor Group</CardTitle>
-            <CardDescription className="text-base">
+            <CardTitle className="text-2xl sm:text-3xl">Create Your Ajor Group</CardTitle>
+            <CardDescription className="text-sm sm:text-base">
               {currentStep === 0 && "Start by naming your savings circle"}
               {currentStep === 1 && "Set contribution amount and schedule"}
               {currentStep === 2 && "Choose how payouts will be distributed"}
@@ -289,13 +289,13 @@ const GroupSetup = () => {
                 </div>
               )}
 
-              <div className="flex gap-3 pt-4">
+              <div className="flex flex-col sm:flex-row gap-3 pt-4">
                 {currentStep > 0 && (
                   <Button 
                     type="button" 
                     variant="outline" 
                     onClick={() => setCurrentStep(currentStep - 1)}
-                    className="flex-1"
+                    className="w-full sm:flex-1"
                   >
                     <ArrowLeft className="mr-2 h-4 w-4" />
                     Back
@@ -305,7 +305,7 @@ const GroupSetup = () => {
                   type="submit" 
                   variant={currentStep === 2 ? "hero" : "default"}
                   size="lg" 
-                  className="flex-1"
+                  className="w-full sm:flex-1"
                 >
                   {currentStep === 2 ? "Create Ajor" : "Next"}
                   <ArrowRight className="ml-2 h-5 w-5" />

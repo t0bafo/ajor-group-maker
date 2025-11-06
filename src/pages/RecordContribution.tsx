@@ -283,16 +283,16 @@ const RecordContribution = () => {
         </Button>
 
         <div className="mb-8">
-          <h1 className="text-3xl md:text-4xl font-bold mb-2">Record Contribution</h1>
-          <p className="text-muted-foreground">
+          <h1 className="text-2xl sm:text-3xl md:text-4xl font-bold mb-2">Record Contribution</h1>
+          <p className="text-muted-foreground text-sm sm:text-base">
             Log a member's {groupData.frequency} contribution for {groupData.groupName}
           </p>
         </div>
 
         <Card className="shadow-[var(--shadow-medium)]">
           <CardHeader>
-            <CardTitle className="text-xl">Contribution Details</CardTitle>
-            <CardDescription>
+            <CardTitle className="text-lg sm:text-xl">Contribution Details</CardTitle>
+            <CardDescription className="text-sm">
               Record which member made their contribution payment
             </CardDescription>
           </CardHeader>
@@ -410,7 +410,7 @@ const RecordContribution = () => {
                 </div>
               )}
 
-              <Button type="submit" className="w-full" size="lg">
+              <Button type="submit" className="w-full text-sm sm:text-base" size="lg">
                 <Calendar className="mr-2 h-4 w-4" />
                 Record Contribution
               </Button>

@@ -49,7 +49,7 @@ const AppNavigation = ({ userEmail, userName }: AppNavigationProps) => {
 
   return (
     <header className="sticky top-0 z-50 w-full border-b bg-background/95 backdrop-blur supports-[backdrop-filter]:bg-background/60">
-      <div className="container flex h-16 items-center justify-between">
+      <div className="container flex h-16 items-center justify-between px-4">
         {/* Logo */}
         <button
           onClick={() => navigate("/dashboard")}
@@ -58,12 +58,12 @@ const AppNavigation = ({ userEmail, userName }: AppNavigationProps) => {
           <div className="w-8 h-8 rounded-lg bg-gradient-to-br from-primary to-accent flex items-center justify-center">
             <span className="text-primary-foreground font-bold text-lg">A</span>
           </div>
-          <span className="text-xl font-bold bg-gradient-to-r from-primary to-accent bg-clip-text text-transparent">
+          <span className="text-lg sm:text-xl font-bold bg-gradient-to-r from-primary to-accent bg-clip-text text-transparent">
             Ajor
           </span>
         </button>
 
-        {/* Navigation Links */}
+        {/* Desktop Navigation Links */}
         <nav className="hidden md:flex items-center gap-2">
           <Button
             variant={isActive("/dashboard") ? "secondary" : "ghost"}
@@ -94,7 +94,7 @@ const AppNavigation = ({ userEmail, userName }: AppNavigationProps) => {
           </Button>
         </nav>
 
-        {/* Profile Menu */}
+        {/* Mobile & Desktop Profile Menu */}
         <DropdownMenu>
           <DropdownMenuTrigger asChild>
             <Button variant="ghost" className="relative h-10 w-10 rounded-full">
@@ -113,6 +113,22 @@ const AppNavigation = ({ userEmail, userName }: AppNavigationProps) => {
               </p>
             </div>
             <DropdownMenuSeparator />
+            {/* Mobile-only navigation items */}
+            <div className="md:hidden">
+              <DropdownMenuItem onClick={() => navigate("/dashboard")} className="cursor-pointer">
+                <Home className="mr-2 h-4 w-4" />
+                Dashboard
+              </DropdownMenuItem>
+              <DropdownMenuItem onClick={() => navigate("/group-setup")} className="cursor-pointer">
+                <UserPlus className="mr-2 h-4 w-4" />
+                Create Ajor
+              </DropdownMenuItem>
+              <DropdownMenuItem onClick={() => navigate("/join-group")} className="cursor-pointer">
+                <Users className="mr-2 h-4 w-4" />
+                Join Ajor
+              </DropdownMenuItem>
+              <DropdownMenuSeparator />
+            </div>
             <DropdownMenuItem onClick={() => navigate("/profile")} className="cursor-pointer">
               <User className="mr-2 h-4 w-4" />
               My Profile

@@ -198,14 +198,14 @@ const InviteMembers = () => {
       <div className="container max-w-3xl mx-auto px-4">
         {/* Header with celebration */}
         <div className="mb-8 text-center animate-fade-in">
-          <div className="inline-flex items-center justify-center w-24 h-24 rounded-full bg-gradient-to-br from-primary via-accent to-primary/80 mb-4 shadow-[var(--shadow-glow-gold)] animate-scale-in relative">
-            <Check className="h-12 w-12 text-white" />
-            <Sparkles className="h-6 w-6 text-primary absolute -top-1 -right-1 animate-pulse" />
+          <div className="inline-flex items-center justify-center w-20 h-20 sm:w-24 sm:h-24 rounded-full bg-gradient-to-br from-primary via-accent to-primary/80 mb-4 shadow-[var(--shadow-glow-gold)] animate-scale-in relative">
+            <Check className="h-10 w-10 sm:h-12 sm:w-12 text-white" />
+            <Sparkles className="h-5 w-5 sm:h-6 sm:w-6 text-primary absolute -top-1 -right-1 animate-pulse" />
           </div>
-          <h1 className="text-4xl md:text-5xl font-bold mb-3 bg-gradient-to-r from-primary via-accent to-primary bg-clip-text text-transparent">
+          <h1 className="text-3xl sm:text-4xl md:text-5xl font-bold mb-3 bg-gradient-to-r from-primary via-accent to-primary bg-clip-text text-transparent px-4">
             Your Ajor is Ready! 🎉
           </h1>
-          <p className="text-muted-foreground text-lg max-w-2xl mx-auto">
+          <p className="text-muted-foreground text-base sm:text-lg max-w-2xl mx-auto px-4">
             Share your link or code so your trusted circle can join and start saving with you.
           </p>
         </div>
@@ -213,8 +213,8 @@ const InviteMembers = () => {
         {/* Main Invite Card - Glassmorphic */}
         <Card className="shadow-[var(--shadow-elegant)] border-gold/20 backdrop-blur-sm bg-concrete/50 mb-8 animate-fade-in">
           <CardHeader className="text-center pb-4">
-            <CardTitle className="text-2xl font-bold">{groupData.groupName}</CardTitle>
-            <CardDescription className="text-base">
+            <CardTitle className="text-xl sm:text-2xl font-bold">{groupData.groupName}</CardTitle>
+            <CardDescription className="text-sm sm:text-base">
               Invite your trusted members to begin the savings journey
             </CardDescription>
           </CardHeader>
@@ -277,7 +277,7 @@ const InviteMembers = () => {
             </div>
 
             {/* Action Buttons */}
-            <div className="grid grid-cols-2 gap-3 pt-2">
+            <div className="grid grid-cols-1 sm:grid-cols-2 gap-3 pt-2">
               <Button
                 onClick={handleCopyLink}
                 variant="outline"
@@ -301,14 +301,14 @@ const InviteMembers = () => {
         {/* Members List */}
         <Card className="shadow-[var(--shadow-medium)] border-gold/10 mb-6 animate-fade-in">
           <CardHeader>
-            <div className="flex items-center justify-between">
-              <div>
-                <CardTitle className="text-xl">Group Members</CardTitle>
-                <CardDescription>
+            <div className="flex flex-col sm:flex-row items-start sm:items-center justify-between gap-3">
+              <div className="flex-1">
+                <CardTitle className="text-lg sm:text-xl">Group Members</CardTitle>
+                <CardDescription className="text-sm">
                   {members.length} of {groupData.numberOfMembers || "—"} members joined
                 </CardDescription>
               </div>
-              <Badge variant="secondary" className="text-base px-3 py-1 bg-gold/10 border-gold/20">
+              <Badge variant="secondary" className="text-sm sm:text-base px-3 py-1 bg-gold/10 border-gold/20">
                 {members.length}/{groupData.numberOfMembers || "—"}
               </Badge>
             </div>
@@ -324,15 +324,15 @@ const InviteMembers = () => {
                 {members.map((member) => (
                   <div
                     key={member.id}
-                    className="flex items-center justify-between p-4 rounded-lg bg-gradient-to-r from-concrete/30 to-concrete/10 border border-gold/10 hover:border-gold/20 transition-all"
+                    className="flex flex-col sm:flex-row items-start sm:items-center justify-between gap-3 p-4 rounded-lg bg-gradient-to-r from-concrete/30 to-concrete/10 border border-gold/10 hover:border-gold/20 transition-all"
                   >
-                    <div className="flex items-center gap-4">
-                      <div className="w-10 h-10 rounded-full bg-gradient-to-br from-primary to-accent flex items-center justify-center text-primary-foreground font-semibold">
+                    <div className="flex items-center gap-3 sm:gap-4 flex-1">
+                      <div className="w-10 h-10 rounded-full bg-gradient-to-br from-primary to-accent flex items-center justify-center text-primary-foreground font-semibold shrink-0">
                         {member.name[0].toUpperCase()}
                       </div>
-                      <div>
-                        <p className="font-medium">{member.name}</p>
-                        <p className="text-sm text-muted-foreground">{member.email}</p>
+                      <div className="min-w-0 flex-1">
+                        <p className="font-medium truncate">{member.name}</p>
+                        <p className="text-xs sm:text-sm text-muted-foreground truncate">{member.email}</p>
                       </div>
                     </div>
                     <Badge variant={member.role === "Host" ? "default" : "outline"} className={member.role === "Host" ? "bg-gold text-gold-foreground" : ""}>

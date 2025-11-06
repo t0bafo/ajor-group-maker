@@ -176,18 +176,18 @@ const GroupDashboard = () => {
       />
       
       <div className="container max-w-6xl mx-auto px-4 py-8">
-        <div className="flex items-center justify-between mb-8">
-          <div>
-            <h1 className="text-3xl md:text-4xl font-bold">{groupData.groupName || "Your Ajor Group"}</h1>
-            <p className="text-muted-foreground mt-1">{groupData.description}</p>
+        <div className="flex flex-col sm:flex-row items-start sm:items-center justify-between gap-4 mb-8">
+          <div className="flex-1">
+            <h1 className="text-2xl sm:text-3xl md:text-4xl font-bold">{groupData.groupName || "Your Ajor Group"}</h1>
+            <p className="text-muted-foreground mt-1 text-sm sm:text-base">{groupData.description}</p>
           </div>
-          <Button variant="outline" size="icon">
+          <Button variant="outline" size="icon" className="shrink-0">
             <Settings className="h-5 w-5" />
           </Button>
         </div>
 
         {/* Summary Cards */}
-        <div className="grid md:grid-cols-3 gap-6 mb-8">
+        <div className="grid grid-cols-1 sm:grid-cols-2 md:grid-cols-3 gap-4 md:gap-6 mb-8">
           <Card className="shadow-[var(--shadow-soft)]">
             <CardHeader className="flex flex-row items-center justify-between pb-2">
               <CardTitle className="text-sm font-medium text-muted-foreground">
@@ -239,12 +239,12 @@ const GroupDashboard = () => {
         {/* Payout Tracking Card */}
         <Card className="shadow-[var(--shadow-medium)] mb-8">
           <CardHeader>
-            <div className="flex items-center justify-between">
-              <div>
-                <CardTitle className="text-xl">Payout Tracking</CardTitle>
-                <CardDescription>Monitor payout completion and rotation progress</CardDescription>
+            <div className="flex flex-col sm:flex-row items-start sm:items-center justify-between gap-3">
+              <div className="flex-1">
+                <CardTitle className="text-lg sm:text-xl">Payout Tracking</CardTitle>
+                <CardDescription className="text-sm">Monitor payout completion and rotation progress</CardDescription>
               </div>
-              <Button onClick={() => navigate("/payout-management")} size="sm">
+              <Button onClick={() => navigate("/payout-management")} size="sm" className="w-full sm:w-auto">
                 Manage Payouts
               </Button>
             </div>
@@ -290,12 +290,12 @@ const GroupDashboard = () => {
 
         <Card className="shadow-[var(--shadow-medium)] mb-8">
           <CardHeader>
-            <div className="flex items-center justify-between">
-              <div>
-                <CardTitle className="text-xl">Contribution Ledger</CardTitle>
-                <CardDescription>Track all member contributions for this cycle</CardDescription>
+            <div className="flex flex-col sm:flex-row items-start sm:items-center justify-between gap-3">
+              <div className="flex-1">
+                <CardTitle className="text-lg sm:text-xl">Contribution Ledger</CardTitle>
+                <CardDescription className="text-sm">Track all member contributions for this cycle</CardDescription>
               </div>
-              <Button onClick={() => navigate("/record-contribution")} size="sm">
+              <Button onClick={() => navigate("/record-contribution")} size="sm" className="w-full sm:w-auto">
                 <Plus className="mr-2 h-4 w-4" />
                 Record Contribution
               </Button>
@@ -312,45 +312,78 @@ const GroupDashboard = () => {
               <Progress value={contributionProgress} className="h-3" />
             </div>
 
-            {/* Contribution Table */}
+            {/* Contribution Table - Mobile Responsive */}
             {contributions.length > 0 ? (
-              <div className="border rounded-lg overflow-hidden">
-                <Table>
-                  <TableHeader>
-                    <TableRow>
-                      <TableHead>Member</TableHead>
-                      <TableHead>Cycle</TableHead>
-                      <TableHead>Amount</TableHead>
-                      <TableHead>Date</TableHead>
-                      <TableHead>Status</TableHead>
-                    </TableRow>
-                  </TableHeader>
-                  <TableBody>
-                    {contributions.map((contribution) => (
-                      <TableRow key={contribution.id}>
-                        <TableCell className="font-medium">{contribution.memberName}</TableCell>
-                        <TableCell>{contribution.cycleLabel}</TableCell>
-                        <TableCell>${contribution.amount.toFixed(2)}</TableCell>
-                        <TableCell>
+              <>
+                {/* Desktop Table */}
+                <div className="hidden md:block border rounded-lg overflow-hidden">
+                  <Table>
+                    <TableHeader>
+                      <TableRow>
+                        <TableHead>Member</TableHead>
+                        <TableHead>Cycle</TableHead>
+                        <TableHead>Amount</TableHead>
+                        <TableHead>Date</TableHead>
+                        <TableHead>Status</TableHead>
+                      </TableRow>
+                    </TableHeader>
+                    <TableBody>
+                      {contributions.map((contribution) => (
+                        <TableRow key={contribution.id}>
+                          <TableCell className="font-medium">{contribution.memberName}</TableCell>
+                          <TableCell>{contribution.cycleLabel}</TableCell>
+                          <TableCell>${contribution.amount.toFixed(2)}</TableCell>
+                          <TableCell>
+                            {new Date(contribution.date).toLocaleDateString("en-US", { 
+                              month: "short", 
+                              day: "numeric" 
+                            })}
+                          </TableCell>
+                          <TableCell>
+                            <Badge variant="default" className="bg-green-600">
+                              {contribution.status}
+                            </Badge>
+                          </TableCell>
+                        </TableRow>
+                      ))}
+                    </TableBody>
+                  </Table>
+                </div>
+                
+                {/* Mobile Card View */}
+                <div className="md:hidden space-y-3">
+                  {contributions.map((contribution) => (
+                    <div key={contribution.id} className="p-4 border rounded-lg space-y-2 bg-secondary/30">
+                      <div className="flex justify-between items-start">
+                        <div>
+                          <p className="font-medium">{contribution.memberName}</p>
+                          <p className="text-sm text-muted-foreground">{contribution.cycleLabel}</p>
+                        </div>
+                        <Badge variant="default" className="bg-green-600">
+                          {contribution.status}
+                        </Badge>
+                      </div>
+                      <div className="flex justify-between text-sm">
+                        <span className="text-muted-foreground">Amount:</span>
+                        <span className="font-semibold">${contribution.amount.toFixed(2)}</span>
+                      </div>
+                      <div className="flex justify-between text-sm">
+                        <span className="text-muted-foreground">Date:</span>
+                        <span>
                           {new Date(contribution.date).toLocaleDateString("en-US", { 
                             month: "short", 
                             day: "numeric" 
                           })}
-                        </TableCell>
-                        <TableCell>
-                          <Badge variant="default" className="bg-green-600">
-                            {contribution.status}
-                          </Badge>
-                        </TableCell>
-                      </TableRow>
-                    ))}
-                  </TableBody>
-                </Table>
-              </div>
+                        </span>
+                      </div>
+                    </div>
+                  ))}
+                </div>
+              </>
             ) : (
               <div className="text-center py-8 text-muted-foreground">
-                <p className="mb-4">No contributions recorded yet</p>
-                <Button onClick={() => navigate("/record-contribution")} variant="outline">
+                <p className="mb-4 text-sm sm:text-base">No contributions recorded yet</p>
+                <Button onClick={() => navigate("/record-contribution")} variant="outline" className="w-full sm:w-auto">
                   <Plus className="mr-2 h-4 w-4" />
                   Record First Contribution
                 </Button>
@@ -379,7 +412,7 @@ const GroupDashboard = () => {
               
               <Button 
                 variant="outline" 
-                className="w-full"
+                className="w-full text-sm sm:text-base"
                 onClick={() => navigate("/invite-members")}
               >
                 <UserPlus className="mr-2 h-4 w-4" />
@@ -392,8 +425,8 @@ const GroupDashboard = () => {
         {/* Members List & Rotation Order */}
         <Card className="shadow-[var(--shadow-medium)]">
           <CardHeader>
-            <CardTitle className="text-xl">Member List & Payout Order</CardTitle>
-            <CardDescription>
+            <CardTitle className="text-lg sm:text-xl">Member List & Payout Order</CardTitle>
+            <CardDescription className="text-sm">
               Rotation order: {groupData.rotationOrder === "sequential" ? "Sequential" : "Random"}
             </CardDescription>
           </CardHeader>
@@ -402,21 +435,21 @@ const GroupDashboard = () => {
               {members.map((member, index) => (
                 <div
                   key={member.id}
-                  className="flex items-center justify-between p-4 rounded-lg bg-secondary/50 hover:bg-secondary transition-colors"
+                  className="flex flex-col sm:flex-row items-start sm:items-center justify-between gap-3 p-4 rounded-lg bg-secondary/50 hover:bg-secondary transition-colors"
                 >
-                  <div className="flex items-center gap-4">
-                    <div className="flex items-center justify-center w-8 h-8 rounded-full bg-muted text-sm font-semibold">
+                  <div className="flex items-center gap-3 sm:gap-4 flex-1">
+                    <div className="flex items-center justify-center w-8 h-8 rounded-full bg-muted text-sm font-semibold shrink-0">
                       {index + 1}
                     </div>
-                    <div className="w-10 h-10 rounded-full bg-gradient-to-br from-primary to-accent flex items-center justify-center text-primary-foreground font-semibold">
+                    <div className="w-10 h-10 rounded-full bg-gradient-to-br from-primary to-accent flex items-center justify-center text-primary-foreground font-semibold shrink-0">
                       {member.name[0].toUpperCase()}
                     </div>
-                    <div>
-                      <p className="font-medium">{member.name}</p>
-                      <p className="text-sm text-muted-foreground">{member.email}</p>
+                    <div className="min-w-0 flex-1">
+                      <p className="font-medium truncate">{member.name}</p>
+                      <p className="text-sm text-muted-foreground truncate">{member.email}</p>
                     </div>
                   </div>
-                  <div className="flex items-center gap-2">
+                  <div className="flex items-center gap-2 self-end sm:self-auto">
                     <Badge 
                       variant={getMemberStatus(member.id) === "Paid" ? "default" : "outline"}
                       className={getMemberStatus(member.id) === "Paid" ? "bg-green-600" : ""}

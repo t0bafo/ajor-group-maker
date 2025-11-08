@@ -5,7 +5,7 @@ import { Card, CardContent, CardDescription, CardHeader, CardTitle } from "@/com
 import { Badge } from "@/components/ui/badge";
 import { Progress } from "@/components/ui/progress";
 import { supabase } from "@/integrations/supabase/client";
-import { UserPlus, Users, DollarSign, Calendar, TrendingUp, Plus } from "lucide-react";
+import { UserPlus, Users, DollarSign, Calendar, TrendingUp, Plus, Crown } from "lucide-react";
 import { useToast } from "@/hooks/use-toast";
 import AppNavigation from "@/components/AppNavigation";
 import InviteMembersModal from "@/components/InviteMembersModal";
@@ -67,6 +67,9 @@ const Dashboard = () => {
 
       if (hostError) throw hostError;
 
+      // Store host group IDs for easy lookup
+      const hostedGroupIds = new Set(hostedGroups?.map(g => g.id) || []);
+
       // Get groups where user is a member (including archived status)
       const { data: memberGroups, error: memberError } = await supabase
         .from('members')
@@ -90,6 +93,7 @@ const Dashboard = () => {
 
       if (groups && groups.length > 0) {
         const formattedGroups = await Promise.all(groups.map(async (group: any) => {
+          const isHost = hostedGroupIds.has(group.id);
           // Get member count
           const { count: memberCount } = await supabase
             .from('members')
@@ -127,6 +131,7 @@ const Dashboard = () => {
             }),
             inviteCode: group.invite_code,
             archived: group.archived || false,
+            isHost,
           };
         }));
 
@@ -287,6 +292,16 @@ const Dashboard = () => {
                           <div className="flex-1">
                             <div className="flex flex-wrap items-center gap-2 sm:gap-3 mb-2">
                               <CardTitle className="text-lg sm:text-xl">{group.groupName}</CardTitle>
+                              {group.isHost ? (
+                                <Badge className="bg-primary/20 text-primary border-primary/30">
+                                  <Crown className="h-3 w-3 mr-1" />
+                                  Host
+                                </Badge>
+                              ) : (
+                                <Badge variant="secondary" className="bg-muted/50">
+                                  Member
+                                </Badge>
+                              )}
                               {group.archived && (
                                 <Badge variant="outline" className="bg-muted">
                                   Archived

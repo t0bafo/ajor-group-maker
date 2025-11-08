@@ -5,7 +5,7 @@ import { Card, CardContent, CardDescription, CardHeader, CardTitle } from "@/com
 import { Badge } from "@/components/ui/badge";
 import { Progress } from "@/components/ui/progress";
 import { Table, TableBody, TableCell, TableHead, TableHeader, TableRow } from "@/components/ui/table";
-import { Calendar, DollarSign, Users, Settings, UserPlus, Plus, TrendingUp, Archive } from "lucide-react";
+import { Calendar, DollarSign, Users, Settings, UserPlus, Plus, TrendingUp, Archive, Crown } from "lucide-react";
 import AppNavigation from "@/components/AppNavigation";
 import ArchiveGroupModal from "@/components/ArchiveGroupModal";
 import { GroupDashboardSkeleton } from "@/components/SkeletonLoader";
@@ -237,8 +237,18 @@ const GroupDashboard = () => {
       <div className="container max-w-6xl mx-auto px-4 py-8 animate-fade-in">
         <div className="flex flex-col sm:flex-row items-start sm:items-center justify-between gap-4 mb-8">
           <div className="flex-1">
-            <div className="flex items-center gap-3 mb-1">
+            <div className="flex flex-wrap items-center gap-2 sm:gap-3 mb-1">
               <h1 className="text-2xl sm:text-3xl md:text-4xl font-bold">{groupData.groupName || "Your Ajor Group"}</h1>
+              {isHost ? (
+                <Badge className="bg-primary/20 text-primary border-primary/30">
+                  <Crown className="h-3 w-3 mr-1" />
+                  Host
+                </Badge>
+              ) : (
+                <Badge variant="secondary" className="bg-muted/50">
+                  Member
+                </Badge>
+              )}
               {groupData.archived && (
                 <Badge variant="outline" className="bg-muted">
                   Archived

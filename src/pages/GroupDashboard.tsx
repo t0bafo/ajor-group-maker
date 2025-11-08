@@ -5,8 +5,9 @@ import { Card, CardContent, CardDescription, CardHeader, CardTitle } from "@/com
 import { Badge } from "@/components/ui/badge";
 import { Progress } from "@/components/ui/progress";
 import { Table, TableBody, TableCell, TableHead, TableHeader, TableRow } from "@/components/ui/table";
-import { Calendar, DollarSign, Users, Settings, UserPlus, Plus, TrendingUp } from "lucide-react";
+import { Calendar, DollarSign, Users, Settings, UserPlus, Plus, TrendingUp, Archive } from "lucide-react";
 import AppNavigation from "@/components/AppNavigation";
+import ArchiveGroupModal from "@/components/ArchiveGroupModal";
 import { supabase } from "@/integrations/supabase/client";
 import { useToast } from "@/hooks/use-toast";
 
@@ -19,6 +20,7 @@ const GroupDashboard = () => {
   const [payouts, setPayouts] = useState<any[]>([]);
   const [user, setUser] = useState<any>(null);
   const [isHost, setIsHost] = useState(false);
+  const [showArchiveModal, setShowArchiveModal] = useState(false);
 
   useEffect(() => {
     // Get current user
@@ -95,6 +97,7 @@ const GroupDashboard = () => {
           rotationOrder: group.rotation_order,
           inviteCode: group.invite_code,
           hostId: group.host_id,
+          archived: group.archived || false,
         });
 
         setMembers(membersData.map((m: any) => ({
@@ -175,6 +178,37 @@ const GroupDashboard = () => {
     return memberPayouts.length > 0 ? "Paid" : "Pending";
   };
 
+  // Check if group is complete (all members have received at least one payout)
+  const isGroupComplete = members.length > 0 && members.every(member => 
+    payouts.some(p => p.memberId === member.id)
+  );
+
+  const handleArchiveGroup = async () => {
+    try {
+      const { error } = await supabase
+        .from('groups')
+        .update({ archived: true })
+        .eq('id', groupData.id);
+
+      if (error) throw error;
+
+      toast({
+        title: "Group Archived",
+        description: "This Ajor has been moved to your archived groups",
+      });
+
+      setShowArchiveModal(false);
+      navigate("/dashboard");
+    } catch (error: any) {
+      console.error('Error archiving group:', error);
+      toast({
+        title: "Error",
+        description: "Failed to archive group. Please try again.",
+        variant: "destructive",
+      });
+    }
+  };
+
   return (
     <div className="min-h-screen bg-gradient-to-b from-background to-secondary/30">
       <AppNavigation 
@@ -185,12 +219,32 @@ const GroupDashboard = () => {
       <div className="container max-w-6xl mx-auto px-4 py-8">
         <div className="flex flex-col sm:flex-row items-start sm:items-center justify-between gap-4 mb-8">
           <div className="flex-1">
-            <h1 className="text-2xl sm:text-3xl md:text-4xl font-bold">{groupData.groupName || "Your Ajor Group"}</h1>
+            <div className="flex items-center gap-3 mb-1">
+              <h1 className="text-2xl sm:text-3xl md:text-4xl font-bold">{groupData.groupName || "Your Ajor Group"}</h1>
+              {groupData.archived && (
+                <Badge variant="outline" className="bg-muted">
+                  Archived
+                </Badge>
+              )}
+            </div>
             <p className="text-muted-foreground mt-1 text-sm sm:text-base">{groupData.description}</p>
           </div>
-          <Button variant="outline" size="icon" className="shrink-0">
-            <Settings className="h-5 w-5" />
-          </Button>
+          <div className="flex items-center gap-2">
+            {isHost && isGroupComplete && !groupData.archived && (
+              <Button 
+                variant="outline" 
+                size="sm"
+                onClick={() => setShowArchiveModal(true)}
+                className="text-accent border-accent/30 hover:bg-accent/10"
+              >
+                <Archive className="h-4 w-4 mr-2" />
+                Archive
+              </Button>
+            )}
+            <Button variant="outline" size="icon" className="shrink-0">
+              <Settings className="h-5 w-5" />
+            </Button>
+          </div>
         </div>
 
         {/* Summary Cards */}
@@ -250,6 +304,13 @@ const GroupDashboard = () => {
               <div className="flex-1">
                 <CardTitle className="text-lg sm:text-xl">Payout Tracking</CardTitle>
                 <CardDescription className="text-sm">Monitor payout completion and rotation progress</CardDescription>
+                {isGroupComplete && !groupData.archived && isHost && (
+                  <div className="mt-3 p-3 bg-green-50 dark:bg-green-950 rounded-lg border border-green-200 dark:border-green-800">
+                    <p className="text-sm text-green-900 dark:text-green-100">
+                      All members have received their payout! You can now archive this group.
+                    </p>
+                  </div>
+                )}
               </div>
               <div className="flex gap-2 w-full sm:w-auto">
                 <Button 
@@ -260,7 +321,7 @@ const GroupDashboard = () => {
                 >
                   View Ledger
                 </Button>
-                {isHost && (
+                {isHost && !groupData.archived && (
                   <Button 
                     onClick={() => navigate("/payout-management")} 
                     size="sm" 
@@ -321,7 +382,7 @@ const GroupDashboard = () => {
                 <CardTitle className="text-lg sm:text-xl">Contribution Tracking</CardTitle>
                 <CardDescription className="text-sm">Track all member contributions for this cycle</CardDescription>
               </div>
-              {isHost && (
+              {isHost && !groupData.archived && (
                 <Button onClick={() => navigate("/record-contribution")} size="sm" className="w-full sm:w-auto">
                   <Plus className="mr-2 h-4 w-4" />
                   Record Contribution
@@ -504,6 +565,13 @@ const GroupDashboard = () => {
           </CardContent>
         </Card>
       </div>
+      
+      <ArchiveGroupModal
+        open={showArchiveModal}
+        onOpenChange={setShowArchiveModal}
+        groupName={groupData.groupName || ""}
+        onConfirm={handleArchiveGroup}
+      />
     </div>
   );
 };

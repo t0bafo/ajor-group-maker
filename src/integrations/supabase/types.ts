@@ -70,6 +70,7 @@ export type Database = {
       }
       groups: {
         Row: {
+          archived: boolean
           contribution_amount: number
           created_at: string | null
           description: string | null
@@ -84,6 +85,7 @@ export type Database = {
           updated_at: string | null
         }
         Insert: {
+          archived?: boolean
           contribution_amount: number
           created_at?: string | null
           description?: string | null
@@ -98,6 +100,7 @@ export type Database = {
           updated_at?: string | null
         }
         Update: {
+          archived?: boolean
           contribution_amount?: number
           created_at?: string | null
           description?: string | null

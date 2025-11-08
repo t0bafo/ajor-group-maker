@@ -19,6 +19,7 @@ const Dashboard = () => {
   const [userGroups, setUserGroups] = useState<any[]>([]);
   const [inviteModalOpen, setInviteModalOpen] = useState(false);
   const [selectedGroup, setSelectedGroup] = useState<{ name: string; code: string } | null>(null);
+  const [showArchived, setShowArchived] = useState(false);
 
   useEffect(() => {
     // Check authentication and load user-specific data
@@ -57,7 +58,7 @@ const Dashboard = () => {
 
   const loadUserGroups = async (userId: string) => {
     try {
-      // Get groups where user is host
+      // Get groups where user is host (including archived status)
       const { data: hostedGroups, error: hostError } = await supabase
         .from('groups')
         .select('*')
@@ -65,7 +66,7 @@ const Dashboard = () => {
 
       if (hostError) throw hostError;
 
-      // Get groups where user is a member
+      // Get groups where user is a member (including archived status)
       const { data: memberGroups, error: memberError } = await supabase
         .from('members')
         .select('group_id, groups(*)')
@@ -124,6 +125,7 @@ const Dashboard = () => {
               day: "numeric" 
             }),
             inviteCode: group.invite_code,
+            archived: group.archived || false,
           };
         }));
 
@@ -148,6 +150,10 @@ const Dashboard = () => {
     setInviteModalOpen(true);
   };
 
+  // Filter groups based on archived status
+  const filteredGroups = userGroups.filter(group => 
+    showArchived ? group.archived : !group.archived
+  );
 
   if (isLoading) {
     return (
@@ -182,7 +188,7 @@ const Dashboard = () => {
             </p>
           </div>
 
-          {/* Active Groups or Empty State */}
+          {/* Active/Archived Groups or Empty State */}
           {userGroups.length > 0 ? (
             <>
               {/* Summary Metrics */}
@@ -229,14 +235,41 @@ const Dashboard = () => {
               {/* Groups List */}
               <div>
                 <div className="flex flex-col sm:flex-row items-start sm:items-center justify-between gap-3 mb-4">
-                  <h2 className="text-xl sm:text-2xl font-semibold">Your Ajors</h2>
-                  <Button onClick={() => navigate("/group-setup")} size="sm" className="w-full sm:w-auto">
-                    <UserPlus className="mr-2 h-4 w-4" />
-                    Create New
-                  </Button>
+                  <div className="flex items-center gap-3 flex-wrap">
+                    <h2 className="text-xl sm:text-2xl font-semibold">
+                      {showArchived ? "Archived Ajors" : "Your Ajors"}
+                    </h2>
+                    <Button 
+                      variant="outline" 
+                      size="sm"
+                      onClick={() => setShowArchived(!showArchived)}
+                    >
+                      {showArchived ? "Show Active" : "Show Archived"}
+                      {!showArchived && userGroups.filter(g => g.archived).length > 0 && (
+                        <Badge variant="secondary" className="ml-2">
+                          {userGroups.filter(g => g.archived).length}
+                        </Badge>
+                      )}
+                    </Button>
+                  </div>
+                  {!showArchived && (
+                    <Button onClick={() => navigate("/group-setup")} size="sm" className="w-full sm:w-auto">
+                      <UserPlus className="mr-2 h-4 w-4" />
+                      Create New
+                    </Button>
+                  )}
                 </div>
                 <div className="grid gap-4">
-                  {userGroups.map((group) => (
+                  {filteredGroups.length === 0 ? (
+                    <Card className="p-8 text-center">
+                      <p className="text-muted-foreground">
+                        {showArchived 
+                          ? "No archived groups yet" 
+                          : "No active groups"}
+                      </p>
+                    </Card>
+                  ) : (
+                    filteredGroups.map((group) => (
                     <Card 
                       key={group.id}
                       className="hover:shadow-[var(--shadow-medium)] transition-all cursor-pointer border-gold/10"
@@ -251,21 +284,30 @@ const Dashboard = () => {
                           <div className="flex-1">
                             <div className="flex flex-wrap items-center gap-2 sm:gap-3 mb-2">
                               <CardTitle className="text-lg sm:text-xl">{group.groupName}</CardTitle>
-                              <Badge variant={group.status === "Active" ? "default" : "secondary"} className={group.status === "Active" ? "bg-emerald/20 text-emerald" : ""}>
-                                {group.status}
-                              </Badge>
+                              {group.archived && (
+                                <Badge variant="outline" className="bg-muted">
+                                  Archived
+                                </Badge>
+                              )}
+                              {!group.archived && (
+                                <Badge variant={group.status === "Active" ? "default" : "secondary"} className={group.status === "Active" ? "bg-emerald/20 text-emerald" : ""}>
+                                  {group.status}
+                                </Badge>
+                              )}
                             </div>
                             <CardDescription className="text-sm">{group.description}</CardDescription>
                           </div>
-                          <Button
-                            variant="outline"
-                            size="sm"
-                            className="border-gold/20 hover:bg-gold/10 w-full sm:w-auto"
-                            onClick={(e) => handleInviteMembers(group.groupName, group.inviteCode, e)}
-                          >
-                            <UserPlus className="h-4 w-4 mr-2" />
-                            Invite
-                          </Button>
+                          {!group.archived && (
+                            <Button
+                              variant="outline"
+                              size="sm"
+                              className="border-gold/20 hover:bg-gold/10 w-full sm:w-auto"
+                              onClick={(e) => handleInviteMembers(group.groupName, group.inviteCode, e)}
+                            >
+                              <UserPlus className="h-4 w-4 mr-2" />
+                              Invite
+                            </Button>
+                          )}
                         </div>
                       </CardHeader>
                       <CardContent className="space-y-4">
@@ -308,7 +350,8 @@ const Dashboard = () => {
                         </div>
                       </CardContent>
                     </Card>
-                  ))}
+                    ))
+                  )}
                 </div>
               </div>
             </>

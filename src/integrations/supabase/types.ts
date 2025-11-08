@@ -202,6 +202,27 @@ export type Database = {
           },
         ]
       }
+      rate_limit: {
+        Row: {
+          created_at: string | null
+          endpoint: string
+          id: string
+          ip_address: string
+        }
+        Insert: {
+          created_at?: string | null
+          endpoint: string
+          id?: string
+          ip_address: string
+        }
+        Update: {
+          created_at?: string | null
+          endpoint?: string
+          id?: string
+          ip_address?: string
+        }
+        Relationships: []
+      }
     }
     Views: {
       [_ in never]: never

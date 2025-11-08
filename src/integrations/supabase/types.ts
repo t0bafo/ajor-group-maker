@@ -81,6 +81,7 @@ export type Database = {
           invite_code: string
           number_of_members: number
           rotation_order: string
+          start_date: string | null
           status: string
           updated_at: string | null
         }
@@ -96,6 +97,7 @@ export type Database = {
           invite_code: string
           number_of_members: number
           rotation_order: string
+          start_date?: string | null
           status?: string
           updated_at?: string | null
         }
@@ -111,6 +113,7 @@ export type Database = {
           invite_code?: string
           number_of_members?: number
           rotation_order?: string
+          start_date?: string | null
           status?: string
           updated_at?: string | null
         }

@@ -5,9 +5,10 @@ import { Card, CardContent, CardDescription, CardHeader, CardTitle } from "@/com
 import { Badge } from "@/components/ui/badge";
 import { Progress } from "@/components/ui/progress";
 import { Table, TableBody, TableCell, TableHead, TableHeader, TableRow } from "@/components/ui/table";
-import { Calendar, DollarSign, Users, Settings, UserPlus, Plus, TrendingUp, Archive, Crown } from "lucide-react";
+import { Calendar, DollarSign, Users, Settings, UserPlus, Plus, TrendingUp, Archive, Crown, Play } from "lucide-react";
 import AppNavigation from "@/components/AppNavigation";
 import ArchiveGroupModal from "@/components/ArchiveGroupModal";
+import StartAjorModal from "@/components/StartAjorModal";
 import { GroupDashboardSkeleton } from "@/components/SkeletonLoader";
 import { supabase } from "@/integrations/supabase/client";
 import { useToast } from "@/hooks/use-toast";
@@ -22,6 +23,8 @@ const GroupDashboard = () => {
   const [user, setUser] = useState<any>(null);
   const [isHost, setIsHost] = useState(false);
   const [showArchiveModal, setShowArchiveModal] = useState(false);
+  const [showStartModal, setShowStartModal] = useState(false);
+  const [startingAjor, setStartingAjor] = useState(false);
   const [loading, setLoading] = useState(true);
 
   useEffect(() => {
@@ -100,6 +103,7 @@ const GroupDashboard = () => {
           inviteCode: group.invite_code,
           hostId: group.host_id,
           archived: group.archived || false,
+          start_date: group.start_date,
         });
 
         setMembers(membersData.map((m: any) => ({
@@ -187,6 +191,44 @@ const GroupDashboard = () => {
     payouts.some(p => p.memberId === member.id)
   );
 
+  const handleStartAjor = async (adjustedMemberCount: number) => {
+    setStartingAjor(true);
+    try {
+      const { error } = await supabase
+        .from('groups')
+        .update({ 
+          start_date: new Date().toISOString(),
+          number_of_members: adjustedMemberCount 
+        })
+        .eq('id', groupData.id);
+
+      if (error) throw error;
+
+      toast({
+        title: "Ajor Started!",
+        description: `${groupData.groupName} has been officially started. Payout calculations will begin from today.`,
+      });
+
+      setShowStartModal(false);
+      
+      // Update local state
+      setGroupData({
+        ...groupData,
+        start_date: new Date().toISOString(),
+        numberOfMembers: adjustedMemberCount,
+      });
+    } catch (error: any) {
+      console.error('Error starting Ajor:', error);
+      toast({
+        title: "Error",
+        description: error.message || "Failed to start Ajor",
+        variant: "destructive",
+      });
+    } finally {
+      setStartingAjor(false);
+    }
+  };
+
   const handleArchiveGroup = async () => {
     try {
       const { error } = await supabase
@@ -258,16 +300,30 @@ const GroupDashboard = () => {
             <p className="text-muted-foreground mt-1 text-sm sm:text-base">{groupData.description}</p>
           </div>
           <div className="flex items-center gap-2">
-            {isHost && isGroupComplete && !groupData.archived && (
-              <Button 
-                variant="outline" 
-                size="sm"
-                onClick={() => setShowArchiveModal(true)}
-                className="text-accent border-accent/30 hover:bg-accent/10"
-              >
-                <Archive className="h-4 w-4 mr-2" />
-                Archive
-              </Button>
+            {isHost && !groupData.archived && (
+              <>
+                {!groupData.start_date && (
+                  <Button 
+                    size="sm"
+                    onClick={() => setShowStartModal(true)}
+                    className="hover:shadow-lg transition-all"
+                  >
+                    <Play className="h-4 w-4 mr-2" />
+                    Start Ajor
+                  </Button>
+                )}
+                {isGroupComplete && groupData.start_date && (
+                  <Button 
+                    variant="outline" 
+                    size="sm"
+                    onClick={() => setShowArchiveModal(true)}
+                    className="text-accent border-accent/30 hover:bg-accent/10"
+                  >
+                    <Archive className="h-4 w-4 mr-2" />
+                    Archive
+                  </Button>
+                )}
+              </>
             )}
             <Button variant="outline" size="icon" className="shrink-0">
               <Settings className="h-5 w-5" />
@@ -593,6 +649,16 @@ const GroupDashboard = () => {
           </CardContent>
         </Card>
       </div>
+      
+      <StartAjorModal
+        open={showStartModal}
+        onOpenChange={setShowStartModal}
+        groupName={groupData.groupName || ""}
+        currentMemberCount={members.length}
+        plannedMemberCount={groupData.numberOfMembers || 0}
+        onConfirm={handleStartAjor}
+        loading={startingAjor}
+      />
       
       <ArchiveGroupModal
         open={showArchiveModal}

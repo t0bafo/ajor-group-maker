@@ -2,6 +2,7 @@ import { Link } from "react-router-dom";
 import { Button } from "@/components/ui/button";
 import { Users, TrendingUp, Shield, ArrowRight, UserPlus, DollarSign, Repeat } from "lucide-react";
 import heroImage from "@/assets/hero-ajor-community.jpg";
+import logoImage from "@/assets/ajor-logo.png";
 
 const Index = () => {
   return (
@@ -175,10 +176,13 @@ const Index = () => {
       <footer className="bg-card border-t border-border/50">
         <div className="container mx-auto px-4 py-12">
           <div className="flex flex-col md:flex-row justify-between items-center gap-6">
-            <div className="text-center md:text-left space-y-2">
-              <h3 className="text-2xl font-bold bg-gradient-to-r from-primary via-cta to-accent bg-clip-text text-transparent">
-                Ajor
-              </h3>
+            <div className="text-center md:text-left space-y-3">
+              <div className="flex items-center gap-3 justify-center md:justify-start">
+                <img src={logoImage} alt="Ajor Logo" className="w-12 h-12" />
+                <h3 className="text-2xl font-bold bg-gradient-to-r from-primary via-cta to-accent bg-clip-text text-transparent">
+                  Ajor
+                </h3>
+              </div>
               <p className="text-muted-foreground">
                 Save together. Grow together.
               </p>

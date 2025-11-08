@@ -11,6 +11,7 @@ import { Avatar, AvatarFallback } from "@/components/ui/avatar";
 import { Home, UserPlus, Users, User, Settings, LogOut } from "lucide-react";
 import { useToast } from "@/hooks/use-toast";
 import { supabase } from "@/integrations/supabase/client";
+import logoImage from "@/assets/ajor-logo.png";
 
 interface AppNavigationProps {
   userEmail?: string;
@@ -55,9 +56,7 @@ const AppNavigation = ({ userEmail, userName }: AppNavigationProps) => {
           onClick={() => navigate("/dashboard")}
           className="flex items-center gap-2 hover:opacity-80 transition-opacity"
         >
-          <div className="w-8 h-8 rounded-lg bg-gradient-to-br from-primary to-accent flex items-center justify-center">
-            <span className="text-primary-foreground font-bold text-lg">A</span>
-          </div>
+          <img src={logoImage} alt="Ajor" className="w-8 h-8" />
           <span className="text-lg sm:text-xl font-bold bg-gradient-to-r from-primary to-accent bg-clip-text text-transparent">
             Ajor
           </span>

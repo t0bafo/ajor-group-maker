@@ -13,12 +13,76 @@ const inviteCodeSchema = z.string()
   .length(9, { message: "Invite code must be 9 characters" })
   .regex(/^[a-z0-9]+$/, { message: "Invalid code format" });
 
+// Rate limiting function
+const checkRateLimit = async (supabase: any, ipAddress: string): Promise<boolean> => {
+  const tenMinutesAgo = new Date(Date.now() - 10 * 60 * 1000);
+  
+  // Count recent attempts
+  const { count, error: countError } = await supabase
+    .from('rate_limit')
+    .select('*', { count: 'exact', head: true })
+    .eq('ip_address', ipAddress)
+    .eq('endpoint', 'validate-invite')
+    .gte('created_at', tenMinutesAgo.toISOString());
+  
+  if (countError) {
+    console.error('Rate limit check error:', countError);
+    // On error, fail open (allow request) to avoid blocking legitimate users
+    return true;
+  }
+  
+  if (count && count >= 10) {
+    console.warn(`Rate limit exceeded for IP: ${ipAddress}`);
+    return false;
+  }
+  
+  // Log this attempt
+  const { error: insertError } = await supabase
+    .from('rate_limit')
+    .insert({
+      ip_address: ipAddress,
+      endpoint: 'validate-invite',
+    });
+  
+  if (insertError) {
+    console.error('Rate limit logging error:', insertError);
+  }
+  
+  return true;
+};
+
 serve(async (req) => {
   if (req.method === "OPTIONS") {
     return new Response(null, { headers: corsHeaders });
   }
 
   try {
+    // Extract IP address from headers
+    const ipAddress = req.headers.get('x-forwarded-for')?.split(',')[0]?.trim() || 
+                      req.headers.get('x-real-ip') || 
+                      'unknown';
+
+    // Create Supabase client with service role to bypass RLS
+    const supabaseAdmin = createClient(
+      Deno.env.get("SUPABASE_URL") ?? "",
+      Deno.env.get("SUPABASE_SERVICE_ROLE_KEY") ?? ""
+    );
+
+    // Check rate limit
+    const allowed = await checkRateLimit(supabaseAdmin, ipAddress);
+    if (!allowed) {
+      console.warn(`Rate limit blocked request from IP: ${ipAddress}`);
+      return new Response(
+        JSON.stringify({ 
+          error: "Too many attempts. Please try again in 10 minutes." 
+        }),
+        { 
+          status: 429, 
+          headers: { ...corsHeaders, "Content-Type": "application/json" } 
+        }
+      );
+    }
+
     const { inviteCode } = await req.json();
 
     // Validate invite code format
@@ -30,12 +94,6 @@ serve(async (req) => {
         { status: 400, headers: { ...corsHeaders, "Content-Type": "application/json" } }
       );
     }
-
-    // Create Supabase client with service role to bypass RLS
-    const supabaseAdmin = createClient(
-      Deno.env.get("SUPABASE_URL") ?? "",
-      Deno.env.get("SUPABASE_SERVICE_ROLE_KEY") ?? ""
-    );
 
     // Look up group by invite code
     const { data: group, error: groupError } = await supabaseAdmin
@@ -83,6 +141,7 @@ serve(async (req) => {
       { status: 200, headers: { ...corsHeaders, "Content-Type": "application/json" } }
     );
   } catch (error) {
+    console.error('Error in validate-invite:', error);
     return new Response(
       JSON.stringify({ error: "Failed to validate invite code" }),
       { status: 500, headers: { ...corsHeaders, "Content-Type": "application/json" } }

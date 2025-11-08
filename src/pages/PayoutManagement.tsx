@@ -87,10 +87,12 @@ const PayoutManagement = () => {
         const totalPayouts = payoutsData?.length || 0;
         setCurrentCycle(totalPayouts + 1);
       } catch (error: any) {
-        console.error('Error loading data:', error);
+        if (import.meta.env.DEV) {
+          console.error('Error loading data:', error);
+        }
         toast({
           title: "Error",
-          description: error.message || "Failed to load data",
+          description: "Failed to load data. Please try again.",
           variant: "destructive",
         });
         navigate("/dashboard");
@@ -189,10 +191,12 @@ const PayoutManagement = () => {
         });
       }
     } catch (error: any) {
-      console.error('Error recording payout:', error);
+      if (import.meta.env.DEV) {
+        console.error('Error recording payout:', error);
+      }
       toast({
         title: "Error",
-        description: error.message || "Failed to record payout",
+        description: "Failed to record payout. Please try again.",
         variant: "destructive",
       });
     }

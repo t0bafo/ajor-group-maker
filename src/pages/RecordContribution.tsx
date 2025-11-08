@@ -87,10 +87,12 @@ const RecordContribution = () => {
         setMembers(membersData || []);
         setAmount(group.contribution_amount.toString());
       } catch (error: any) {
-        console.error('Error loading data:', error);
+        if (import.meta.env.DEV) {
+          console.error('Error loading data:', error);
+        }
         toast({
           title: "Error Loading Data",
-          description: error.message || "Failed to load group data",
+          description: "Failed to load group data. Please try again.",
           variant: "destructive",
         });
       } finally {
@@ -240,10 +242,12 @@ const RecordContribution = () => {
         navigate("/group-dashboard");
       }, 1000);
     } catch (error: any) {
-      console.error('Error recording contribution:', error);
+      if (import.meta.env.DEV) {
+        console.error('Error recording contribution:', error);
+      }
       toast({
         title: "Error Recording Contribution",
-        description: error.message || "Failed to record contribution",
+        description: "Failed to record contribution. Please try again.",
         variant: "destructive",
       });
       setShowConfirmation(false);

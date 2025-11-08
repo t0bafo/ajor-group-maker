@@ -69,10 +69,12 @@ const JoinGroup = () => {
         description: `You're invited to join ${data.groupName}`,
       });
     } catch (error: any) {
-      console.error('Error verifying code:', error);
+      if (import.meta.env.DEV) {
+        console.error('Error verifying code:', error);
+      }
       toast({
         title: "Error",
-        description: "Failed to verify invite code",
+        description: "Failed to verify invite code. Please try again.",
         variant: "destructive",
       });
     }

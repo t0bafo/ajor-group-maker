@@ -136,10 +136,12 @@ const GroupSetup = () => {
         navigate("/invite-members");
       }, 1200);
     } catch (error: any) {
-      console.error('Error creating group:', error);
+      if (import.meta.env.DEV) {
+        console.error('Error creating group:', error);
+      }
       toast({
         title: "Error Creating Group",
-        description: error.message || "Failed to create group",
+        description: "Failed to create group. Please try again.",
         variant: "destructive",
       });
     }

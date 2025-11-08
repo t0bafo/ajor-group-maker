@@ -233,7 +233,7 @@ const RecordContribution = () => {
       setShowConfirmation(false);
       
       toast({
-        title: "✅ Contribution Recorded!",
+        title: "Contribution Recorded!",
         description: `Contribution of $${amount} for ${selectedMember?.name} has been successfully logged.`,
       });
       

@@ -20,7 +20,7 @@ interface ConfirmationModalProps {
 const ConfirmationModal = ({ open, onOpenChange, groupData, members }: ConfirmationModalProps) => {
   const handleConfirm = () => {
     toast({
-      title: "Your Ajor has been created! 🎉",
+      title: "Your Ajor has been created!",
       description: "Start inviting members and building your savings community",
     });
     onOpenChange(false);

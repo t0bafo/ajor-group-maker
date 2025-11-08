@@ -286,7 +286,7 @@ const GroupDashboard = () => {
             {latestPayout ? (
               <div className="p-4 bg-green-50 dark:bg-green-950 rounded-lg border border-green-200 dark:border-green-800">
                 <p className="text-sm font-semibold text-green-900 dark:text-green-100">
-                  ✅ Latest: Cycle {latestCompletedCycle}
+                  Latest: Cycle {latestCompletedCycle}
                   {latestPayout && 
                     ` - ${members.find(m => m.id === latestPayout.memberId)?.name} received $${totalAmount.toFixed(0)}`
                   }

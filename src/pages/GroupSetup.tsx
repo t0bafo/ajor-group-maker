@@ -127,7 +127,7 @@ const GroupSetup = () => {
       celebrationConfetti();
       
       toast({
-        title: "🎉 Your Ajor is Ready!",
+        title: "Your Ajor is Ready!",
         description: "Time to invite your trusted circle",
       });
 

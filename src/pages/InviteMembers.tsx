@@ -167,7 +167,7 @@ const InviteMembers = () => {
     if (!groupData?.inviteCode) return;
     navigator.clipboard.writeText(groupData.inviteCode);
     toast({
-      title: "✅ Code copied",
+      title: "Code copied",
       description: "Share it with your circle.",
     });
   };
@@ -203,7 +203,7 @@ const InviteMembers = () => {
             <Sparkles className="h-5 w-5 sm:h-6 sm:w-6 text-primary absolute -top-1 -right-1 animate-pulse" />
           </div>
           <h1 className="text-3xl sm:text-4xl md:text-5xl font-bold mb-3 bg-gradient-to-r from-primary via-accent to-primary bg-clip-text text-transparent px-4">
-            Your Ajor is Ready! 🎉
+            Your Ajor is Ready!
           </h1>
           <p className="text-muted-foreground text-base sm:text-lg max-w-2xl mx-auto px-4">
             Share your link or code so your trusted circle can join and start saving with you.

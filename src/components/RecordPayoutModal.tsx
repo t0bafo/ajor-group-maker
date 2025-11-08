@@ -35,7 +35,7 @@ const RecordPayoutModal = ({
     onOpenChange(false);
     
     toast({
-      title: "✅ Payout Recorded!",
+      title: "Payout Recorded!",
       description: `${member.name} has received their payout of $${amount.toFixed(2)}.`,
     });
   };

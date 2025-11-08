@@ -80,7 +80,7 @@ const MemberDashboard = () => {
               <CheckCircle className="h-6 w-6 text-primary-foreground" />
             </div>
             <div className="flex-1">
-              <h2 className="text-lg sm:text-xl font-semibold mb-2">Welcome to the group! 🎉</h2>
+              <h2 className="text-lg sm:text-xl font-semibold mb-2">Welcome to the group!</h2>
               <p className="text-muted-foreground text-sm sm:text-base">
                 Your first contribution of ${groupData.contributionAmount} is due on{" "}
                 <span className="font-semibold text-foreground">

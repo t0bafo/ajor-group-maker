@@ -21,7 +21,7 @@ const InviteMembersModal = ({ open, onOpenChange, groupName, inviteCode }: Invit
     navigator.clipboard.writeText(inviteLink);
     setCopied(true);
     toast({
-      title: "✅ Link copied",
+      title: "Link copied",
       description: "Send it to your group.",
     });
     setTimeout(() => setCopied(false), 2000);
@@ -30,7 +30,7 @@ const InviteMembersModal = ({ open, onOpenChange, groupName, inviteCode }: Invit
   const handleCopyCode = () => {
     navigator.clipboard.writeText(inviteCode);
     toast({
-      title: "✅ Code copied",
+      title: "Code copied",
       description: "Share it with your circle.",
     });
   };

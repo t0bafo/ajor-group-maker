@@ -181,7 +181,7 @@ const PayoutManagement = () => {
       // Check if rotation is complete (all members paid once)
       if (updatedPayouts.length % members.length === 0) {
         toast({
-          title: "Rotation Complete! 🎉",
+          title: "Rotation Complete!",
           description: `All ${members.length} members have received a payout. Starting new rotation.`,
         });
       } else {

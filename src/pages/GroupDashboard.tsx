@@ -8,6 +8,7 @@ import { Table, TableBody, TableCell, TableHead, TableHeader, TableRow } from "@
 import { Calendar, DollarSign, Users, Settings, UserPlus, Plus, TrendingUp, Archive } from "lucide-react";
 import AppNavigation from "@/components/AppNavigation";
 import ArchiveGroupModal from "@/components/ArchiveGroupModal";
+import { GroupDashboardSkeleton } from "@/components/SkeletonLoader";
 import { supabase } from "@/integrations/supabase/client";
 import { useToast } from "@/hooks/use-toast";
 
@@ -21,6 +22,7 @@ const GroupDashboard = () => {
   const [user, setUser] = useState<any>(null);
   const [isHost, setIsHost] = useState(false);
   const [showArchiveModal, setShowArchiveModal] = useState(false);
+  const [loading, setLoading] = useState(true);
 
   useEffect(() => {
     // Get current user
@@ -136,6 +138,8 @@ const GroupDashboard = () => {
           description: error.message || "Failed to load group data",
           variant: "destructive",
         });
+      } finally {
+        setLoading(false);
       }
     };
 
@@ -209,6 +213,20 @@ const GroupDashboard = () => {
     }
   };
 
+  if (loading) {
+    return (
+      <div className="min-h-screen bg-gradient-to-b from-background to-secondary/30">
+        <AppNavigation 
+          userEmail={user?.email} 
+          userName={user?.user_metadata?.full_name}
+        />
+        <div className="container max-w-6xl mx-auto px-4 py-8">
+          <GroupDashboardSkeleton />
+        </div>
+      </div>
+    );
+  }
+
   return (
     <div className="min-h-screen bg-gradient-to-b from-background to-secondary/30">
       <AppNavigation 
@@ -216,7 +234,7 @@ const GroupDashboard = () => {
         userName={user?.user_metadata?.full_name}
       />
       
-      <div className="container max-w-6xl mx-auto px-4 py-8">
+      <div className="container max-w-6xl mx-auto px-4 py-8 animate-fade-in">
         <div className="flex flex-col sm:flex-row items-start sm:items-center justify-between gap-4 mb-8">
           <div className="flex-1">
             <div className="flex items-center gap-3 mb-1">
@@ -249,7 +267,7 @@ const GroupDashboard = () => {
 
         {/* Summary Cards */}
         <div className="grid grid-cols-1 sm:grid-cols-2 md:grid-cols-3 gap-4 md:gap-6 mb-8">
-          <Card className="shadow-[var(--shadow-soft)]">
+          <Card className="shadow-[var(--shadow-soft)] hover:shadow-[var(--shadow-medium)] transition-all duration-300 hover:-translate-y-1 group">
             <CardHeader className="flex flex-row items-center justify-between pb-2">
               <CardTitle className="text-sm font-medium text-muted-foreground">
                 Contribution Amount
@@ -264,12 +282,12 @@ const GroupDashboard = () => {
             </CardContent>
           </Card>
 
-          <Card className="shadow-[var(--shadow-soft)]">
+          <Card className="shadow-[var(--shadow-soft)] hover:shadow-[var(--shadow-medium)] transition-all duration-300 hover:-translate-y-1 group">
             <CardHeader className="flex flex-row items-center justify-between pb-2">
               <CardTitle className="text-sm font-medium text-muted-foreground">
                 Payout Progress
               </CardTitle>
-              <TrendingUp className="h-5 w-5 text-accent" />
+              <TrendingUp className="h-5 w-5 text-accent group-hover:scale-110 transition-transform" />
             </CardHeader>
             <CardContent>
               <div className="text-3xl font-bold">{totalPayouts}</div>
@@ -279,12 +297,12 @@ const GroupDashboard = () => {
             </CardContent>
           </Card>
 
-          <Card className="shadow-[var(--shadow-soft)]">
+          <Card className="shadow-[var(--shadow-soft)] hover:shadow-[var(--shadow-medium)] transition-all duration-300 hover:-translate-y-1 group">
             <CardHeader className="flex flex-row items-center justify-between pb-2">
               <CardTitle className="text-sm font-medium text-muted-foreground">
                 Members
               </CardTitle>
-              <Users className="h-5 w-5 text-primary" />
+              <Users className="h-5 w-5 text-primary group-hover:scale-110 transition-transform" />
             </CardHeader>
             <CardContent>
               <div className="text-3xl font-bold">

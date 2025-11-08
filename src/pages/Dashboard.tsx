@@ -10,6 +10,7 @@ import { useToast } from "@/hooks/use-toast";
 import AppNavigation from "@/components/AppNavigation";
 import InviteMembersModal from "@/components/InviteMembersModal";
 import EmptyState from "@/components/EmptyState";
+import { DashboardSkeleton } from "@/components/SkeletonLoader";
 
 const Dashboard = () => {
   const navigate = useNavigate();
@@ -157,11 +158,13 @@ const Dashboard = () => {
 
   if (isLoading) {
     return (
-      <div className="min-h-screen bg-gradient-to-b from-background to-secondary/30 flex items-center justify-center">
-        <div className="text-center">
-          <div className="animate-spin rounded-full h-12 w-12 border-b-2 border-primary mx-auto"></div>
-          <p className="mt-4 text-muted-foreground">Loading...</p>
-        </div>
+      <div className="min-h-screen bg-gradient-to-b from-background via-muted/20 to-background">
+        <AppNavigation userEmail={user?.email} userName={user?.user_metadata?.full_name} />
+        <main className="container mx-auto px-4 py-12 md:py-16">
+          <div className="max-w-6xl mx-auto">
+            <DashboardSkeleton />
+          </div>
+        </main>
       </div>
     );
   }
@@ -272,7 +275,7 @@ const Dashboard = () => {
                     filteredGroups.map((group) => (
                     <Card 
                       key={group.id}
-                      className="hover:shadow-[var(--shadow-medium)] transition-all cursor-pointer border-gold/10"
+                      className="hover:shadow-[var(--shadow-large)] hover:-translate-y-1 transition-all duration-300 cursor-pointer border-gold/10 animate-fade-in group"
                       onClick={() => {
                         // Store current group ID for the group dashboard
                         sessionStorage.setItem("currentGroupId", group.id);

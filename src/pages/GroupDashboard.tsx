@@ -18,6 +18,7 @@ const GroupDashboard = () => {
   const [contributions, setContributions] = useState<any[]>([]);
   const [payouts, setPayouts] = useState<any[]>([]);
   const [user, setUser] = useState<any>(null);
+  const [isHost, setIsHost] = useState(false);
 
   useEffect(() => {
     // Get current user
@@ -78,6 +79,11 @@ const GroupDashboard = () => {
 
         if (payoutsError) throw payoutsError;
 
+        // Check if current user is the host
+        const { data: { user: currentUser } } = await supabase.auth.getUser();
+        const userIsHost = currentUser && group.host_id === currentUser.id;
+        setIsHost(userIsHost);
+
         // Format data for display
         setGroupData({
           id: group.id,
@@ -88,6 +94,7 @@ const GroupDashboard = () => {
           numberOfMembers: group.number_of_members,
           rotationOrder: group.rotation_order,
           inviteCode: group.invite_code,
+          hostId: group.host_id,
         });
 
         setMembers(membersData.map((m: any) => ({
@@ -244,9 +251,25 @@ const GroupDashboard = () => {
                 <CardTitle className="text-lg sm:text-xl">Payout Tracking</CardTitle>
                 <CardDescription className="text-sm">Monitor payout completion and rotation progress</CardDescription>
               </div>
-              <Button onClick={() => navigate("/payout-management")} size="sm" className="w-full sm:w-auto">
-                Manage Payouts
-              </Button>
+              <div className="flex gap-2 w-full sm:w-auto">
+                <Button 
+                  onClick={() => navigate("/group-ledger")} 
+                  variant="outline"
+                  size="sm" 
+                  className="flex-1 sm:flex-none"
+                >
+                  View Ledger
+                </Button>
+                {isHost && (
+                  <Button 
+                    onClick={() => navigate("/payout-management")} 
+                    size="sm" 
+                    className="flex-1 sm:flex-none"
+                  >
+                    Manage Payouts
+                  </Button>
+                )}
+              </div>
             </div>
           </CardHeader>
           <CardContent className="space-y-4">
@@ -272,17 +295,20 @@ const GroupDashboard = () => {
             ) : null}
             
             {nextPayoutMember ? (
-              <div className="p-4 bg-accent/10 rounded-lg border border-accent/20">
-                <p className="text-sm text-muted-foreground">
-                  <strong>Next (Cycle {currentCycle}):</strong> {nextPayoutMember.name} to receive ${totalAmount.toFixed(0)}
+              <div className="p-4 bg-gradient-to-r from-primary/10 via-accent/10 to-secondary/20 rounded-lg border border-primary/20">
+                <p className="text-sm">
+                  <strong className="text-foreground">Next Recipient (Cycle {currentCycle}):</strong>
+                  <span className="text-muted-foreground ml-2">{nextPayoutMember.name} will receive ${totalAmount.toFixed(0)}</span>
                 </p>
               </div>
             ) : totalPayouts === 0 ? (
               <div className="text-center py-4 text-muted-foreground">
                 <p className="mb-4">No payouts recorded yet</p>
-                <Button onClick={() => navigate("/payout-management")} variant="outline" size="sm">
-                  Start Recording Payouts
-                </Button>
+                {isHost && (
+                  <Button onClick={() => navigate("/payout-management")} variant="outline" size="sm">
+                    Start Recording Payouts
+                  </Button>
+                )}
               </div>
             ) : null}
           </CardContent>
@@ -292,13 +318,15 @@ const GroupDashboard = () => {
           <CardHeader>
             <div className="flex flex-col sm:flex-row items-start sm:items-center justify-between gap-3">
               <div className="flex-1">
-                <CardTitle className="text-lg sm:text-xl">Contribution Ledger</CardTitle>
+                <CardTitle className="text-lg sm:text-xl">Contribution Tracking</CardTitle>
                 <CardDescription className="text-sm">Track all member contributions for this cycle</CardDescription>
               </div>
-              <Button onClick={() => navigate("/record-contribution")} size="sm" className="w-full sm:w-auto">
-                <Plus className="mr-2 h-4 w-4" />
-                Record Contribution
-              </Button>
+              {isHost && (
+                <Button onClick={() => navigate("/record-contribution")} size="sm" className="w-full sm:w-auto">
+                  <Plus className="mr-2 h-4 w-4" />
+                  Record Contribution
+                </Button>
+              )}
             </div>
           </CardHeader>
           <CardContent className="space-y-4">
@@ -383,10 +411,12 @@ const GroupDashboard = () => {
             ) : (
               <div className="text-center py-8 text-muted-foreground">
                 <p className="mb-4 text-sm sm:text-base">No contributions recorded yet</p>
-                <Button onClick={() => navigate("/record-contribution")} variant="outline" className="w-full sm:w-auto">
-                  <Plus className="mr-2 h-4 w-4" />
-                  Record First Contribution
-                </Button>
+                {isHost && (
+                  <Button onClick={() => navigate("/record-contribution")} variant="outline" className="w-full sm:w-auto">
+                    <Plus className="mr-2 h-4 w-4" />
+                    Record First Contribution
+                  </Button>
+                )}
               </div>
             )}
           </CardContent>

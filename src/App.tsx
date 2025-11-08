@@ -16,6 +16,7 @@ import GroupOverview from "./pages/GroupOverview";
 import MemberDashboard from "./pages/MemberDashboard";
 import RecordContribution from "./pages/RecordContribution";
 import PayoutManagement from "./pages/PayoutManagement";
+import GroupLedger from "./pages/GroupLedger";
 import Privacy from "./pages/Privacy";
 import Terms from "./pages/Terms";
 import NotFound from "./pages/NotFound";
@@ -42,6 +43,7 @@ const App = () => (
           <Route path="/member-dashboard" element={<MemberDashboard />} />
           <Route path="/record-contribution" element={<RecordContribution />} />
           <Route path="/payout-management" element={<PayoutManagement />} />
+          <Route path="/group-ledger" element={<GroupLedger />} />
           <Route path="/privacy" element={<Privacy />} />
           <Route path="/terms" element={<Terms />} />
           {/* ADD ALL CUSTOM ROUTES ABOVE THE CATCH-ALL "*" ROUTE */}

@@ -47,47 +47,28 @@ const GroupDashboard = () => {
       }
 
       try {
-        // Fetch group data
-        const { data: group, error: groupError } = await supabase
-          .from('groups')
-          .select('*')
-          .eq('id', groupId)
-          .single();
+        // Fetch all data in parallel for faster loading
+        const [
+          { data: group, error: groupError },
+          { data: membersData, error: membersError },
+          { data: contributionsData, error: contributionsError },
+          { data: payoutsData, error: payoutsError },
+          { data: { user: currentUser } }
+        ] = await Promise.all([
+          supabase.from('groups').select('*').eq('id', groupId).single(),
+          supabase.from('members').select('*').eq('group_id', groupId).order('position'),
+          supabase.from('contributions').select('*, members(name)').eq('group_id', groupId).order('created_at', { ascending: false }),
+          supabase.from('payouts').select('*').eq('group_id', groupId).order('created_at', { ascending: false }),
+          supabase.auth.getUser()
+        ]);
 
+        // Check for errors
         if (groupError) throw groupError;
-
-        // Fetch members
-        const { data: membersData, error: membersError } = await supabase
-          .from('members')
-          .select('*')
-          .eq('group_id', groupId)
-          .order('position');
-
         if (membersError) throw membersError;
-
-        // Fetch contributions
-        const { data: contributionsData, error: contributionsError } = await supabase
-          .from('contributions')
-          .select(`
-            *,
-            members(name)
-          `)
-          .eq('group_id', groupId)
-          .order('created_at', { ascending: false });
-
         if (contributionsError) throw contributionsError;
-
-        // Fetch payouts
-        const { data: payoutsData, error: payoutsError } = await supabase
-          .from('payouts')
-          .select('*')
-          .eq('group_id', groupId)
-          .order('created_at', { ascending: false });
-
         if (payoutsError) throw payoutsError;
 
         // Check if current user is the host
-        const { data: { user: currentUser } } = await supabase.auth.getUser();
         const userIsHost = currentUser && group.host_id === currentUser.id;
         setIsHost(userIsHost);
 

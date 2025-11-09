@@ -176,9 +176,25 @@ const GroupDashboard = () => {
   // Check if group is locked (has any payouts recorded)
   const isGroupLocked = payouts.length > 0;
 
-  const handleStartAjor = async (adjustedMemberCount: number) => {
+  const handleStartAjor = async (adjustedMemberCount: number, reorderedMembers?: any[]) => {
     setStartingAjor(true);
     try {
+      // Update member positions if reordered
+      if (reorderedMembers && reorderedMembers.length > 0) {
+        const updates = reorderedMembers.map((member, index) => 
+          supabase
+            .from('members')
+            .update({ position: index + 1 })
+            .eq('id', member.id)
+        );
+        
+        const results = await Promise.all(updates);
+        const errors = results.filter(r => r.error);
+        if (errors.length > 0) {
+          throw new Error('Failed to update member positions');
+        }
+      }
+
       const { error } = await supabase
         .from('groups')
         .update({ 
@@ -202,6 +218,25 @@ const GroupDashboard = () => {
         start_date: new Date().toISOString(),
         numberOfMembers: adjustedMemberCount,
       });
+
+      // Reload members if reordered
+      if (reorderedMembers) {
+        const { data: updatedMembers } = await supabase
+          .from('members')
+          .select('*')
+          .eq('group_id', groupData.id)
+          .order('position');
+        
+        if (updatedMembers) {
+          setMembers(updatedMembers.map((m: any) => ({
+            id: m.id,
+            name: m.name,
+            email: m.email,
+            role: m.role,
+            userId: m.user_id,
+          })));
+        }
+      }
     } catch (error: any) {
       console.error('Error starting Ajor:', error);
       toast({
@@ -763,6 +798,7 @@ const GroupDashboard = () => {
         groupName={groupData.groupName || ""}
         currentMemberCount={members.length}
         plannedMemberCount={groupData.numberOfMembers || 0}
+        members={members}
         onConfirm={handleStartAjor}
         loading={startingAjor}
       />

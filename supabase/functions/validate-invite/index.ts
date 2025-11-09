@@ -98,7 +98,7 @@ serve(async (req) => {
     // Look up group by invite code
     const { data: group, error: groupError } = await supabaseAdmin
       .from("groups")
-      .select("id, group_name, description, contribution_amount, frequency, number_of_members, rotation_order, status")
+      .select("id, group_name, description, contribution_amount, frequency, number_of_members, rotation_order, status, start_date")
       .eq("invite_code", validationResult.data)
       .eq("status", "active")
       .single();
@@ -107,6 +107,14 @@ serve(async (req) => {
       return new Response(
         JSON.stringify({ error: "Invalid or expired invite code" }),
         { status: 404, headers: { ...corsHeaders, "Content-Type": "application/json" } }
+      );
+    }
+
+    // Check if group has already started
+    if (group.start_date) {
+      return new Response(
+        JSON.stringify({ error: "This Ajor has already started and is no longer accepting new members" }),
+        { status: 403, headers: { ...corsHeaders, "Content-Type": "application/json" } }
       );
     }
 

@@ -4,8 +4,16 @@ import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
 import { Alert, AlertDescription } from "@/components/ui/alert";
-import { Calendar, Users, AlertCircle } from "lucide-react";
+import { Calendar, Users, AlertCircle, ArrowUpDown } from "lucide-react";
 import { LoadingButton } from "./LoadingButton";
+import ReorderMembersModal from "./ReorderMembersModal";
+
+interface Member {
+  id: string;
+  name: string;
+  email: string;
+  position?: number;
+}
 
 interface StartAjorModalProps {
   open: boolean;
@@ -13,7 +21,8 @@ interface StartAjorModalProps {
   groupName: string;
   currentMemberCount: number;
   plannedMemberCount: number;
-  onConfirm: (adjustedMemberCount: number) => void;
+  members: Member[];
+  onConfirm: (adjustedMemberCount: number, reorderedMembers?: Member[]) => void;
   loading?: boolean;
 }
 
@@ -23,11 +32,14 @@ const StartAjorModal = ({
   groupName,
   currentMemberCount,
   plannedMemberCount,
+  members,
   onConfirm,
   loading = false,
 }: StartAjorModalProps) => {
   const [adjustedCount, setAdjustedCount] = useState(currentMemberCount);
   const [showConfirmation, setShowConfirmation] = useState(false);
+  const [showReorderModal, setShowReorderModal] = useState(false);
+  const [reorderedMembers, setReorderedMembers] = useState<Member[]>(members);
   const needsAdjustment = currentMemberCount !== plannedMemberCount;
 
   const handleConfirm = () => {
@@ -43,13 +55,19 @@ const StartAjorModal = ({
     }
 
     // Proceed with starting
-    onConfirm(adjustedCount);
+    onConfirm(adjustedCount, reorderedMembers);
   };
 
   const handleCancel = () => {
     setShowConfirmation(false);
     setAdjustedCount(currentMemberCount);
+    setReorderedMembers(members);
     onOpenChange(false);
+  };
+
+  const handleReorderConfirm = (newOrder: Member[]) => {
+    setReorderedMembers(newOrder);
+    setShowReorderModal(false);
   };
 
   return (
@@ -114,6 +132,22 @@ const StartAjorModal = ({
                 </p>
               </div>
 
+              <div className="space-y-3">
+                <Button
+                  type="button"
+                  variant="outline"
+                  className="w-full border-primary/20"
+                  onClick={() => setShowReorderModal(true)}
+                  disabled={loading || currentMemberCount < 2}
+                >
+                  <ArrowUpDown className="mr-2 h-4 w-4" />
+                  Arrange Payout Order
+                </Button>
+                <p className="text-xs text-muted-foreground text-center">
+                  Customize the order in which members will receive payouts
+                </p>
+              </div>
+
               <Alert className="bg-primary/5 border-primary/20">
                 <Calendar className="h-4 w-4 text-primary" />
                 <AlertDescription className="text-sm">
@@ -168,6 +202,14 @@ const StartAjorModal = ({
           </LoadingButton>
         </DialogFooter>
       </DialogContent>
+
+      <ReorderMembersModal
+        open={showReorderModal}
+        onOpenChange={setShowReorderModal}
+        members={reorderedMembers}
+        onConfirm={handleReorderConfirm}
+        loading={loading}
+      />
     </Dialog>
   );
 };

@@ -5,7 +5,8 @@ import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from "@/components/ui/card";
 import { Badge } from "@/components/ui/badge";
-import { Copy, Mail, Plus, Check, ArrowRight, Users, Sparkles } from "lucide-react";
+import { Alert, AlertDescription } from "@/components/ui/alert";
+import { Copy, Mail, Plus, Check, ArrowRight, Users, Sparkles, AlertCircle } from "lucide-react";
 import { toast } from "@/hooks/use-toast";
 import { supabase } from "@/integrations/supabase/client";
 import { celebrationConfetti } from "@/lib/confetti";
@@ -56,6 +57,7 @@ const InviteMembers = () => {
           groupName: group.group_name,
           numberOfMembers: group.number_of_members,
           inviteCode: group.invite_code,
+          startDate: group.start_date,
         });
 
         setMembers(membersData.map((m: any) => ({
@@ -99,6 +101,16 @@ const InviteMembers = () => {
   const handleSendInvite = async (e: React.FormEvent) => {
     e.preventDefault();
     if (!groupData) return;
+
+    // Check if Ajor has started
+    if (groupData.startDate) {
+      toast({
+        title: "Cannot Invite Members",
+        description: "Members cannot be added after the Ajor has started",
+        variant: "destructive",
+      });
+      return;
+    }
 
     const trimmedEmail = inviteEmail.trim();
     
@@ -215,10 +227,22 @@ const InviteMembers = () => {
           <CardHeader className="text-center pb-4">
             <CardTitle className="text-xl sm:text-2xl font-bold">{groupData.groupName}</CardTitle>
             <CardDescription className="text-sm sm:text-base">
-              Invite your trusted members to begin the savings journey
+              {groupData.startDate 
+                ? "Ajor has started - member invites are now locked"
+                : "Invite your trusted members to begin the savings journey"
+              }
             </CardDescription>
           </CardHeader>
           <CardContent className="space-y-6">
+            {groupData.startDate && (
+              <Alert variant="destructive" className="bg-orange-50 dark:bg-orange-950 border-orange-200 dark:border-orange-800">
+                <AlertCircle className="h-4 w-4" />
+                <AlertDescription>
+                  This Ajor has already started. No new members can be added at this time.
+                </AlertDescription>
+              </Alert>
+            )}
+
             {/* Invite Link Section */}
             <div className="space-y-3">
               <Label className="text-sm font-semibold text-muted-foreground uppercase tracking-wide">
@@ -229,12 +253,14 @@ const InviteMembers = () => {
                   value={inviteLink}
                   readOnly
                   className="font-mono text-sm bg-background/80 border-gold/20"
+                  disabled={!!groupData.startDate}
                 />
                 <Button
                   onClick={handleCopyLink}
                   variant="outline"
                   size="icon"
                   className="shrink-0 border-gold/20 hover:bg-gold/10"
+                  disabled={!!groupData.startDate}
                 >
                   {copied ? (
                     <Check className="h-4 w-4 text-emerald" />
@@ -282,6 +308,7 @@ const InviteMembers = () => {
                 onClick={handleCopyLink}
                 variant="outline"
                 className="border-gold/20 hover:bg-gold/10"
+                disabled={!!groupData.startDate}
               >
                 <Copy className="mr-2 h-4 w-4" />
                 Copy Link
@@ -290,6 +317,7 @@ const InviteMembers = () => {
                 onClick={handleShare}
                 variant="cta"
                 className="bg-gradient-to-r from-accent to-primary"
+                disabled={!!groupData.startDate}
               >
                 <Mail className="mr-2 h-4 w-4" />
                 Share via...

@@ -8,10 +8,12 @@ import { ArrowLeft, DollarSign, CheckCircle2, Clock, AlertCircle } from "lucide-
 import RecordPayoutModal from "@/components/RecordPayoutModal";
 import { useToast } from "@/hooks/use-toast";
 import { supabase } from "@/integrations/supabase/client";
+import { useNotification } from "@/hooks/useNotification";
 
 const PayoutManagement = () => {
   const navigate = useNavigate();
   const { toast } = useToast();
+  const { sendNotification } = useNotification();
   const [groupData, setGroupData] = useState<any>(null);
   const [members, setMembers] = useState<any[]>([]);
   const [payouts, setPayouts] = useState<any[]>([]);
@@ -177,6 +179,25 @@ const PayoutManagement = () => {
       
       // Increment to next cycle
       setCurrentCycle(currentCycle + 1);
+
+      // Send payout notification to the member
+      if (selectedMember.email) {
+        try {
+          await sendNotification({
+            type: "payout_notification",
+            recipientEmail: selectedMember.email,
+            recipientName: selectedMember.name,
+            data: {
+              groupName: groupData.group_name,
+              amount: totalAmount,
+              cycleLabel: `Cycle ${currentCycle}`,
+            },
+          });
+        } catch (notifError) {
+          console.error("Failed to send payout notification:", notifError);
+          // Don't block the payout process if notification fails
+        }
+      }
 
       // Check if rotation is complete (all members paid once)
       if (updatedPayouts.length % members.length === 0) {

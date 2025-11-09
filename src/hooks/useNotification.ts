@@ -1,0 +1,40 @@
+import { supabase } from "@/integrations/supabase/client";
+import { toast } from "sonner";
+
+interface SendNotificationParams {
+  type: "contribution_reminder" | "payout_notification" | "member_activity";
+  recipientEmail: string;
+  recipientName: string;
+  data: {
+    groupName?: string;
+    amount?: number;
+    cycleLabel?: string;
+    dueDate?: string;
+    memberName?: string;
+    activityType?: "joined" | "left";
+  };
+}
+
+export const useNotification = () => {
+  const sendNotification = async (params: SendNotificationParams) => {
+    try {
+      const { data, error } = await supabase.functions.invoke("send-notification", {
+        body: params,
+      });
+
+      if (error) {
+        console.error("Error sending notification:", error);
+        throw error;
+      }
+
+      console.log("Notification sent successfully:", data);
+      return data;
+    } catch (error: any) {
+      console.error("Failed to send notification:", error);
+      toast.error("Failed to send notification");
+      throw error;
+    }
+  };
+
+  return { sendNotification };
+};

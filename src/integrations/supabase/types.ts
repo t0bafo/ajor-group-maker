@@ -160,6 +160,39 @@ export type Database = {
           },
         ]
       }
+      notification_preferences: {
+        Row: {
+          contribution_reminders: boolean
+          created_at: string
+          email_notifications: boolean
+          id: string
+          member_activity: boolean
+          payout_notifications: boolean
+          updated_at: string
+          user_id: string
+        }
+        Insert: {
+          contribution_reminders?: boolean
+          created_at?: string
+          email_notifications?: boolean
+          id?: string
+          member_activity?: boolean
+          payout_notifications?: boolean
+          updated_at?: string
+          user_id: string
+        }
+        Update: {
+          contribution_reminders?: boolean
+          created_at?: string
+          email_notifications?: boolean
+          id?: string
+          member_activity?: boolean
+          payout_notifications?: boolean
+          updated_at?: string
+          user_id?: string
+        }
+        Relationships: []
+      }
       payouts: {
         Row: {
           amount: number

@@ -9,9 +9,11 @@ import { ArrowLeft, Calendar, DollarSign, Users, TrendingUp, CheckCircle2 } from
 import { toast } from "@/hooks/use-toast";
 import JoinSuccessModal from "@/components/JoinSuccessModal";
 import { supabase } from "@/integrations/supabase/client";
+import { useNotification } from "@/hooks/useNotification";
 
 const GroupOverview = () => {
   const navigate = useNavigate();
+  const { sendNotification } = useNotification();
   const [groupInfo, setGroupInfo] = useState<any>(null);
   const [agreed, setAgreed] = useState(false);
   const [showSuccess, setShowSuccess] = useState(false);
@@ -90,6 +92,37 @@ const GroupOverview = () => {
         });
 
       if (error) throw error;
+
+      // Send notification to host about new member
+      try {
+        // We can't fetch host email directly due to RLS, so we'll send it from the edge function
+        // For now, we'll just notify the existing group members
+        const { data: allMembers } = await supabase
+          .from('members')
+          .select('email, name')
+          .eq('group_id', groupInfo.id);
+
+        // Notify all existing members about the new member
+        if (allMembers && allMembers.length > 0) {
+          for (const member of allMembers) {
+            if (member.email) {
+              await sendNotification({
+                type: "member_activity",
+                recipientEmail: member.email,
+                recipientName: member.name,
+                data: {
+                  groupName: groupInfo.groupName,
+                  memberName: user.user_metadata?.full_name || user.email?.split('@')[0] || 'Member',
+                  activityType: "joined",
+                },
+              });
+            }
+          }
+        }
+      } catch (notifError) {
+        console.error("Failed to send member join notification:", notifError);
+        // Don't block the join process if notification fails
+      }
 
       // Store group ID for dashboard
       sessionStorage.setItem("currentGroupId", groupInfo.id);

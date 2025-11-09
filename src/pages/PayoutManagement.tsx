@@ -62,6 +62,17 @@ const PayoutManagement = () => {
           return;
         }
 
+        // Check if Ajor has been started
+        if (!group.start_date) {
+          toast({
+            title: "Ajor Not Started",
+            description: "Please start the Ajor before managing payouts",
+            variant: "destructive",
+          });
+          navigate("/group-dashboard");
+          return;
+        }
+
         setIsHost(true);
         setGroupData(group);
 
@@ -128,6 +139,26 @@ const PayoutManagement = () => {
       toast({
         title: "Wrong Rotation Order",
         description: "Please pay members in their rotation order.",
+        variant: "destructive",
+      });
+      return;
+    }
+
+    // Check if all members have contributed for the current cycle
+    const { data: contributions } = await supabase
+      .from('contributions')
+      .select('member_id')
+      .eq('group_id', groupData.id)
+      .eq('cycle', currentCycle);
+
+    const contributedMemberIds = new Set(contributions?.map(c => c.member_id) || []);
+    const allMembersContributed = members.every(m => contributedMemberIds.has(m.id));
+
+    if (!allMembersContributed) {
+      const missingCount = members.length - contributedMemberIds.size;
+      toast({
+        title: "Contributions Incomplete",
+        description: `${missingCount} member(s) still need to contribute for Cycle ${currentCycle} before payout can be made.`,
         variant: "destructive",
       });
       return;

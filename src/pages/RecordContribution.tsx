@@ -67,6 +67,17 @@ const RecordContribution = () => {
           return;
         }
 
+        // Check if Ajor has been started
+        if (!group.start_date) {
+          toast({
+            title: "Ajor Not Started",
+            description: "Please start the Ajor before recording contributions",
+            variant: "destructive",
+          });
+          navigate("/group-dashboard");
+          return;
+        }
+
         setIsHost(true);
 
         // Fetch all members

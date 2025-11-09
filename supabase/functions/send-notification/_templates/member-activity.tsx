@@ -36,18 +36,15 @@ export const MemberActivityEmail = ({
             {isJoined ? "👋 New Member" : "Member Left"}
           </Heading>
           <Text style={text}>Hi {recipientName},</Text>
-          <Text style={text}>
-            {isJoined ? (
-              <>
-                <strong>{memberName}</strong> has joined <strong>{groupName}</strong>! 
-                Welcome them to the group.
-              </>
-            ) : (
-              <>
-                <strong>{memberName}</strong> has left <strong>{groupName}</strong>.
-              </>
-            )}
-          </Text>
+          {isJoined ? (
+            <Text style={text}>
+              <strong>{memberName}</strong> has joined <strong>{groupName}</strong>! Welcome them to the group.
+            </Text>
+          ) : (
+            <Text style={text}>
+              <strong>{memberName}</strong> has left <strong>{groupName}</strong>.
+            </Text>
+          )}
           <Text style={text}>
             {isJoined 
               ? "The rotation order and contribution schedule may be updated to include the new member."

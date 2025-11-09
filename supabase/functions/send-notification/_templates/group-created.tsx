@@ -59,8 +59,12 @@ export const GroupCreatedEmail = ({
           <strong>Next Steps:</strong>
         </Text>
         <Text style={text}>
-          1. Share the invite code with your trusted circle<br />
-          2. Once all members join, start the Ajor to begin contributions<br />
+          1. Share the invite code with your trusted circle
+        </Text>
+        <Text style={text}>
+          2. Once all members join, start the Ajor to begin contributions
+        </Text>
+        <Text style={text}>
           3. Manage contributions and payouts from your dashboard
         </Text>
         <Text style={footer}>

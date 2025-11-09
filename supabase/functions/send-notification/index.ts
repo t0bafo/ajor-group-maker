@@ -10,6 +10,7 @@ import { MemberActivityEmail } from "./_templates/member-activity.tsx";
 const resend = new Resend(Deno.env.get("RESEND_API_KEY"));
 const supabaseUrl = Deno.env.get("SUPABASE_URL")!;
 const supabaseServiceKey = Deno.env.get("SUPABASE_SERVICE_ROLE_KEY")!;
+const supabase = createClient(supabaseUrl, supabaseServiceKey);
 
 const corsHeaders = {
   "Access-Control-Allow-Origin": "*",
@@ -101,6 +102,33 @@ const handler = async (req: Request): Promise<Response> => {
     }
 
     console.log("Email sent successfully to:", recipientEmail);
+
+    // Log to notification history
+    try {
+      // Try to find user by email
+      const { data: userData } = await supabase
+        .from('members')
+        .select('user_id')
+        .eq('email', recipientEmail)
+        .maybeSingle();
+
+      if (userData?.user_id) {
+        await supabase
+          .from('notification_history')
+          .insert({
+            user_id: userData.user_id,
+            type,
+            recipient_email: recipientEmail,
+            recipient_name: recipientName,
+            subject,
+            status: 'sent',
+            metadata: data,
+          });
+      }
+    } catch (historyError) {
+      console.error("Failed to log notification history:", historyError);
+      // Don't fail the request if history logging fails
+    }
 
     return new Response(
       JSON.stringify({ success: true, message: "Notification sent" }),

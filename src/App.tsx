@@ -17,6 +17,8 @@ import MemberDashboard from "./pages/MemberDashboard";
 import RecordContribution from "./pages/RecordContribution";
 import PayoutManagement from "./pages/PayoutManagement";
 import GroupLedger from "./pages/GroupLedger";
+import NotificationPreferences from "./pages/NotificationPreferences";
+import NotificationHistory from "./pages/NotificationHistory";
 import Privacy from "./pages/Privacy";
 import Terms from "./pages/Terms";
 import NotFound from "./pages/NotFound";
@@ -44,6 +46,8 @@ const App = () => (
           <Route path="/record-contribution" element={<RecordContribution />} />
           <Route path="/payout-management" element={<PayoutManagement />} />
           <Route path="/group-ledger" element={<GroupLedger />} />
+          <Route path="/notification-preferences" element={<NotificationPreferences />} />
+          <Route path="/notification-history" element={<NotificationHistory />} />
           <Route path="/privacy" element={<Privacy />} />
           <Route path="/terms" element={<Terms />} />
           {/* ADD ALL CUSTOM ROUTES ABOVE THE CATCH-ALL "*" ROUTE */}

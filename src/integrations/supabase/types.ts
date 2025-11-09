@@ -160,6 +160,48 @@ export type Database = {
           },
         ]
       }
+      notification_history: {
+        Row: {
+          clicked_at: string | null
+          id: string
+          metadata: Json | null
+          opened_at: string | null
+          recipient_email: string
+          recipient_name: string
+          sent_at: string
+          status: string
+          subject: string
+          type: string
+          user_id: string | null
+        }
+        Insert: {
+          clicked_at?: string | null
+          id?: string
+          metadata?: Json | null
+          opened_at?: string | null
+          recipient_email: string
+          recipient_name: string
+          sent_at?: string
+          status?: string
+          subject: string
+          type: string
+          user_id?: string | null
+        }
+        Update: {
+          clicked_at?: string | null
+          id?: string
+          metadata?: Json | null
+          opened_at?: string | null
+          recipient_email?: string
+          recipient_name?: string
+          sent_at?: string
+          status?: string
+          subject?: string
+          type?: string
+          user_id?: string | null
+        }
+        Relationships: []
+      }
       notification_preferences: {
         Row: {
           contribution_reminders: boolean

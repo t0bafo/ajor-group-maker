@@ -8,7 +8,7 @@ import {
   DropdownMenuTrigger,
 } from "@/components/ui/dropdown-menu";
 import { Avatar, AvatarFallback } from "@/components/ui/avatar";
-import { Home, UserPlus, Users, User, Settings, LogOut } from "lucide-react";
+import { Home, UserPlus, Users, User, Settings, LogOut, Bell, History } from "lucide-react";
 import { useToast } from "@/hooks/use-toast";
 import { supabase } from "@/integrations/supabase/client";
 import logoImage from "@/assets/ajor-logo.png";
@@ -131,6 +131,14 @@ const AppNavigation = ({ userEmail, userName }: AppNavigationProps) => {
             <DropdownMenuItem onClick={() => navigate("/profile")} className="cursor-pointer">
               <User className="mr-2 h-4 w-4" />
               My Profile
+            </DropdownMenuItem>
+            <DropdownMenuItem onClick={() => navigate("/notification-preferences")} className="cursor-pointer">
+              <Bell className="mr-2 h-4 w-4" />
+              Notifications
+            </DropdownMenuItem>
+            <DropdownMenuItem onClick={() => navigate("/notification-history")} className="cursor-pointer">
+              <History className="mr-2 h-4 w-4" />
+              Notification History
             </DropdownMenuItem>
             <DropdownMenuItem onClick={() => navigate("/settings")} className="cursor-pointer">
               <Settings className="mr-2 h-4 w-4" />

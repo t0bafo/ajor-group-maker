@@ -173,6 +173,9 @@ const GroupDashboard = () => {
     payouts.some(p => p.memberId === member.id)
   );
 
+  // Check if group is locked (has any payouts recorded)
+  const isGroupLocked = payouts.length > 0;
+
   const handleStartAjor = async (adjustedMemberCount: number) => {
     setStartingAjor(true);
     try {
@@ -383,11 +386,16 @@ const GroupDashboard = () => {
               )}
             </div>
             <p className="text-muted-foreground mt-1 text-sm sm:text-base">{groupData.description}</p>
+            {isGroupLocked && (
+              <Badge variant="outline" className="mt-2 bg-accent/10 text-accent border-accent/30">
+                🔒 Locked - Payouts in progress
+              </Badge>
+            )}
           </div>
           <div className="flex items-center gap-2">
             {isHost && !groupData.archived && (
               <>
-                {!groupData.start_date && (
+                {!groupData.start_date && !isGroupLocked && (
                   <Button 
                     size="sm"
                     onClick={() => setShowStartModal(true)}
@@ -410,9 +418,11 @@ const GroupDashboard = () => {
                 )}
               </>
             )}
-            <Button variant="outline" size="icon" className="shrink-0">
-              <Settings className="h-5 w-5" />
-            </Button>
+            {!isGroupLocked && (
+              <Button variant="outline" size="icon" className="shrink-0">
+                <Settings className="h-5 w-5" />
+              </Button>
+            )}
           </div>
         </div>
 

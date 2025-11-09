@@ -56,7 +56,7 @@ const GroupDashboard = () => {
           { data: payoutsData, error: payoutsError },
           { data: { user: currentUser } }
         ] = await Promise.all([
-          supabase.from('groups').select('*').eq('id', groupId).single(),
+          supabase.from('groups').select('*').eq('id', groupId).maybeSingle(),
           supabase.from('members').select('*').eq('group_id', groupId).order('position'),
           supabase.from('contributions').select('*, members(name)').eq('group_id', groupId).order('created_at', { ascending: false }),
           supabase.from('payouts').select('*').eq('group_id', groupId).order('created_at', { ascending: false }),
@@ -68,6 +68,17 @@ const GroupDashboard = () => {
         if (membersError) throw membersError;
         if (contributionsError) throw contributionsError;
         if (payoutsError) throw payoutsError;
+        
+        // Check if group exists
+        if (!group) {
+          toast({
+            title: "Group Not Found",
+            description: "You don't have access to this group or it doesn't exist",
+            variant: "destructive",
+          });
+          navigate("/dashboard");
+          return;
+        }
 
         // Check if current user is the host
         const userIsHost = currentUser && group.host_id === currentUser.id;

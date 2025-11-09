@@ -51,8 +51,8 @@ export const GroupCreatedEmail = ({
           <Text style={detailsText}>
             <strong>Number of Members:</strong> {numberOfMembers}
           </Text>
-          <Text style={detailsText}>
-            <strong>Invite Code:</strong> <code style={code}>{inviteCode}</code>
+          <Text style={codeText}>
+            <strong>Invite Code:</strong> {inviteCode}
           </Text>
         </Section>
         <Text style={text}>
@@ -69,7 +69,8 @@ export const GroupCreatedEmail = ({
         </Text>
         <Text style={footer}>
           Thank you for choosing Ajor to manage your savings circle!
-          <br />
+        </Text>
+        <Text style={footer}>
           — The Ajor Team
         </Text>
       </Container>
@@ -121,12 +122,13 @@ const detailsText = {
   margin: "8px 0",
 };
 
-const code = {
+const codeText = {
+  ...detailsText,
   backgroundColor: "#e0e7ff",
-  padding: "4px 8px",
+  padding: "12px",
   borderRadius: "4px",
   fontFamily: "monospace",
-  fontSize: "14px",
+  fontSize: "16px",
   fontWeight: "bold",
 };
 

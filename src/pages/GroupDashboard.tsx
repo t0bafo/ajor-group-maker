@@ -5,7 +5,7 @@ import { Card, CardContent, CardDescription, CardHeader, CardTitle } from "@/com
 import { Badge } from "@/components/ui/badge";
 import { Progress } from "@/components/ui/progress";
 import { Table, TableBody, TableCell, TableHead, TableHeader, TableRow } from "@/components/ui/table";
-import { Calendar, DollarSign, Users, Settings, UserPlus, Plus, TrendingUp, Archive, Crown, Play } from "lucide-react";
+import { Calendar, DollarSign, Users, Settings, UserPlus, Plus, TrendingUp, Archive, Crown, Play, Bell } from "lucide-react";
 import AppNavigation from "@/components/AppNavigation";
 import ArchiveGroupModal from "@/components/ArchiveGroupModal";
 import StartAjorModal from "@/components/StartAjorModal";
@@ -26,6 +26,7 @@ const GroupDashboard = () => {
   const [showStartModal, setShowStartModal] = useState(false);
   const [startingAjor, setStartingAjor] = useState(false);
   const [loading, setLoading] = useState(true);
+  const [sendingReminders, setSendingReminders] = useState(false);
 
   useEffect(() => {
     // Get current user
@@ -233,6 +234,109 @@ const GroupDashboard = () => {
         description: "Failed to archive group. Please try again.",
         variant: "destructive",
       });
+    }
+  };
+
+  const handleSendReminders = async () => {
+    if (!groupData.start_date) {
+      toast({
+        title: "Cannot Send Reminders",
+        description: "Please start the Ajor first before sending reminders",
+        variant: "destructive",
+      });
+      return;
+    }
+
+    setSendingReminders(true);
+    try {
+      // Calculate current cycle
+      const startDate = new Date(groupData.start_date);
+      const now = new Date();
+      const diffTime = Math.abs(now.getTime() - startDate.getTime());
+      const diffDays = Math.ceil(diffTime / (1000 * 60 * 60 * 24));
+      
+      let currentCycle = 1;
+      if (groupData.frequency === "weekly") {
+        currentCycle = Math.floor(diffDays / 7) + 1;
+      } else if (groupData.frequency === "biweekly") {
+        currentCycle = Math.floor(diffDays / 14) + 1;
+      } else {
+        currentCycle = Math.floor(diffDays / 30) + 1;
+      }
+
+      // Get members who haven't contributed this cycle
+      const contributedMemberIds = new Set(
+        contributions
+          .filter(c => c.cycle === currentCycle)
+          .map(c => c.memberId)
+      );
+
+      const membersToRemind = members.filter(m => !contributedMemberIds.has(m.id));
+
+      if (membersToRemind.length === 0) {
+        toast({
+          title: "All Members Contributed",
+          description: "All members have already contributed for this cycle",
+        });
+        setSendingReminders(false);
+        return;
+      }
+
+      // Calculate next cycle due date
+      let nextCycleDate = new Date(startDate);
+      if (groupData.frequency === "weekly") {
+        nextCycleDate.setDate(startDate.getDate() + (currentCycle * 7));
+      } else if (groupData.frequency === "biweekly") {
+        nextCycleDate.setDate(startDate.getDate() + (currentCycle * 14));
+      } else {
+        nextCycleDate.setMonth(startDate.getMonth() + currentCycle);
+      }
+
+      // Send reminders to each member
+      let successCount = 0;
+      for (const member of membersToRemind) {
+        try {
+          const { error } = await supabase.functions.invoke("send-notification", {
+            body: {
+              type: "contribution_reminder",
+              recipientEmail: member.email,
+              recipientName: member.name,
+              data: {
+                groupName: groupData.groupName,
+                amount: parseFloat(groupData.contributionAmount),
+                cycleLabel: `Cycle ${currentCycle}`,
+                dueDate: nextCycleDate.toLocaleDateString("en-US", {
+                  weekday: "long",
+                  year: "numeric",
+                  month: "long",
+                  day: "numeric",
+                }),
+              },
+            },
+          });
+
+          if (!error) {
+            successCount++;
+          }
+        } catch (error) {
+          console.error(`Failed to send reminder to ${member.name}:`, error);
+        }
+      }
+
+      toast({
+        title: "Reminders Sent",
+        description: `Successfully sent ${successCount} reminder${successCount !== 1 ? 's' : ''} to members who haven't contributed`,
+      });
+
+    } catch (error: any) {
+      console.error('Error sending reminders:', error);
+      toast({
+        title: "Error",
+        description: "Failed to send reminders. Please try again.",
+        variant: "destructive",
+      });
+    } finally {
+      setSendingReminders(false);
     }
   };
 
@@ -448,10 +552,22 @@ const GroupDashboard = () => {
                 <CardDescription className="text-sm">Track all member contributions for this cycle</CardDescription>
               </div>
               {isHost && !groupData.archived && (
-                <Button onClick={() => navigate("/record-contribution")} size="sm" className="w-full sm:w-auto">
-                  <Plus className="mr-2 h-4 w-4" />
-                  Record Contribution
-                </Button>
+                <div className="flex gap-2 w-full sm:w-auto">
+                  <Button 
+                    onClick={handleSendReminders} 
+                    variant="outline" 
+                    size="sm" 
+                    disabled={sendingReminders}
+                    className="flex-1 sm:flex-none"
+                  >
+                    <Bell className="mr-2 h-4 w-4" />
+                    {sendingReminders ? "Sending..." : "Send Reminder"}
+                  </Button>
+                  <Button onClick={() => navigate("/record-contribution")} size="sm" className="flex-1 sm:flex-none">
+                    <Plus className="mr-2 h-4 w-4" />
+                    Record Contribution
+                  </Button>
+                </div>
               )}
             </div>
           </CardHeader>

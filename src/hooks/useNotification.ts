@@ -2,7 +2,7 @@ import { supabase } from "@/integrations/supabase/client";
 import { toast } from "sonner";
 
 interface SendNotificationParams {
-  type: "contribution_reminder" | "payout_notification" | "member_activity" | "group_created";
+  type: "contribution_reminder" | "payout_notification" | "member_activity" | "group_created" | "welcome_email";
   recipientEmail: string;
   recipientName: string;
   data: {

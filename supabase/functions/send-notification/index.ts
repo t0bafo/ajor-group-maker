@@ -7,6 +7,7 @@ import { ContributionReminderEmail } from "./_templates/contribution-reminder.ts
 import { PayoutNotificationEmail } from "./_templates/payout-notification.tsx";
 import { MemberActivityEmail } from "./_templates/member-activity.tsx";
 import { GroupCreatedEmail } from "./_templates/group-created.tsx";
+import { WelcomeEmail } from "./_templates/welcome-email.tsx";
 
 const resend = new Resend(Deno.env.get("RESEND_API_KEY"));
 const supabaseUrl = Deno.env.get("SUPABASE_URL")!;
@@ -19,7 +20,7 @@ const corsHeaders = {
 };
 
 interface NotificationRequest {
-  type: "contribution_reminder" | "payout_notification" | "member_activity" | "group_created";
+  type: "contribution_reminder" | "payout_notification" | "member_activity" | "group_created" | "welcome_email";
   recipientEmail: string;
   recipientName: string;
   data: {
@@ -101,6 +102,15 @@ const handler = async (req: Request): Promise<Response> => {
           })
         );
         subject = `Your Ajor group "${data.groupName}" has been created!`;
+        break;
+
+      case "welcome_email":
+        html = await renderAsync(
+          React.createElement(WelcomeEmail, {
+            recipientName,
+          })
+        );
+        subject = "Welcome to Ajor - Let's get started!";
         break;
 
       default:

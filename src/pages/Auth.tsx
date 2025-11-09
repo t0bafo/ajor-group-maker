@@ -90,6 +90,25 @@ const Auth = () => {
       data: { subscription },
     } = supabase.auth.onAuthStateChange((event, session) => {
       if (event === "SIGNED_IN" && session) {
+        // Send welcome email for new Google sign-ups
+        if (session.user.app_metadata.provider === "google") {
+          const isNewUser = new Date(session.user.created_at).getTime() > Date.now() - 10000; // Created within last 10 seconds
+          if (isNewUser) {
+            setTimeout(() => {
+              supabase.functions.invoke("send-notification", {
+                body: {
+                  type: "welcome_email",
+                  recipientEmail: session.user.email!,
+                  recipientName: session.user.user_metadata.full_name || session.user.email!.split('@')[0],
+                  data: {},
+                },
+              }).catch((error) => {
+                console.error("Failed to send welcome email:", error);
+              });
+            }, 0);
+          }
+        }
+
         // Check for pending invite code first
         const inviteCode = sessionStorage.getItem("pendingInviteCode");
         if (inviteCode) {

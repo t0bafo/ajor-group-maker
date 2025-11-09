@@ -2,7 +2,7 @@ import { supabase } from "@/integrations/supabase/client";
 import { toast } from "sonner";
 
 interface SendNotificationParams {
-  type: "contribution_reminder" | "payout_notification" | "member_activity";
+  type: "contribution_reminder" | "payout_notification" | "member_activity" | "group_created";
   recipientEmail: string;
   recipientName: string;
   data: {
@@ -12,6 +12,10 @@ interface SendNotificationParams {
     dueDate?: string;
     memberName?: string;
     activityType?: "joined" | "left";
+    contributionAmount?: number;
+    frequency?: string;
+    numberOfMembers?: number;
+    inviteCode?: string;
   };
 }
 

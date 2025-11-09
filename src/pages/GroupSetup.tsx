@@ -13,9 +13,11 @@ import StepIndicator from "@/components/StepIndicator";
 import CulturalTooltip from "@/components/CulturalTooltip";
 import { celebrationConfetti } from "@/lib/confetti";
 import { groupSchema } from "@/lib/validation";
+import { useNotification } from "@/hooks/useNotification";
 
 const GroupSetup = () => {
   const navigate = useNavigate();
+  const { sendNotification } = useNotification();
   const [currentStep, setCurrentStep] = useState(0);
   const [formData, setFormData] = useState({
     groupName: "",
@@ -119,6 +121,25 @@ const GroupSetup = () => {
         });
 
       if (memberError) throw memberError;
+
+      // Send group creation notification
+      try {
+        await sendNotification({
+          type: "group_created",
+          recipientEmail: user.email || '',
+          recipientName: user.user_metadata?.full_name || user.email?.split('@')[0] || 'Host',
+          data: {
+            groupName: formData.groupName,
+            contributionAmount: parseFloat(formData.contributionAmount),
+            frequency: formData.frequency,
+            numberOfMembers: parseInt(formData.numberOfMembers),
+            inviteCode: inviteCode,
+          },
+        });
+      } catch (notificationError) {
+        console.error('Failed to send notification:', notificationError);
+        // Don't block the flow if notification fails
+      }
 
       // Store group ID for next page
       sessionStorage.setItem("currentGroupId", group.id);

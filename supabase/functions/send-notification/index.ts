@@ -6,6 +6,7 @@ import { renderAsync } from "https://esm.sh/@react-email/components@0.0.22";
 import { ContributionReminderEmail } from "./_templates/contribution-reminder.tsx";
 import { PayoutNotificationEmail } from "./_templates/payout-notification.tsx";
 import { MemberActivityEmail } from "./_templates/member-activity.tsx";
+import { GroupCreatedEmail } from "./_templates/group-created.tsx";
 
 const resend = new Resend(Deno.env.get("RESEND_API_KEY"));
 const supabaseUrl = Deno.env.get("SUPABASE_URL")!;
@@ -18,7 +19,7 @@ const corsHeaders = {
 };
 
 interface NotificationRequest {
-  type: "contribution_reminder" | "payout_notification" | "member_activity";
+  type: "contribution_reminder" | "payout_notification" | "member_activity" | "group_created";
   recipientEmail: string;
   recipientName: string;
   data: {
@@ -28,6 +29,10 @@ interface NotificationRequest {
     dueDate?: string;
     memberName?: string;
     activityType?: "joined" | "left";
+    contributionAmount?: number;
+    frequency?: string;
+    numberOfMembers?: number;
+    inviteCode?: string;
   };
 }
 
@@ -82,6 +87,20 @@ const handler = async (req: Request): Promise<Response> => {
           })
         );
         subject = `${data.memberName} ${data.activityType === "joined" ? "joined" : "left"} ${data.groupName}`;
+        break;
+
+      case "group_created":
+        html = await renderAsync(
+          React.createElement(GroupCreatedEmail, {
+            recipientName,
+            groupName: data.groupName!,
+            contributionAmount: data.contributionAmount!,
+            frequency: data.frequency!,
+            numberOfMembers: data.numberOfMembers!,
+            inviteCode: data.inviteCode!,
+          })
+        );
+        subject = `Your Ajor group "${data.groupName}" has been created!`;
         break;
 
       default:

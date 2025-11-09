@@ -454,7 +454,12 @@ const GroupDashboard = () => {
               </>
             )}
             {!isGroupLocked && (
-              <Button variant="outline" size="icon" className="shrink-0">
+              <Button 
+                variant="outline" 
+                size="icon" 
+                className="shrink-0"
+                onClick={() => navigate("/group-overview")}
+              >
                 <Settings className="h-5 w-5" />
               </Button>
             )}

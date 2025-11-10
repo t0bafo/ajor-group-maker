@@ -1,8 +1,10 @@
 import { Link } from "react-router-dom";
 import { Button } from "@/components/ui/button";
-import { Users, TrendingUp, Shield, ArrowRight, UserPlus, DollarSign, Repeat } from "lucide-react";
+import { Users, TrendingUp, Shield, ArrowRight, UserPlus, FileText, Repeat, CheckCircle } from "lucide-react";
 import heroImage from "@/assets/hero-ajor-community.jpg";
 import logoImage from "@/assets/ajor-logo.png";
+import AjorCalculator from "@/components/AjorCalculator";
+import CommitmentCallout from "@/components/CommitmentCallout";
 
 const Index = () => {
   return (
@@ -61,31 +63,31 @@ const Index = () => {
               How It Works
             </h2>
             <p className="text-muted-foreground text-lg md:text-xl max-w-2xl mx-auto">
-              Three simple steps to start saving with your community
+              Rotating savings made simple—rooted in cultural traditions like <span className="font-semibold text-foreground">ajo</span> and <span className="font-semibold text-foreground">susu</span>
             </p>
           </div>
           
-          <div className="grid md:grid-cols-3 gap-8 md:gap-12 max-w-6xl mx-auto">
+          <div className="grid md:grid-cols-4 gap-8 md:gap-8 max-w-7xl mx-auto mb-16">
             <div className="text-center space-y-6 group">
               <div className="w-20 h-20 rounded-2xl bg-gradient-to-br from-primary via-cta to-accent flex items-center justify-center mx-auto shadow-[var(--shadow-medium)] group-hover:shadow-[var(--shadow-glow-gold)] transition-all group-hover:scale-105">
-                <UserPlus className="h-9 w-9 text-card" />
+                <Users className="h-9 w-9 text-card" />
               </div>
               <div className="space-y-3">
-                <h3 className="text-2xl font-semibold">1. Create an Ajor</h3>
-                <p className="text-muted-foreground leading-relaxed">
-                  Start a savings group with friends, family, or trusted colleagues.
+                <h3 className="text-xl font-semibold">1. Form Your Circle</h3>
+                <p className="text-muted-foreground leading-relaxed text-sm">
+                  Invite friends, family, or trusted colleagues to join your savings group
                 </p>
               </div>
             </div>
 
             <div className="text-center space-y-6 group">
               <div className="w-20 h-20 rounded-2xl bg-gradient-to-br from-primary via-cta to-accent flex items-center justify-center mx-auto shadow-[var(--shadow-medium)] group-hover:shadow-[var(--shadow-glow-gold)] transition-all group-hover:scale-105">
-                <DollarSign className="h-9 w-9 text-card" />
+                <FileText className="h-9 w-9 text-card" />
               </div>
               <div className="space-y-3">
-                <h3 className="text-2xl font-semibold">2. Contribute Together</h3>
-                <p className="text-muted-foreground leading-relaxed">
-                  Each member contributes their share manually every cycle.
+                <h3 className="text-xl font-semibold">2. Agree on Terms</h3>
+                <p className="text-muted-foreground leading-relaxed text-sm">
+                  Set the contribution amount, frequency, and payout rotation together
                 </p>
               </div>
             </div>
@@ -95,12 +97,34 @@ const Index = () => {
                 <Repeat className="h-9 w-9 text-card" />
               </div>
               <div className="space-y-3">
-                <h3 className="text-2xl font-semibold">3. Payout in Turns</h3>
-                <p className="text-muted-foreground leading-relaxed">
-                  Each member receives their payout when it's their turn in the rotation.
+                <h3 className="text-xl font-semibold">3. Contribute & Rotate</h3>
+                <p className="text-muted-foreground leading-relaxed text-sm">
+                  Each member contributes regularly, and one person receives the full pot per cycle
                 </p>
               </div>
             </div>
+
+            <div className="text-center space-y-6 group">
+              <div className="w-20 h-20 rounded-2xl bg-gradient-to-br from-primary via-cta to-accent flex items-center justify-center mx-auto shadow-[var(--shadow-medium)] group-hover:shadow-[var(--shadow-glow-gold)] transition-all group-hover:scale-105">
+                <CheckCircle className="h-9 w-9 text-card" />
+              </div>
+              <div className="space-y-3">
+                <h3 className="text-xl font-semibold">4. Stay Accountable</h3>
+                <p className="text-muted-foreground leading-relaxed text-sm">
+                  Everyone commits to paying for the full duration, building trust and discipline
+                </p>
+              </div>
+            </div>
+          </div>
+
+          {/* Interactive Calculator */}
+          <div className="max-w-3xl mx-auto mb-16">
+            <AjorCalculator />
+          </div>
+
+          {/* Commitment Callout */}
+          <div className="max-w-3xl mx-auto">
+            <CommitmentCallout />
           </div>
         </div>
       </section>

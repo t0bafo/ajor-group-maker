@@ -1,4 +1,15 @@
-import React from "https://esm.sh/react@18.3.1";
+import {
+  Body,
+  Container,
+  Head,
+  Heading,
+  Html,
+  Link,
+  Preview,
+  Section,
+  Text,
+} from "https://esm.sh/@react-email/components@0.0.22";
+import * as React from "https://esm.sh/react@18.3.1";
 
 interface RequestApprovedEmailProps {
   recipientName: string;
@@ -18,166 +29,215 @@ export const RequestApprovedEmail = ({
   frequency,
 }: RequestApprovedEmailProps) => {
   return (
-    <html>
-      <head>
-        <style>{`
-          body {
-            font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', 'Roboto', 'Oxygen', 'Ubuntu', 'Cantarell', 'Fira Sans', 'Droid Sans', 'Helvetica Neue', sans-serif;
-            line-height: 1.6;
-            color: #333333;
-            background-color: #f5f5f5;
-            margin: 0;
-            padding: 0;
-          }
-          .container {
-            max-width: 600px;
-            margin: 40px auto;
-            background-color: #ffffff;
-            border-radius: 12px;
-            overflow: hidden;
-            box-shadow: 0 4px 6px rgba(0, 0, 0, 0.1);
-          }
-          .header {
-            background: linear-gradient(135deg, #10b981 0%, #34d399 100%);
-            padding: 40px 30px;
-            text-align: center;
-          }
-          .header h1 {
-            color: #ffffff;
-            margin: 0;
-            font-size: 28px;
-            font-weight: bold;
-          }
-          .content {
-            padding: 40px 30px;
-          }
-          .greeting {
-            font-size: 18px;
-            margin-bottom: 20px;
-            color: #1a1a1a;
-          }
-          .welcome-box {
-            background-color: #f0fdf4;
-            border: 2px solid #10b981;
-            padding: 20px;
-            margin: 20px 0;
-            border-radius: 8px;
-          }
-          .welcome-box p {
-            margin: 5px 0;
-            color: #1a1a1a;
-            font-style: italic;
-          }
-          .info-grid {
-            display: grid;
-            grid-template-columns: 1fr 1fr;
-            gap: 15px;
-            margin: 25px 0;
-          }
-          .info-card {
-            background-color: #f8f9fa;
-            padding: 15px;
-            border-radius: 8px;
-            text-align: center;
-          }
-          .info-card strong {
-            display: block;
-            color: #666666;
-            font-size: 12px;
-            margin-bottom: 5px;
-            text-transform: uppercase;
-          }
-          .info-card .value {
-            color: #1a1a1a;
-            font-size: 24px;
-            font-weight: bold;
-          }
-          .cta-button {
-            display: inline-block;
-            background: linear-gradient(135deg, #10b981 0%, #34d399 100%);
-            color: #ffffff;
-            text-decoration: none;
-            padding: 14px 32px;
-            border-radius: 8px;
-            font-weight: bold;
-            margin: 20px 0;
-            text-align: center;
-          }
-          .footer {
-            background-color: #f8f9fa;
-            padding: 30px;
-            text-align: center;
-            font-size: 14px;
-            color: #666666;
-          }
-          .divider {
-            height: 1px;
-            background: linear-gradient(to right, transparent, #10b981, transparent);
-            margin: 30px 0;
-          }
-        `}</style>
-      </head>
-      <body>
-        <div className="container">
-          <div className="header">
-            <h1>🎉 Request Approved!</h1>
-          </div>
+    <Html>
+      <Head />
+      <Preview>Your request to join {groupName} was approved!</Preview>
+      <Body style={main}>
+        <Container style={container}>
+          <Section style={header}>
+            <Heading style={heading}>🎉 Request Approved!</Heading>
+          </Section>
           
-          <div className="content">
-            <p className="greeting">Hi {recipientName},</p>
+          <Section style={content}>
+            <Text style={greeting}>Hi {recipientName},</Text>
             
-            <p>
+            <Text style={paragraph}>
               Great news! {hostName} has approved your request to join <strong>{groupName}</strong>.
-            </p>
+            </Text>
 
             {welcomeMessage && (
-              <div className="welcome-box">
-                <strong>Message from {hostName}:</strong>
-                <p>"{welcomeMessage}"</p>
-              </div>
+              <Section style={welcomeBox}>
+                <Text style={welcomeTitle}>Message from {hostName}:</Text>
+                <Text style={welcomeMessageStyle}>"{welcomeMessage}"</Text>
+              </Section>
             )}
 
-            <div className="divider"></div>
+            <Section style={divider}></Section>
 
-            <h3 style={{ color: "#1a1a1a", marginTop: "30px" }}>Group Details</h3>
-            <div className="info-grid">
-              <div className="info-card">
-                <strong>Contribution</strong>
-                <div className="value">${contributionAmount}</div>
-              </div>
-              <div className="info-card">
-                <strong>Frequency</strong>
-                <div className="value" style={{ fontSize: "18px", textTransform: "capitalize" }}>{frequency}</div>
-              </div>
-            </div>
+            <Heading as="h3" style={subheading}>Group Details</Heading>
+            <Section style={infoGrid}>
+              <Section style={infoCard}>
+                <Text style={infoLabel}>Contribution</Text>
+                <Text style={infoValue}>${contributionAmount}</Text>
+              </Section>
+              <Section style={infoCard}>
+                <Text style={infoLabel}>Frequency</Text>
+                <Text style={infoValueSmall}>{frequency}</Text>
+              </Section>
+            </Section>
 
-            <p style={{ textAlign: "center", margin: "30px 0" }}>
-              <a href="https://your-app-url.com/dashboard" className="cta-button">
+            <Section style={buttonContainer}>
+              <Link href="https://ajor-group-maker.lovable.app/dashboard" style={button}>
                 View Group Dashboard
-              </a>
-            </p>
+              </Link>
+            </Section>
 
-            <p style={{ color: "#666666", fontSize: "14px" }}>
+            <Text style={subtext}>
               <strong>What's next?</strong>
-            </p>
-            <ul style={{ color: "#666666", fontSize: "14px", marginLeft: "20px" }}>
-              <li>Review the group dashboard and payout schedule</li>
-              <li>Mark your calendar for contribution dates</li>
-              <li>Connect with other group members</li>
-              <li>Prepare for your first contribution</li>
-            </ul>
-          </div>
+            </Text>
+            <Text style={subtext}>
+              • Review the group dashboard and payout schedule<br />
+              • Mark your calendar for contribution dates<br />
+              • Connect with other group members<br />
+              • Prepare for your first contribution
+            </Text>
+          </Section>
 
-          <div className="footer">
-            <p>
+          <Section style={footer}>
+            <Text style={footerText}>
               Welcome to {groupName}! Let's build wealth together.
-            </p>
-            <p style={{ marginTop: "10px" }}>
+            </Text>
+            <Text style={footerText}>
               © 2025 Ajor. Building wealth through community savings.
-            </p>
-          </div>
-        </div>
-      </body>
-    </html>
+            </Text>
+          </Section>
+        </Container>
+      </Body>
+    </Html>
   );
+};
+
+const main = {
+  backgroundColor: "#f5f5f5",
+  fontFamily: '-apple-system,BlinkMacSystemFont,"Segoe UI",Roboto,"Helvetica Neue",Ubuntu,sans-serif',
+};
+
+const container = {
+  backgroundColor: "#ffffff",
+  margin: "40px auto",
+  padding: "0",
+  borderRadius: "12px",
+  maxWidth: "600px",
+  boxShadow: "0 4px 6px rgba(0, 0, 0, 0.1)",
+};
+
+const header = {
+  background: "linear-gradient(135deg, #10b981 0%, #34d399 100%)",
+  padding: "40px 30px",
+  textAlign: "center" as const,
+};
+
+const heading = {
+  color: "#ffffff",
+  fontSize: "28px",
+  fontWeight: "bold",
+  margin: "0",
+};
+
+const content = {
+  padding: "40px 30px",
+};
+
+const greeting = {
+  fontSize: "18px",
+  marginBottom: "20px",
+  color: "#1a1a1a",
+};
+
+const paragraph = {
+  fontSize: "16px",
+  lineHeight: "1.6",
+  color: "#333333",
+  margin: "10px 0",
+};
+
+const welcomeBox = {
+  backgroundColor: "#f0fdf4",
+  border: "2px solid #10b981",
+  padding: "20px",
+  margin: "20px 0",
+  borderRadius: "8px",
+};
+
+const welcomeTitle = {
+  fontWeight: "bold",
+  color: "#1a1a1a",
+  marginBottom: "8px",
+};
+
+const welcomeMessageStyle = {
+  color: "#1a1a1a",
+  fontStyle: "italic",
+  margin: "5px 0",
+};
+
+const divider = {
+  height: "1px",
+  background: "linear-gradient(to right, transparent, #10b981, transparent)",
+  margin: "30px 0",
+};
+
+const subheading = {
+  color: "#1a1a1a",
+  fontSize: "20px",
+  marginTop: "30px",
+  marginBottom: "15px",
+};
+
+const infoGrid = {
+  display: "flex",
+  gap: "15px",
+  margin: "25px 0",
+};
+
+const infoCard = {
+  backgroundColor: "#f8f9fa",
+  padding: "15px",
+  borderRadius: "8px",
+  textAlign: "center" as const,
+  flex: "1",
+};
+
+const infoLabel = {
+  color: "#666666",
+  fontSize: "12px",
+  textTransform: "uppercase" as const,
+  fontWeight: "bold",
+  marginBottom: "5px",
+};
+
+const infoValue = {
+  color: "#1a1a1a",
+  fontSize: "24px",
+  fontWeight: "bold",
+};
+
+const infoValueSmall = {
+  color: "#1a1a1a",
+  fontSize: "18px",
+  fontWeight: "bold",
+  textTransform: "capitalize" as const,
+};
+
+const buttonContainer = {
+  textAlign: "center" as const,
+  margin: "30px 0",
+};
+
+const button = {
+  backgroundColor: "#10b981",
+  color: "#ffffff",
+  padding: "14px 32px",
+  borderRadius: "8px",
+  fontWeight: "bold",
+  textDecoration: "none",
+  display: "inline-block",
+};
+
+const subtext = {
+  color: "#666666",
+  fontSize: "14px",
+  marginTop: "10px",
+};
+
+const footer = {
+  backgroundColor: "#f8f9fa",
+  padding: "30px",
+  textAlign: "center" as const,
+};
+
+const footerText = {
+  color: "#666666",
+  fontSize: "14px",
+  margin: "5px 0",
 };

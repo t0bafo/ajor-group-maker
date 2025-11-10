@@ -237,8 +237,17 @@ const handler = async (req: Request): Promise<Response> => {
       }
     );
   } catch (error: any) {
+    console.error("Error sending notification:", error);
+    console.error("Error details:", {
+      message: error.message,
+      stack: error.stack,
+      type: typeof error,
+    });
     return new Response(
-      JSON.stringify({ error: "Failed to send notification" }),
+      JSON.stringify({ 
+        error: "Failed to send notification",
+        details: error.message 
+      }),
       {
         status: 500,
         headers: { ...corsHeaders, "Content-Type": "application/json" },

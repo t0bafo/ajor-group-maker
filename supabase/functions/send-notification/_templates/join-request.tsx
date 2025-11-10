@@ -1,4 +1,15 @@
-import React from "https://esm.sh/react@18.3.1";
+import {
+  Body,
+  Container,
+  Head,
+  Heading,
+  Html,
+  Link,
+  Preview,
+  Section,
+  Text,
+} from "https://esm.sh/@react-email/components@0.0.22";
+import * as React from "https://esm.sh/react@18.3.1";
 
 interface JoinRequestEmailProps {
   recipientName: string;
@@ -18,152 +29,175 @@ export const JoinRequestEmail = ({
   requestedAt,
 }: JoinRequestEmailProps) => {
   return (
-    <html>
-      <head>
-        <style>{`
-          body {
-            font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', 'Roboto', 'Oxygen', 'Ubuntu', 'Cantarell', 'Fira Sans', 'Droid Sans', 'Helvetica Neue', sans-serif;
-            line-height: 1.6;
-            color: #333333;
-            background-color: #f5f5f5;
-            margin: 0;
-            padding: 0;
-          }
-          .container {
-            max-width: 600px;
-            margin: 40px auto;
-            background-color: #ffffff;
-            border-radius: 12px;
-            overflow: hidden;
-            box-shadow: 0 4px 6px rgba(0, 0, 0, 0.1);
-          }
-          .header {
-            background: linear-gradient(135deg, #D4AF37 0%, #F4E5C3 100%);
-            padding: 40px 30px;
-            text-align: center;
-          }
-          .header h1 {
-            color: #1a1a1a;
-            margin: 0;
-            font-size: 28px;
-            font-weight: bold;
-          }
-          .content {
-            padding: 40px 30px;
-          }
-          .greeting {
-            font-size: 18px;
-            margin-bottom: 20px;
-            color: #1a1a1a;
-          }
-          .info-box {
-            background-color: #f8f9fa;
-            border-left: 4px solid #D4AF37;
-            padding: 20px;
-            margin: 20px 0;
-            border-radius: 4px;
-          }
-          .info-box strong {
-            display: block;
-            color: #1a1a1a;
-            margin-bottom: 8px;
-          }
-          .info-box p {
-            margin: 5px 0;
-            color: #666666;
-          }
-          .message-box {
-            background-color: #fff9e6;
-            border: 1px solid #D4AF37;
-            padding: 15px;
-            margin: 20px 0;
-            border-radius: 8px;
-          }
-          .message-box strong {
-            display: block;
-            color: #1a1a1a;
-            margin-bottom: 8px;
-          }
-          .cta-button {
-            display: inline-block;
-            background: linear-gradient(135deg, #D4AF37 0%, #F4E5C3 100%);
-            color: #1a1a1a;
-            text-decoration: none;
-            padding: 14px 32px;
-            border-radius: 8px;
-            font-weight: bold;
-            margin: 20px 0;
-            text-align: center;
-          }
-          .footer {
-            background-color: #f8f9fa;
-            padding: 30px;
-            text-align: center;
-            font-size: 14px;
-            color: #666666;
-          }
-          .divider {
-            height: 1px;
-            background: linear-gradient(to right, transparent, #D4AF37, transparent);
-            margin: 30px 0;
-          }
-        `}</style>
-      </head>
-      <body>
-        <div className="container">
-          <div className="header">
-            <h1>🔔 New Join Request</h1>
-          </div>
+    <Html>
+      <Head />
+      <Preview>New join request for {groupName} from {memberName}</Preview>
+      <Body style={main}>
+        <Container style={container}>
+          <Section style={header}>
+            <Heading style={heading}>🔔 New Join Request</Heading>
+          </Section>
           
-          <div className="content">
-            <p className="greeting">Hi {recipientName},</p>
+          <Section style={content}>
+            <Text style={greeting}>Hi {recipientName},</Text>
             
-            <p>
+            <Text style={paragraph}>
               You have a new join request for your Ajor group <strong>{groupName}</strong>.
-            </p>
+            </Text>
 
-            <div className="info-box">
-              <strong>Member Details:</strong>
-              <p><strong>Name:</strong> {memberName}</p>
-              <p><strong>Email:</strong> {memberEmail}</p>
-              <p><strong>Requested:</strong> {requestedAt}</p>
-            </div>
+            <Section style={infoBox}>
+              <Text style={infoTitle}>Member Details:</Text>
+              <Text style={infoParagraph}><strong>Name:</strong> {memberName}</Text>
+              <Text style={infoParagraph}><strong>Email:</strong> {memberEmail}</Text>
+              <Text style={infoParagraph}><strong>Requested:</strong> {requestedAt}</Text>
+            </Section>
 
             {joinMessage && (
-              <div className="message-box">
-                <strong>Message from {memberName}:</strong>
-                <p>{joinMessage}</p>
-              </div>
+              <Section style={messageBox}>
+                <Text style={infoTitle}>Message from {memberName}:</Text>
+                <Text style={paragraph}>{joinMessage}</Text>
+              </Section>
             )}
 
-            <div className="divider"></div>
+            <Section style={divider}></Section>
 
-            <p style={{ textAlign: "center", margin: "30px 0" }}>
-              <a href="https://your-app-url.com/dashboard" className="cta-button">
+            <Section style={buttonContainer}>
+              <Link href="https://ajor-group-maker.lovable.app/dashboard" style={button}>
                 Review Request
-              </a>
-            </p>
+              </Link>
+            </Section>
 
-            <p style={{ color: "#666666", fontSize: "14px" }}>
+            <Text style={subtext}>
               <strong>What's next?</strong>
-            </p>
-            <ul style={{ color: "#666666", fontSize: "14px", marginLeft: "20px" }}>
-              <li>Review the member's details and message</li>
-              <li>Approve to add them to your group</li>
-              <li>Or reject if they're not a good fit</li>
-            </ul>
-          </div>
+            </Text>
+            <Text style={subtext}>
+              • Review the member's details and message<br />
+              • Approve to add them to your group<br />
+              • Or reject if they're not a good fit
+            </Text>
+          </Section>
 
-          <div className="footer">
-            <p>
+          <Section style={footer}>
+            <Text style={footerText}>
               This email was sent because you're the host of {groupName} on Ajor.
-            </p>
-            <p style={{ marginTop: "10px" }}>
+            </Text>
+            <Text style={footerText}>
               © 2025 Ajor. Building wealth through community savings.
-            </p>
-          </div>
-        </div>
-      </body>
-    </html>
+            </Text>
+          </Section>
+        </Container>
+      </Body>
+    </Html>
   );
+};
+
+const main = {
+  backgroundColor: "#f5f5f5",
+  fontFamily: '-apple-system,BlinkMacSystemFont,"Segoe UI",Roboto,"Helvetica Neue",Ubuntu,sans-serif',
+};
+
+const container = {
+  backgroundColor: "#ffffff",
+  margin: "40px auto",
+  padding: "0",
+  borderRadius: "12px",
+  maxWidth: "600px",
+  boxShadow: "0 4px 6px rgba(0, 0, 0, 0.1)",
+};
+
+const header = {
+  background: "linear-gradient(135deg, #D4AF37 0%, #F4E5C3 100%)",
+  padding: "40px 30px",
+  textAlign: "center" as const,
+};
+
+const heading = {
+  color: "#1a1a1a",
+  fontSize: "28px",
+  fontWeight: "bold",
+  margin: "0",
+};
+
+const content = {
+  padding: "40px 30px",
+};
+
+const greeting = {
+  fontSize: "18px",
+  marginBottom: "20px",
+  color: "#1a1a1a",
+};
+
+const paragraph = {
+  fontSize: "16px",
+  lineHeight: "1.6",
+  color: "#333333",
+  margin: "10px 0",
+};
+
+const infoBox = {
+  backgroundColor: "#f8f9fa",
+  borderLeft: "4px solid #D4AF37",
+  padding: "20px",
+  margin: "20px 0",
+  borderRadius: "4px",
+};
+
+const infoTitle = {
+  fontWeight: "bold",
+  color: "#1a1a1a",
+  marginBottom: "8px",
+};
+
+const infoParagraph = {
+  margin: "5px 0",
+  color: "#666666",
+  fontSize: "14px",
+};
+
+const messageBox = {
+  backgroundColor: "#fff9e6",
+  border: "1px solid #D4AF37",
+  padding: "15px",
+  margin: "20px 0",
+  borderRadius: "8px",
+};
+
+const divider = {
+  height: "1px",
+  background: "linear-gradient(to right, transparent, #D4AF37, transparent)",
+  margin: "30px 0",
+};
+
+const buttonContainer = {
+  textAlign: "center" as const,
+  margin: "30px 0",
+};
+
+const button = {
+  backgroundColor: "#D4AF37",
+  color: "#1a1a1a",
+  padding: "14px 32px",
+  borderRadius: "8px",
+  fontWeight: "bold",
+  textDecoration: "none",
+  display: "inline-block",
+};
+
+const subtext = {
+  color: "#666666",
+  fontSize: "14px",
+  marginTop: "10px",
+};
+
+const footer = {
+  backgroundColor: "#f8f9fa",
+  padding: "30px",
+  textAlign: "center" as const,
+};
+
+const footerText = {
+  color: "#666666",
+  fontSize: "14px",
+  margin: "5px 0",
 };

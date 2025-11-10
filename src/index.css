@@ -103,48 +103,50 @@ All colors MUST be HSL.
     --popover-foreground: 30 33% 97%;
 
     /* Primary: Matte Gold (brighter in dark) */
-    --primary: 42 42% 65%;
+    --primary: 42 42% 68%;
     --primary-foreground: 0 0% 10%;
-    --primary-hover: 42 42% 58%;
+    --primary-hover: 42 42% 60%;
 
     --secondary: 0 0% 18%;
     --secondary-foreground: 30 33% 97%;
 
     --muted: 0 0% 16%;
-    --muted-foreground: 0 0% 60%;
+    --muted-foreground: 0 0% 70%; /* Improved from 60% for better contrast */
 
     /* Accent: Terracotta (warmer in dark) */
-    --accent: 14 52% 58%;
+    --accent: 14 52% 62%;
     --accent-foreground: 0 0% 10%;
 
     /* CTA: Burnt Orange */
-    --cta: 28 80% 58%;
+    --cta: 28 80% 62%;
     --cta-foreground: 0 0% 100%;
 
     /* Emerald accent */
-    --emerald: 165 45% 28%;
+    --emerald: 165 45% 35%; /* Brighter for better visibility */
     --emerald-foreground: 0 0% 100%;
 
-    --destructive: 0 72% 55%;
+    --destructive: 0 72% 58%;
     --destructive-foreground: 0 0% 100%;
 
-    --border: 0 0% 20%;
+    --border: 0 0% 22%; /* Slightly lighter for better visibility */
     --input: 0 0% 18%;
-    --ring: 42 42% 65%;
+    --ring: 42 42% 68%;
     
-    --gradient-hero: linear-gradient(135deg, hsl(42 42% 65%) 0%, hsl(28 80% 58%) 100%);
+    --gradient-hero: linear-gradient(135deg, hsl(42 42% 68%) 0%, hsl(28 80% 62%) 100%);
     --gradient-concrete: linear-gradient(180deg, hsl(0 0% 12%) 0%, hsl(0 0% 10%) 100%);
     --gradient-subtle: linear-gradient(180deg, hsl(0 0% 10%) 0%, hsl(0 0% 14%) 100%);
-    --gradient-gold: linear-gradient(135deg, hsl(42 42% 68%) 0%, hsl(42 42% 60%) 100%);
+    --gradient-gold: linear-gradient(135deg, hsl(42 42% 70%) 0%, hsl(42 42% 62%) 100%);
     
-    --shadow-soft: 0 1px 3px 0 hsl(0 0% 0% / 0.4), 0 1px 2px -1px hsl(0 0% 0% / 0.4);
-    --shadow-medium: 0 4px 6px -1px hsl(0 0% 0% / 0.5), 0 2px 4px -2px hsl(0 0% 0% / 0.5);
-    --shadow-large: 0 10px 15px -3px hsl(0 0% 0% / 0.6), 0 4px 6px -4px hsl(0 0% 0% / 0.6);
-    --shadow-glow-gold: 0 0 40px hsl(42 42% 65% / 0.3);
-    --shadow-glow-terracotta: 0 0 32px hsl(14 52% 58% / 0.25);
+    --shadow-soft: 0 1px 3px 0 hsl(0 0% 0% / 0.5), 0 1px 2px -1px hsl(0 0% 0% / 0.5);
+    --shadow-medium: 0 4px 6px -1px hsl(0 0% 0% / 0.6), 0 2px 4px -2px hsl(0 0% 0% / 0.6);
+    --shadow-large: 0 10px 15px -3px hsl(0 0% 0% / 0.7), 0 4px 6px -4px hsl(0 0% 0% / 0.7);
+    --shadow-glow-gold: 0 0 40px hsl(42 42% 68% / 0.35);
+    --shadow-glow-terracotta: 0 0 32px hsl(14 52% 62% / 0.3);
     
-    --glass-bg: hsl(0 0% 14% / 0.7);
-    --glass-border: hsl(0 0% 20% / 0.3);
+    /* Glassmorphic effect - improved backdrop blur and contrast */
+    --glass-bg: hsl(0 0% 16% / 0.8);
+    --glass-border: hsl(0 0% 25% / 0.4);
+    
     --sidebar-background: 240 5.9% 10%;
     --sidebar-foreground: 240 4.8% 95.9%;
     --sidebar-primary: 224.3 76.3% 48%;

@@ -5,10 +5,12 @@ import heroImage from "@/assets/hero-ajor-community.jpg";
 import logoImage from "@/assets/ajor-logo.png";
 import AjorCalculator from "@/components/AjorCalculator";
 import CommitmentCallout from "@/components/CommitmentCallout";
+import LandingNavigation from "@/components/LandingNavigation";
 
 const Index = () => {
   return (
     <div className="min-h-screen">
+      <LandingNavigation />
       {/* Hero Section */}
       <section className="relative overflow-hidden bg-gradient-to-b from-background via-background to-muted/30">
         <div className="container mx-auto px-4 py-20 md:py-32">
@@ -130,7 +132,7 @@ const Index = () => {
       </section>
 
       {/* Why Ajor Section */}
-      <section className="py-20 md:py-32 bg-background">
+      <section id="why-ajor" className="py-20 md:py-32 bg-background">
         <div className="container mx-auto px-4">
           <div className="text-center mb-16 md:mb-20 space-y-4">
             <h2 className="text-4xl md:text-5xl font-bold tracking-tight">
@@ -223,8 +225,13 @@ const Index = () => {
               </Link>
             </nav>
           </div>
-          <div className="text-center mt-8 pt-8 border-t border-border/50 text-sm text-muted-foreground">
-            © {new Date().getFullYear()} Ajor. All rights reserved.
+          <div className="text-center mt-8 pt-8 border-t border-border/50">
+            <p className="text-sm text-muted-foreground mb-2">
+              Questions? Email us at <a href="mailto:support@ajor.app" className="text-primary hover:underline">support@ajor.app</a>
+            </p>
+            <p className="text-sm text-muted-foreground">
+              © {new Date().getFullYear()} Ajor. All rights reserved.
+            </p>
           </div>
         </div>
       </footer>

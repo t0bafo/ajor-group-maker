@@ -76,7 +76,12 @@ const AppNavigation = ({ userEmail, userName }: AppNavigationProps) => {
           <Button
             variant="ghost"
             size="sm"
-            onClick={() => navigate("/group-setup")}
+            onClick={() => {
+              // Clear session storage for fresh group creation
+              sessionStorage.removeItem("currentGroupId");
+              sessionStorage.removeItem("groupCreationKey");
+              navigate("/group-setup");
+            }}
             className="gap-2"
           >
             <UserPlus className="h-4 w-4" />
@@ -118,7 +123,12 @@ const AppNavigation = ({ userEmail, userName }: AppNavigationProps) => {
                 <Home className="mr-2 h-4 w-4" />
                 Dashboard
               </DropdownMenuItem>
-              <DropdownMenuItem onClick={() => navigate("/group-setup")} className="cursor-pointer">
+              <DropdownMenuItem onClick={() => {
+                // Clear session storage for fresh group creation
+                sessionStorage.removeItem("currentGroupId");
+                sessionStorage.removeItem("groupCreationKey");
+                navigate("/group-setup");
+              }} className="cursor-pointer">
                 <UserPlus className="mr-2 h-4 w-4" />
                 Create Ajor
               </DropdownMenuItem>

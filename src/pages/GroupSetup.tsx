@@ -40,22 +40,14 @@ const GroupSetup = () => {
 
   // Generate idempotency key on mount and clear old group data
   useEffect(() => {
-    // Clear any previous group data when starting fresh
-    const existingKey = sessionStorage.getItem("groupCreationKey");
-    const existingGroupId = sessionStorage.getItem("currentGroupId");
+    // Always clear group data when arriving at GroupSetup for a fresh start
+    sessionStorage.removeItem("currentGroupId");
+    sessionStorage.removeItem("groupCreationKey");
     
-    // If we have an existing key and group, user is returning to an in-progress creation
-    // Otherwise, clear everything for a fresh start
-    if (!existingKey || !existingGroupId) {
-      sessionStorage.removeItem("currentGroupId");
-      sessionStorage.removeItem("groupCreationKey");
-      
-      const newKey = `group_${Date.now()}_${Math.random().toString(36).substring(2, 15)}`;
-      sessionStorage.setItem("groupCreationKey", newKey);
-      idempotencyKey.current = newKey;
-    } else {
-      idempotencyKey.current = existingKey;
-    }
+    // Generate fresh idempotency key
+    const newKey = `group_${Date.now()}_${Math.random().toString(36).substring(2, 15)}`;
+    sessionStorage.setItem("groupCreationKey", newKey);
+    idempotencyKey.current = newKey;
   }, []);
 
   const handleInputChange = (field: string, value: string) => {

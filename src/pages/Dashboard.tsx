@@ -362,7 +362,12 @@ const Dashboard = () => {
                   </div>
                    {!showArchived && (
                     <Button 
-                      onClick={() => navigate("/group-setup")} 
+                      onClick={() => {
+                        // Clear session storage for fresh group creation
+                        sessionStorage.removeItem("currentGroupId");
+                        sessionStorage.removeItem("groupCreationKey");
+                        navigate("/group-setup");
+                      }} 
                       size="sm" 
                       className="w-full sm:w-auto dashboard-create-button"
                     >
@@ -539,7 +544,12 @@ const Dashboard = () => {
             <div className="mt-8">
               <div className="grid md:grid-cols-2 gap-6">
                 {/* Create New Ajor */}
-                <Card className="hover:shadow-[var(--shadow-medium)] transition-all cursor-pointer group" onClick={() => navigate("/group-setup")}>
+                <Card className="hover:shadow-[var(--shadow-medium)] transition-all cursor-pointer group" onClick={() => {
+                  // Clear session storage for fresh group creation
+                  sessionStorage.removeItem("currentGroupId");
+                  sessionStorage.removeItem("groupCreationKey");
+                  navigate("/group-setup");
+                }}>
                   <CardHeader>
                     <div className="w-12 h-12 rounded-full bg-gradient-to-br from-primary to-accent flex items-center justify-center mb-4 group-hover:scale-110 transition-transform">
                       <UserPlus className="h-6 w-6 text-primary-foreground" />

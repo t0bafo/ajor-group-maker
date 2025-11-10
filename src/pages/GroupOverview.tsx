@@ -125,21 +125,19 @@ const GroupOverview = () => {
       if (requiresApproval) {
         // Send join request notification to host
         try {
-          // Get host user data from auth
-          const { data: { user: hostUser }, error: hostError } = await supabase.auth.admin.getUserById(groupSettings.host_id);
+          // Get host email using database function
+          const { data: hostEmail, error: hostError } = await supabase
+            .rpc('get_user_email', { _user_id: groupSettings.host_id });
           
           if (hostError) {
-            console.error("Error fetching host user:", hostError);
+            console.error("Error fetching host email:", hostError);
           }
-
-          const hostEmail = hostUser?.email;
-          const hostName = hostUser?.user_metadata?.full_name || hostUser?.email?.split('@')[0] || groupInfo.hostName;
 
           if (hostEmail) {
             await sendNotification({
               type: "join_request",
               recipientEmail: hostEmail,
-              recipientName: hostName,
+              recipientName: groupInfo.hostName,
               data: {
                 groupName: groupInfo.groupName,
                 memberName: user.user_metadata?.full_name || user.email?.split('@')[0] || 'Member',

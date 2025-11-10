@@ -19,6 +19,8 @@ import {
   DropdownMenuTrigger,
 } from "@/components/ui/dropdown-menu";
 import ArchiveGroupModal from "@/components/ArchiveGroupModal";
+import OnboardingTour from "@/components/OnboardingTour";
+import { useOnboarding } from "@/hooks/useOnboarding";
 
 const Dashboard = () => {
   const navigate = useNavigate();
@@ -31,6 +33,9 @@ const Dashboard = () => {
   const [showArchived, setShowArchived] = useState(false);
   const [archiveModalOpen, setArchiveModalOpen] = useState(false);
   const [groupToArchive, setGroupToArchive] = useState<{ id: string; name: string; archived: boolean } | null>(null);
+  
+  // Onboarding tour state
+  const { shouldShowTour, isLoading: isOnboardingLoading, markOnboardingComplete, dismissOnboarding } = useOnboarding(user?.id);
 
   useEffect(() => {
     // Check authentication and load user-specific data
@@ -263,6 +268,14 @@ const Dashboard = () => {
 
   return (
     <div className="min-h-screen bg-gradient-to-b from-background via-muted/20 to-background">
+      {/* Onboarding Tour */}
+      {shouldShowTour && !isOnboardingLoading && (
+        <OnboardingTour
+          onComplete={markOnboardingComplete}
+          onSkip={dismissOnboarding}
+        />
+      )}
+      
       <AppNavigation 
         userEmail={user?.email} 
         userName={user?.user_metadata?.full_name}
@@ -347,8 +360,12 @@ const Dashboard = () => {
                       )}
                     </Button>
                   </div>
-                  {!showArchived && (
-                    <Button onClick={() => navigate("/group-setup")} size="sm" className="w-full sm:w-auto">
+                   {!showArchived && (
+                    <Button 
+                      onClick={() => navigate("/group-setup")} 
+                      size="sm" 
+                      className="w-full sm:w-auto dashboard-create-button"
+                    >
                       <UserPlus className="mr-2 h-4 w-4" />
                       Create New
                     </Button>

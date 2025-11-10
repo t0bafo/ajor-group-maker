@@ -8,9 +8,10 @@ import { Separator } from "@/components/ui/separator";
 import { supabase } from "@/integrations/supabase/client";
 import { useToast } from "@/hooks/use-toast";
 import AppNavigation from "@/components/AppNavigation";
-import { User, Mail, Calendar, Bell, Shield, Crown, Users } from "lucide-react";
+import { User, Mail, Calendar, Bell, Shield, Crown, Users, PlayCircle } from "lucide-react";
 import { Avatar, AvatarFallback } from "@/components/ui/avatar";
 import { Badge } from "@/components/ui/badge";
+import { useOnboarding } from "@/hooks/useOnboarding";
 
 const Profile = () => {
   const navigate = useNavigate();
@@ -24,6 +25,8 @@ const Profile = () => {
     hostedGroups: 0,
     memberGroups: 0,
   });
+
+  const { resetOnboarding } = useOnboarding(user?.id);
 
   useEffect(() => {
     checkAuth();
@@ -99,6 +102,23 @@ const Profile = () => {
       });
     } finally {
       setIsUpdating(false);
+    }
+  };
+
+  const handleReplayTour = async () => {
+    try {
+      await resetOnboarding();
+      toast({
+        title: "Onboarding Tour Reset",
+        description: "Navigate to your dashboard to see the tour again",
+      });
+      navigate("/dashboard");
+    } catch (error: any) {
+      toast({
+        title: "Error",
+        description: error.message,
+        variant: "destructive",
+      });
     }
   };
 
@@ -258,6 +278,15 @@ const Profile = () => {
               </CardDescription>
             </CardHeader>
             <CardContent className="space-y-3">
+              <Button
+                variant="outline"
+                className="w-full justify-start"
+                onClick={handleReplayTour}
+              >
+                <PlayCircle className="mr-2 h-4 w-4" />
+                Replay Onboarding Tour
+              </Button>
+              <Separator />
               <Button
                 variant="outline"
                 className="w-full justify-start"

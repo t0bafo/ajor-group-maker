@@ -209,15 +209,37 @@ All colors MUST be HSL.
   
   @media (max-width: 768px) {
     /* Larger touch targets on mobile */
-    button {
+    button, [role="button"], a[role="button"] {
       min-height: 44px;
       min-width: 44px;
+    }
+    
+    /* Icon-only buttons need proper padding */
+    button:not(:has(span)):not(:has(p)) {
+      padding: 12px;
     }
     
     /* Better readability on small screens */
     body {
       font-size: 16px;
       line-height: 1.5;
+    }
+    
+    /* Larger form inputs on mobile */
+    input, textarea, select, [role="combobox"] {
+      min-height: 44px;
+      padding: 12px;
+    }
+    
+    /* Better modal spacing on mobile */
+    [role="dialog"] {
+      max-width: calc(100vw - 32px);
+      margin: 16px;
+    }
+    
+    /* Dropdown menus should be full width on mobile */
+    [role="menu"], [role="listbox"] {
+      min-width: 200px;
     }
   }
 }

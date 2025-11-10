@@ -3,6 +3,7 @@ import Joyride, { CallBackProps, STATUS, Step } from "react-joyride";
 import { Button } from "@/components/ui/button";
 import { Sparkles, Users, DollarSign, Repeat, Shield } from "lucide-react";
 import confetti from "canvas-confetti";
+import { useIsMobile } from "@/hooks/use-mobile";
 
 interface OnboardingTourProps {
   onComplete: () => void;
@@ -11,6 +12,7 @@ interface OnboardingTourProps {
 
 const OnboardingTour = ({ onComplete, onSkip }: OnboardingTourProps) => {
   const [stepIndex, setStepIndex] = useState(0);
+  const isMobile = useIsMobile();
 
   const steps: Step[] = [
     {
@@ -181,24 +183,36 @@ const OnboardingTour = ({ onComplete, onSkip }: OnboardingTourProps) => {
           zIndex: 10000,
         },
         tooltip: {
-          borderRadius: 12,
+          borderRadius: isMobile ? 16 : 12,
           padding: 0,
+          maxWidth: isMobile ? "calc(100vw - 32px)" : 420,
         },
         tooltipContainer: {
           textAlign: "left",
+        },
+        tooltipContent: {
+          padding: isMobile ? "20px" : "16px",
         },
         buttonNext: {
           display: stepIndex === 0 ? "none" : "block",
           backgroundColor: "hsl(var(--primary))",
           borderRadius: 8,
-          padding: "8px 16px",
+          padding: isMobile ? "12px 24px" : "8px 16px",
+          minHeight: isMobile ? 44 : "auto",
+          fontSize: isMobile ? "16px" : "14px",
         },
         buttonBack: {
           color: "hsl(var(--muted-foreground))",
           marginRight: 8,
+          padding: isMobile ? "12px 24px" : "8px 16px",
+          minHeight: isMobile ? 44 : "auto",
+          fontSize: isMobile ? "16px" : "14px",
         },
         buttonSkip: {
           color: "hsl(var(--muted-foreground))",
+          padding: isMobile ? "12px" : "8px",
+          minHeight: isMobile ? 44 : "auto",
+          fontSize: isMobile ? "16px" : "14px",
         },
       }}
       locale={{

@@ -212,17 +212,14 @@ const Index = () => {
               </p>
             </div>
             <nav className="flex gap-8 text-sm">
-              <Link to="/about" className="text-muted-foreground hover:text-foreground transition-colors">
-                About
+              <Link to="/faq" className="text-muted-foreground hover:text-foreground transition-colors">
+                FAQ
               </Link>
               <Link to="/privacy" className="text-muted-foreground hover:text-foreground transition-colors">
                 Privacy
               </Link>
               <Link to="/terms" className="text-muted-foreground hover:text-foreground transition-colors">
                 Terms
-              </Link>
-              <Link to="/contact" className="text-muted-foreground hover:text-foreground transition-colors">
-                Contact
               </Link>
             </nav>
           </div>

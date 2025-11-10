@@ -79,7 +79,6 @@ const handler = async (req: Request): Promise<Response> => {
   const providedSecret = req.headers.get("x-cron-secret");
 
   if (!cronSecret || providedSecret !== cronSecret) {
-    console.error("Unauthorized: Invalid or missing CRON_SECRET");
     return new Response(
       JSON.stringify({ error: "Unauthorized" }),
       {
@@ -90,8 +89,6 @@ const handler = async (req: Request): Promise<Response> => {
   }
 
   try {
-    console.log("Starting contribution reminder check...");
-
     // Get all active groups that have started
     const { data: groups, error: groupsError } = await supabase
       .from("groups")
@@ -100,25 +97,18 @@ const handler = async (req: Request): Promise<Response> => {
       .not("start_date", "is", null);
 
     if (groupsError) {
-      console.error("Error fetching groups:", groupsError);
       throw groupsError;
     }
-
-    console.log(`Found ${groups?.length || 0} active groups`);
 
     const now = new Date();
     let remindersSent = 0;
 
     for (const group of groups as Group[]) {
-      console.log(`Processing group: ${group.group_name}`);
-      
       const currentCycle = getCurrentCycle(group.start_date, group.frequency);
       const nextCycleDate = getNextCycleDate(group.start_date, group.frequency, currentCycle);
       
       // Calculate days until next cycle
       const daysUntilDue = Math.ceil((nextCycleDate.getTime() - now.getTime()) / (1000 * 60 * 60 * 24));
-      
-      console.log(`Group ${group.group_name}: Cycle ${currentCycle}, Days until due: ${daysUntilDue}`);
       
       // Send reminders if 2-3 days before due date
       if (daysUntilDue >= 2 && daysUntilDue <= 3) {
@@ -129,7 +119,6 @@ const handler = async (req: Request): Promise<Response> => {
           .eq("group_id", group.id);
 
         if (membersError) {
-          console.error(`Error fetching members for group ${group.id}:`, membersError);
           continue;
         }
 
@@ -141,7 +130,6 @@ const handler = async (req: Request): Promise<Response> => {
           .eq("cycle", currentCycle);
 
         if (contributionsError) {
-          console.error(`Error fetching contributions for group ${group.id}:`, contributionsError);
           continue;
         }
 
@@ -152,7 +140,6 @@ const handler = async (req: Request): Promise<Response> => {
         // Send reminders to members who haven't contributed yet
         for (const member of members as Member[]) {
           if (contributedMemberIds.has(member.id)) {
-            console.log(`Member ${member.name} already contributed for cycle ${currentCycle}`);
             continue;
           }
 
@@ -165,7 +152,6 @@ const handler = async (req: Request): Promise<Response> => {
               .single();
 
             if (prefs && (!prefs.email_notifications || !prefs.contribution_reminders)) {
-              console.log(`Member ${member.name} has notifications disabled`);
               continue;
             }
           }
@@ -194,20 +180,15 @@ const handler = async (req: Request): Promise<Response> => {
               }
             );
 
-            if (notificationError) {
-              console.error(`Error sending reminder to ${member.email}:`, notificationError);
-            } else {
-              console.log(`Reminder sent to ${member.name} (${member.email})`);
+            if (!notificationError) {
               remindersSent++;
             }
           } catch (error) {
-            console.error(`Failed to send reminder to ${member.email}:`, error);
+            // Continue to next member
           }
         }
       }
     }
-
-    console.log(`Reminder check complete. Sent ${remindersSent} reminders.`);
 
     return new Response(
       JSON.stringify({
@@ -221,9 +202,8 @@ const handler = async (req: Request): Promise<Response> => {
       }
     );
   } catch (error: any) {
-    console.error("Error in send-contribution-reminders function:", error);
     return new Response(
-      JSON.stringify({ error: error.message }),
+      JSON.stringify({ error: "Failed to process reminders" }),
       {
         status: 500,
         headers: { ...corsHeaders, "Content-Type": "application/json" },

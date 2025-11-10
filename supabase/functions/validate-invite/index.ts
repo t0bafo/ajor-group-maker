@@ -26,13 +26,11 @@ const checkRateLimit = async (supabase: any, ipAddress: string): Promise<boolean
     .gte('created_at', tenMinutesAgo.toISOString());
   
   if (countError) {
-    console.error('Rate limit check error:', countError);
     // On error, fail open (allow request) to avoid blocking legitimate users
     return true;
   }
   
   if (count && count >= 10) {
-    console.warn(`Rate limit exceeded for IP: ${ipAddress}`);
     return false;
   }
   
@@ -44,9 +42,6 @@ const checkRateLimit = async (supabase: any, ipAddress: string): Promise<boolean
       endpoint: 'validate-invite',
     });
   
-  if (insertError) {
-    console.error('Rate limit logging error:', insertError);
-  }
   
   return true;
 };
@@ -71,7 +66,6 @@ serve(async (req) => {
     // Check rate limit
     const allowed = await checkRateLimit(supabaseAdmin, ipAddress);
     if (!allowed) {
-      console.warn(`Rate limit blocked request from IP: ${ipAddress}`);
       return new Response(
         JSON.stringify({ 
           error: "Too many attempts. Please try again in 10 minutes." 
@@ -149,7 +143,6 @@ serve(async (req) => {
       { status: 200, headers: { ...corsHeaders, "Content-Type": "application/json" } }
     );
   } catch (error) {
-    console.error('Error in validate-invite:', error);
     return new Response(
       JSON.stringify({ error: "Failed to validate invite code" }),
       { status: 500, headers: { ...corsHeaders, "Content-Type": "application/json" } }

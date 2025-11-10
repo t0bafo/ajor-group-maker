@@ -3,6 +3,7 @@ import { createClient } from "https://esm.sh/@supabase/supabase-js@2.79.0";
 import { Resend } from "https://esm.sh/resend@4.0.0";
 import React from "https://esm.sh/react@18.3.1";
 import { renderAsync } from "https://esm.sh/@react-email/components@0.0.22";
+import { z } from "https://deno.land/x/zod@v3.22.4/mod.ts";
 import { ContributionReminderEmail } from "./_templates/contribution-reminder.tsx";
 import { PayoutNotificationEmail } from "./_templates/payout-notification.tsx";
 import { MemberActivityEmail } from "./_templates/member-activity.tsx";
@@ -19,6 +20,26 @@ const corsHeaders = {
   "Access-Control-Allow-Headers": "authorization, x-client-info, apikey, content-type",
 };
 
+// Input validation schema
+const notificationSchema = z.object({
+  type: z.enum(['contribution_reminder', 'payout_notification', 'member_activity', 'group_created', 'welcome_email']),
+  recipientEmail: z.string().email().max(255),
+  recipientName: z.string().trim().min(1).max(100),
+  data: z.object({
+    groupName: z.string().trim().max(100).optional(),
+    amount: z.number().positive().max(1000000).optional(),
+    cycleLabel: z.string().max(50).optional(),
+    dueDate: z.string().max(100).optional(),
+    memberName: z.string().trim().max(100).optional(),
+    activityType: z.enum(['joined', 'left']).optional(),
+    contributionAmount: z.number().positive().max(1000000).optional(),
+    frequency: z.string().max(50).optional(),
+    numberOfMembers: z.number().int().positive().max(100).optional(),
+    inviteCode: z.string().length(9).optional(),
+    customMessage: z.string().max(500).optional(),
+  }),
+});
+
 interface NotificationRequest {
   type: "contribution_reminder" | "payout_notification" | "member_activity" | "group_created" | "welcome_email";
   recipientEmail: string;
@@ -34,6 +55,7 @@ interface NotificationRequest {
     frequency?: string;
     numberOfMembers?: number;
     inviteCode?: string;
+    customMessage?: string;
   };
 }
 
@@ -44,9 +66,21 @@ const handler = async (req: Request): Promise<Response> => {
   }
 
   try {
-    const { type, recipientEmail, recipientName, data }: NotificationRequest = await req.json();
+    const requestBody = await req.json();
+    
+    // Validate input
+    const validationResult = notificationSchema.safeParse(requestBody);
+    if (!validationResult.success) {
+      return new Response(
+        JSON.stringify({ 
+          error: 'Invalid input', 
+          details: validationResult.error.errors 
+        }),
+        { status: 400, headers: { ...corsHeaders, "Content-Type": "application/json" } }
+      );
+    }
 
-    console.log("Sending notification:", { type, recipientEmail, data });
+    const { type, recipientEmail, recipientName, data }: NotificationRequest = validationResult.data;
 
     let html: string;
     let subject: string;
@@ -126,11 +160,8 @@ const handler = async (req: Request): Promise<Response> => {
     });
 
     if (error) {
-      console.error("Error sending email:", error);
-      throw error;
+      throw new Error("Failed to send email");
     }
-
-    console.log("Email sent successfully to:", recipientEmail);
 
     // Log to notification history
     try {
@@ -155,7 +186,6 @@ const handler = async (req: Request): Promise<Response> => {
           });
       }
     } catch (historyError) {
-      console.error("Failed to log notification history:", historyError);
       // Don't fail the request if history logging fails
     }
 
@@ -167,9 +197,8 @@ const handler = async (req: Request): Promise<Response> => {
       }
     );
   } catch (error: any) {
-    console.error("Error in send-notification function:", error);
     return new Response(
-      JSON.stringify({ error: error.message }),
+      JSON.stringify({ error: "Failed to send notification" }),
       {
         status: 500,
         headers: { ...corsHeaders, "Content-Type": "application/json" },

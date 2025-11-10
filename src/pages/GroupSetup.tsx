@@ -1,4 +1,4 @@
-import { useState } from "react";
+import { useState, useRef, useEffect } from "react";
 import { useNavigate } from "react-router-dom";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
@@ -14,11 +14,13 @@ import CulturalTooltip from "@/components/CulturalTooltip";
 import { celebrationConfetti } from "@/lib/confetti";
 import { groupSchema } from "@/lib/validation";
 import { useNotification } from "@/hooks/useNotification";
+import { LoadingButton } from "@/components/LoadingButton";
 
 const GroupSetup = () => {
   const navigate = useNavigate();
   const { sendNotification } = useNotification();
   const [currentStep, setCurrentStep] = useState(0);
+  const [isSubmitting, setIsSubmitting] = useState(false);
   const [formData, setFormData] = useState({
     groupName: "",
     description: "",
@@ -28,7 +30,25 @@ const GroupSetup = () => {
     rotationOrder: "sequential",
   });
 
+  // Layer 2: Request deduplication - prevent concurrent submissions
+  const isCreatingGroup = useRef(false);
+  
+  // Layer 3: Idempotency key - unique key per form session
+  const idempotencyKey = useRef<string | null>(null);
+
   const steps = ["Basic Info", "Financial Details", "Rotation Setup"];
+
+  // Generate idempotency key on mount
+  useEffect(() => {
+    const existingKey = sessionStorage.getItem("groupCreationKey");
+    if (!existingKey) {
+      const newKey = `group_${Date.now()}_${Math.random().toString(36).substring(2, 15)}`;
+      sessionStorage.setItem("groupCreationKey", newKey);
+      idempotencyKey.current = newKey;
+    } else {
+      idempotencyKey.current = existingKey;
+    }
+  }, []);
 
   const handleInputChange = (field: string, value: string) => {
     setFormData((prev) => ({ ...prev, [field]: value }));
@@ -73,6 +93,33 @@ const GroupSetup = () => {
     }
     
     // Final step - create group
+    
+    // Layer 2: Check if request is already in progress
+    if (isCreatingGroup.current) {
+      toast({
+        title: "Already Creating Group",
+        description: "Please wait while we create your group...",
+        variant: "destructive",
+      });
+      return;
+    }
+
+    // Layer 3: Check if this session already created a group
+    const existingGroupId = sessionStorage.getItem("currentGroupId");
+    const sessionKey = sessionStorage.getItem("groupCreationKey");
+    if (existingGroupId && sessionKey === idempotencyKey.current) {
+      toast({
+        title: "Group Already Created",
+        description: "Redirecting you to invite members...",
+      });
+      navigate("/invite-members");
+      return;
+    }
+
+    // Layer 1: Set loading state
+    setIsSubmitting(true);
+    isCreatingGroup.current = true;
+
     try {
       // Get current user
       const { data: { user } } = await supabase.auth.getUser();
@@ -141,7 +188,7 @@ const GroupSetup = () => {
         // Don't block the flow if notification fails
       }
 
-      // Store group ID for next page
+      // Store group ID for next page (idempotency check)
       sessionStorage.setItem("currentGroupId", group.id);
       
       // Celebration confetti!
@@ -154,17 +201,35 @@ const GroupSetup = () => {
 
       // Navigate to invite members page
       setTimeout(() => {
-        navigate("/invite-members");
+        navigate("/invite-members", { replace: true });
       }, 1200);
     } catch (error: any) {
+      // Reset state on error
+      isCreatingGroup.current = false;
+      setIsSubmitting(false);
+
       if (import.meta.env.DEV) {
         console.error('Error creating group:', error);
       }
-      toast({
-        title: "Error Creating Group",
-        description: "Failed to create group. Please try again.",
-        variant: "destructive",
-      });
+
+      // Handle duplicate invite code error
+      if (error?.message?.includes("duplicate") || error?.code === "23505") {
+        toast({
+          title: "Duplicate Detected",
+          description: "This group may already exist. Refreshing...",
+          variant: "destructive",
+        });
+        // Generate new idempotency key and retry
+        const newKey = `group_${Date.now()}_${Math.random().toString(36).substring(2, 15)}`;
+        sessionStorage.setItem("groupCreationKey", newKey);
+        idempotencyKey.current = newKey;
+      } else {
+        toast({
+          title: "Error Creating Group",
+          description: error?.message || "Failed to create group. Please try again.",
+          variant: "destructive",
+        });
+      }
     }
   };
 
@@ -321,21 +386,36 @@ const GroupSetup = () => {
                     type="button" 
                     variant="outline" 
                     onClick={() => setCurrentStep(currentStep - 1)}
+                    disabled={isSubmitting}
                     className="w-full sm:flex-1"
                   >
                     <ArrowLeft className="mr-2 h-4 w-4" />
                     Back
                   </Button>
                 )}
-                <Button 
-                  type="submit" 
-                  variant={currentStep === 2 ? "hero" : "default"}
-                  size="lg" 
-                  className="w-full sm:flex-1"
-                >
-                  {currentStep === 2 ? "Create Ajor" : "Next"}
-                  <ArrowRight className="ml-2 h-5 w-5" />
-                </Button>
+                {currentStep === 2 ? (
+                  <LoadingButton
+                    type="submit"
+                    variant="hero"
+                    size="lg"
+                    loading={isSubmitting}
+                    className="w-full sm:flex-1"
+                  >
+                    Create Ajor
+                    {!isSubmitting && <ArrowRight className="ml-2 h-5 w-5" />}
+                  </LoadingButton>
+                ) : (
+                  <Button 
+                    type="submit" 
+                    variant="default"
+                    size="lg" 
+                    className="w-full sm:flex-1"
+                    disabled={isSubmitting}
+                  >
+                    Next
+                    <ArrowRight className="ml-2 h-5 w-5" />
+                  </Button>
+                )}
               </div>
             </form>
           </CardContent>

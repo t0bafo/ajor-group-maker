@@ -102,11 +102,11 @@ const InviteMembers = () => {
     e.preventDefault();
     if (!groupData) return;
 
-    // Check if Ajor has started
-    if (groupData.startDate) {
+    // Check if group is full
+    if (members.length >= groupData.numberOfMembers) {
       toast({
-        title: "Cannot Invite Members",
-        description: "Members cannot be added after the Ajor has started",
+        title: "Group is Full",
+        description: "This Ajor has already started. No new members can be added at this time.",
         variant: "destructive",
       });
       return;
@@ -234,15 +234,6 @@ const InviteMembers = () => {
             </CardDescription>
           </CardHeader>
           <CardContent className="space-y-6">
-            {groupData.startDate && (
-              <Alert variant="destructive" className="bg-orange-50 dark:bg-orange-950 border-orange-200 dark:border-orange-800">
-                <AlertCircle className="h-4 w-4" />
-                <AlertDescription>
-                  This Ajor has already started. No new members can be added at this time.
-                </AlertDescription>
-              </Alert>
-            )}
-
             {/* Invite Link Section */}
             <div className="space-y-3">
               <Label className="text-sm font-semibold text-muted-foreground uppercase tracking-wide">

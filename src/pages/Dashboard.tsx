@@ -5,12 +5,20 @@ import { Card, CardContent, CardDescription, CardHeader, CardTitle } from "@/com
 import { Badge } from "@/components/ui/badge";
 import { Progress } from "@/components/ui/progress";
 import { supabase } from "@/integrations/supabase/client";
-import { UserPlus, Users, DollarSign, Calendar, TrendingUp, Plus, Crown } from "lucide-react";
+import { UserPlus, Users, DollarSign, Calendar, TrendingUp, Plus, Crown, MoreVertical, Eye, Archive, Trash2, BookOpen, Settings } from "lucide-react";
 import { useToast } from "@/hooks/use-toast";
 import AppNavigation from "@/components/AppNavigation";
 import InviteMembersModal from "@/components/InviteMembersModal";
 import EmptyState from "@/components/EmptyState";
 import { DashboardSkeleton } from "@/components/SkeletonLoader";
+import {
+  DropdownMenu,
+  DropdownMenuContent,
+  DropdownMenuItem,
+  DropdownMenuSeparator,
+  DropdownMenuTrigger,
+} from "@/components/ui/dropdown-menu";
+import ArchiveGroupModal from "@/components/ArchiveGroupModal";
 
 const Dashboard = () => {
   const navigate = useNavigate();
@@ -21,6 +29,8 @@ const Dashboard = () => {
   const [inviteModalOpen, setInviteModalOpen] = useState(false);
   const [selectedGroup, setSelectedGroup] = useState<{ name: string; code: string } | null>(null);
   const [showArchived, setShowArchived] = useState(false);
+  const [archiveModalOpen, setArchiveModalOpen] = useState(false);
+  const [groupToArchive, setGroupToArchive] = useState<{ id: string; name: string; archived: boolean } | null>(null);
 
   useEffect(() => {
     // Check authentication and load user-specific data
@@ -170,6 +180,67 @@ const Dashboard = () => {
     e.stopPropagation(); // Prevent card click
     setSelectedGroup({ name: groupName, code: inviteCode });
     setInviteModalOpen(true);
+  };
+
+  const handleArchiveGroup = async (groupId: string, shouldArchive: boolean) => {
+    try {
+      const { error } = await supabase
+        .from('groups')
+        .update({ archived: shouldArchive })
+        .eq('id', groupId);
+
+      if (error) throw error;
+
+      toast({
+        title: shouldArchive ? "Group Archived" : "Group Unarchived",
+        description: shouldArchive 
+          ? "Group moved to archived groups" 
+          : "Group restored to active groups",
+      });
+
+      // Reload groups
+      if (user) loadUserGroups(user.id);
+    } catch (error: any) {
+      toast({
+        title: "Error",
+        description: error.message,
+        variant: "destructive",
+      });
+    }
+  };
+
+  const handleDeleteGroup = async (groupId: string, groupName: string, e: React.MouseEvent) => {
+    e.stopPropagation();
+    
+    const confirmed = window.confirm(
+      `Are you sure you want to permanently delete "${groupName}"? This action cannot be undone.`
+    );
+
+    if (!confirmed) return;
+
+    try {
+      // Delete group (cascading deletes will handle members, contributions, etc.)
+      const { error } = await supabase
+        .from('groups')
+        .delete()
+        .eq('id', groupId);
+
+      if (error) throw error;
+
+      toast({
+        title: "Group Deleted",
+        description: `"${groupName}" has been permanently deleted`,
+      });
+
+      // Reload groups
+      if (user) loadUserGroups(user.id);
+    } catch (error: any) {
+      toast({
+        title: "Error Deleting Group",
+        description: error.message,
+        variant: "destructive",
+      });
+    }
   };
 
   // Filter groups based on archived status
@@ -331,17 +402,74 @@ const Dashboard = () => {
                             </div>
                             <CardDescription className="text-sm">{group.description}</CardDescription>
                           </div>
-                          {!group.archived && (
-                            <Button
-                              variant="outline"
-                              size="sm"
-                              className="border-gold/20 hover:bg-gold/10 w-full sm:w-auto"
-                              onClick={(e) => handleInviteMembers(group.groupName, group.inviteCode, e)}
-                            >
-                              <UserPlus className="h-4 w-4 mr-2" />
-                              Invite
-                            </Button>
-                          )}
+                          <div className="flex items-center gap-2">
+                            {!group.archived && (
+                              <Button
+                                variant="outline"
+                                size="sm"
+                                className="border-gold/20 hover:bg-gold/10"
+                                onClick={(e) => handleInviteMembers(group.groupName, group.inviteCode, e)}
+                              >
+                                <UserPlus className="h-4 w-4 mr-2" />
+                                <span className="hidden sm:inline">Invite</span>
+                              </Button>
+                            )}
+                            <DropdownMenu>
+                              <DropdownMenuTrigger asChild onClick={(e) => e.stopPropagation()}>
+                                <Button variant="ghost" size="sm" className="h-8 w-8 p-0">
+                                  <MoreVertical className="h-4 w-4" />
+                                </Button>
+                              </DropdownMenuTrigger>
+                              <DropdownMenuContent align="end" className="w-56">
+                                <DropdownMenuItem
+                                  onClick={(e) => {
+                                    e.stopPropagation();
+                                    sessionStorage.setItem("currentGroupId", group.id);
+                                    navigate("/group-dashboard");
+                                  }}
+                                >
+                                  <Eye className="mr-2 h-4 w-4" />
+                                  View Details
+                                </DropdownMenuItem>
+                                <DropdownMenuItem
+                                  onClick={(e) => {
+                                    e.stopPropagation();
+                                    sessionStorage.setItem("currentGroupId", group.id);
+                                    navigate("/group-ledger");
+                                  }}
+                                >
+                                  <BookOpen className="mr-2 h-4 w-4" />
+                                  View Ledger
+                                </DropdownMenuItem>
+                                {group.isHost && (
+                                  <>
+                                    <DropdownMenuSeparator />
+                                    <DropdownMenuItem
+                                      onClick={(e) => {
+                                        e.stopPropagation();
+                                        setGroupToArchive({
+                                          id: group.id,
+                                          name: group.groupName,
+                                          archived: group.archived
+                                        });
+                                        setArchiveModalOpen(true);
+                                      }}
+                                    >
+                                      <Archive className="mr-2 h-4 w-4" />
+                                      {group.archived ? "Unarchive" : "Archive"}
+                                    </DropdownMenuItem>
+                                    <DropdownMenuItem
+                                      onClick={(e) => handleDeleteGroup(group.id, group.groupName, e)}
+                                      className="text-destructive focus:text-destructive"
+                                    >
+                                      <Trash2 className="mr-2 h-4 w-4" />
+                                      Delete Group
+                                    </DropdownMenuItem>
+                                  </>
+                                )}
+                              </DropdownMenuContent>
+                            </DropdownMenu>
+                          </div>
                         </div>
                       </CardHeader>
                       <CardContent className="space-y-4">
@@ -453,6 +581,21 @@ const Dashboard = () => {
           onOpenChange={setInviteModalOpen}
           groupName={selectedGroup.name}
           inviteCode={selectedGroup.code}
+        />
+      )}
+
+      {/* Archive Group Modal */}
+      {groupToArchive && (
+        <ArchiveGroupModal
+          open={archiveModalOpen}
+          onOpenChange={setArchiveModalOpen}
+          groupName={groupToArchive.name}
+          isArchived={groupToArchive.archived}
+          onConfirm={() => {
+            handleArchiveGroup(groupToArchive.id, !groupToArchive.archived);
+            setArchiveModalOpen(false);
+            setGroupToArchive(null);
+          }}
         />
       )}
     </div>

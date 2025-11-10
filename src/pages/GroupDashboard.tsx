@@ -1062,6 +1062,7 @@ const GroupDashboard = () => {
         open={showArchiveModal}
         onOpenChange={setShowArchiveModal}
         groupName={groupData.groupName || ""}
+        isArchived={groupData.archived || false}
         onConfirm={handleArchiveGroup}
       />
 

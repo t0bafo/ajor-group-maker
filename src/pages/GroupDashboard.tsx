@@ -9,6 +9,7 @@ import { Calendar, DollarSign, Users, Settings, UserPlus, Plus, TrendingUp, Arch
 import AppNavigation from "@/components/AppNavigation";
 import ArchiveGroupModal from "@/components/ArchiveGroupModal";
 import StartAjorModal from "@/components/StartAjorModal";
+import BatchContributionModal from "@/components/BatchContributionModal";
 import { GroupDashboardSkeleton } from "@/components/SkeletonLoader";
 import { supabase } from "@/integrations/supabase/client";
 import { useToast } from "@/hooks/use-toast";
@@ -24,6 +25,7 @@ const GroupDashboard = () => {
   const [isHost, setIsHost] = useState(false);
   const [showArchiveModal, setShowArchiveModal] = useState(false);
   const [showStartModal, setShowStartModal] = useState(false);
+  const [showBatchModal, setShowBatchModal] = useState(false);
   const [startingAjor, setStartingAjor] = useState(false);
   const [loading, setLoading] = useState(true);
   const [sendingReminders, setSendingReminders] = useState(false);
@@ -142,6 +144,48 @@ const GroupDashboard = () => {
 
     loadGroupData();
   }, [navigate, toast]);
+
+  const reloadGroupData = async () => {
+    const groupId = sessionStorage.getItem("currentGroupId");
+    if (!groupId) return;
+
+    try {
+      const [
+        { data: contributionsData },
+        { data: payoutsData },
+      ] = await Promise.all([
+        supabase.from('contributions').select('*, members(name)').eq('group_id', groupId).order('created_at', { ascending: false }),
+        supabase.from('payouts').select('*').eq('group_id', groupId).order('created_at', { ascending: false }),
+      ]);
+
+      if (contributionsData) {
+        setContributions(contributionsData.map((c: any) => ({
+          id: c.id,
+          memberId: c.member_id,
+          memberName: c.members?.name || 'Unknown',
+          amount: parseFloat(c.amount),
+          cycle: c.cycle,
+          cycleLabel: c.cycle_label,
+          date: c.created_at,
+          note: c.note,
+          status: c.status,
+        })));
+      }
+
+      if (payoutsData) {
+        setPayouts(payoutsData.map((p: any) => ({
+          id: p.id,
+          memberId: p.member_id,
+          amount: parseFloat(p.amount),
+          cycle: p.cycle,
+          date: p.payout_date,
+          status: p.status,
+        })));
+      }
+    } catch (error) {
+      console.error('Error reloading data:', error);
+    }
+  };
 
   const totalAmount = parseFloat(groupData.contributionAmount || 0) * parseInt(groupData.numberOfMembers || 0);
   const currentProgress = (members.length / parseInt(groupData.numberOfMembers || 1)) * 100;
@@ -624,9 +668,22 @@ const GroupDashboard = () => {
                     <Bell className="mr-2 h-4 w-4" />
                     {sendingReminders ? "Sending..." : "Send Reminder"}
                   </Button>
-                  <Button onClick={() => navigate("/record-contribution")} size="sm" className="flex-1 sm:flex-none">
+                  <Button 
+                    onClick={() => setShowBatchModal(true)} 
+                    size="sm" 
+                    className="flex-1 sm:flex-none bg-primary hover:bg-primary/90"
+                    disabled={!groupData.start_date}
+                  >
                     <Plus className="mr-2 h-4 w-4" />
-                    Record Contribution
+                    Quick Entry
+                  </Button>
+                  <Button 
+                    onClick={() => navigate("/record-contribution")} 
+                    variant="outline"
+                    size="sm" 
+                    className="flex-1 sm:flex-none"
+                  >
+                    Single Entry
                   </Button>
                 </div>
               )}
@@ -818,12 +875,26 @@ const GroupDashboard = () => {
         onConfirm={handleStartAjor}
         loading={startingAjor}
       />
-      
-      <ArchiveGroupModal
+
+      <ArchiveGroupModal 
         open={showArchiveModal}
         onOpenChange={setShowArchiveModal}
         groupName={groupData.groupName || ""}
         onConfirm={handleArchiveGroup}
+      />
+
+      <BatchContributionModal
+        open={showBatchModal}
+        onOpenChange={setShowBatchModal}
+        groupData={{
+          id: groupData.id,
+          groupName: groupData.groupName || "",
+          contributionAmount: parseFloat(groupData.contributionAmount || 0),
+          frequency: groupData.frequency || "monthly",
+          start_date: groupData.start_date,
+        }}
+        members={members}
+        onSuccess={reloadGroupData}
       />
     </div>
   );

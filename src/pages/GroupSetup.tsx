@@ -171,6 +171,7 @@ const GroupSetup = () => {
 
       // Send group creation notification
       try {
+        console.log('Attempting to send group creation notification to:', user.email);
         await sendNotification({
           type: "group_created",
           recipientEmail: user.email || '',
@@ -183,9 +184,20 @@ const GroupSetup = () => {
             inviteCode: inviteCode,
           },
         });
-      } catch (notificationError) {
-        console.error('Failed to send notification:', notificationError);
-        // Don't block the flow if notification fails
+        console.log('Group creation notification sent successfully');
+      } catch (notificationError: any) {
+        console.error('Failed to send notification to host:', notificationError);
+        console.error('Notification error details:', {
+          message: notificationError?.message,
+          status: notificationError?.status,
+          details: notificationError?.details,
+        });
+        // Show toast to inform user (but don't block group creation)
+        toast({
+          title: "Group Created Successfully",
+          description: "Note: Email notification failed to send. Please check your email settings.",
+          variant: "default",
+        });
       }
 
       // Store group ID for next page (idempotency check)

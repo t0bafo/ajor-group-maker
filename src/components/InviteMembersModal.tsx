@@ -133,8 +133,7 @@ const InviteMembersModal = ({ open, onOpenChange, groupName, inviteCode }: Invit
             </Button>
             <Button
               onClick={handleShare}
-              variant="cta"
-              className="bg-gradient-to-r from-accent to-primary"
+              variant="hero"
             >
               <Mail className="mr-2 h-4 w-4" />
               Share via...

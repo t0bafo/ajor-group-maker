@@ -315,8 +315,7 @@ const InviteMembers = () => {
               </Button>
               <Button
                 onClick={handleShare}
-                variant="cta"
-                className="bg-gradient-to-r from-accent to-primary"
+                variant="hero"
                 disabled={!!groupData.startDate}
               >
                 <Mail className="mr-2 h-4 w-4" />

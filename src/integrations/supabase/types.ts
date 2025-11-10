@@ -355,7 +355,15 @@ export type Database = {
       expire_old_pending_requests: { Args: never; Returns: number }
       generate_invite_code: { Args: never; Returns: string }
       get_user_email: { Args: { _user_id: string }; Returns: string }
+      is_approved_group_member: {
+        Args: { _group_id: string; _user_id: string }
+        Returns: boolean
+      }
       is_group_full: { Args: { group_id_param: string }; Returns: boolean }
+      is_group_host: {
+        Args: { _group_id: string; _user_id: string }
+        Returns: boolean
+      }
       is_user_in_group: {
         Args: { _group_id: string; _user_id: string }
         Returns: boolean

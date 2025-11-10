@@ -70,18 +70,33 @@ const Dashboard = () => {
       // Store host group IDs for easy lookup
       const hostedGroupIds = new Set(hostedGroups?.map(g => g.id) || []);
 
-      // Get groups where user is a member (including archived status)
-      const { data: memberGroups, error: memberError } = await supabase
+      // Get group IDs where user is an approved member
+      const { data: membershipData, error: memberError } = await supabase
         .from('members')
-        .select('group_id, groups(*)')
-        .eq('user_id', userId);
+        .select('group_id')
+        .eq('user_id', userId)
+        .eq('status', 'approved');
 
       if (memberError) throw memberError;
+
+      // Get the actual group data for member groups
+      const memberGroupIds = membershipData?.map(m => m.group_id) || [];
+      let memberGroups: any[] = [];
+      
+      if (memberGroupIds.length > 0) {
+        const { data: groupsData, error: groupsError } = await supabase
+          .from('groups')
+          .select('*')
+          .in('id', memberGroupIds);
+        
+        if (groupsError) throw groupsError;
+        memberGroups = groupsData || [];
+      }
 
       // Combine and deduplicate groups
       const allGroups = [
         ...(hostedGroups || []),
-        ...(memberGroups?.map(m => m.groups).filter(Boolean) || [])
+        ...memberGroups
       ];
       
       // Remove duplicates based on group id
@@ -94,11 +109,12 @@ const Dashboard = () => {
       if (groups && groups.length > 0) {
         const formattedGroups = await Promise.all(groups.map(async (group: any) => {
           const isHost = hostedGroupIds.has(group.id);
-          // Get member count
+          // Get approved member count only
           const { count: memberCount } = await supabase
             .from('members')
             .select('*', { count: 'exact', head: true })
-            .eq('group_id', group.id);
+            .eq('group_id', group.id)
+            .eq('status', 'approved');
 
           // Get contribution progress
           const { count: contributionCount } = await supabase

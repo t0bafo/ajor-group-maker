@@ -139,7 +139,7 @@ export const RequestApprovedEmail = ({
 
             <div className="divider"></div>
 
-            <h3 style="color: #1a1a1a; margin-top: 30px;">Group Details</h3>
+            <h3 style={{ color: "#1a1a1a", marginTop: "30px" }}>Group Details</h3>
             <div className="info-grid">
               <div className="info-card">
                 <strong>Contribution</strong>
@@ -147,20 +147,20 @@ export const RequestApprovedEmail = ({
               </div>
               <div className="info-card">
                 <strong>Frequency</strong>
-                <div className="value" style="font-size: 18px; text-transform: capitalize;">{frequency}</div>
+                <div className="value" style={{ fontSize: "18px", textTransform: "capitalize" }}>{frequency}</div>
               </div>
             </div>
 
-            <p style="text-align: center; margin: 30px 0;">
+            <p style={{ textAlign: "center", margin: "30px 0" }}>
               <a href="https://your-app-url.com/dashboard" className="cta-button">
                 View Group Dashboard
               </a>
             </p>
 
-            <p style="color: #666666; font-size: 14px;">
+            <p style={{ color: "#666666", fontSize: "14px" }}>
               <strong>What's next?</strong>
             </p>
-            <ul style="color: #666666; font-size: 14px; margin-left: 20px;">
+            <ul style={{ color: "#666666", fontSize: "14px", marginLeft: "20px" }}>
               <li>Review the group dashboard and payout schedule</li>
               <li>Mark your calendar for contribution dates</li>
               <li>Connect with other group members</li>
@@ -172,7 +172,7 @@ export const RequestApprovedEmail = ({
             <p>
               Welcome to {groupName}! Let's build wealth together.
             </p>
-            <p style="margin-top: 10px;">
+            <p style={{ marginTop: "10px" }}>
               © 2025 Ajor. Building wealth through community savings.
             </p>
           </div>

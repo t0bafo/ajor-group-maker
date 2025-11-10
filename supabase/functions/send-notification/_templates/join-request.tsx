@@ -138,16 +138,16 @@ export const JoinRequestEmail = ({
 
             <div className="divider"></div>
 
-            <p style="text-align: center; margin: 30px 0;">
+            <p style={{ textAlign: "center", margin: "30px 0" }}>
               <a href="https://your-app-url.com/dashboard" className="cta-button">
                 Review Request
               </a>
             </p>
 
-            <p style="color: #666666; font-size: 14px;">
+            <p style={{ color: "#666666", fontSize: "14px" }}>
               <strong>What's next?</strong>
             </p>
-            <ul style="color: #666666; font-size: 14px; margin-left: 20px;">
+            <ul style={{ color: "#666666", fontSize: "14px", marginLeft: "20px" }}>
               <li>Review the member's details and message</li>
               <li>Approve to add them to your group</li>
               <li>Or reject if they're not a good fit</li>
@@ -158,7 +158,7 @@ export const JoinRequestEmail = ({
             <p>
               This email was sent because you're the host of {groupName} on Ajor.
             </p>
-            <p style="margin-top: 10px;">
+            <p style={{ marginTop: "10px" }}>
               © 2025 Ajor. Building wealth through community savings.
             </p>
           </div>

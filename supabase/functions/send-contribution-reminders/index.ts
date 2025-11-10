@@ -74,6 +74,21 @@ const handler = async (req: Request): Promise<Response> => {
     return new Response(null, { headers: corsHeaders });
   }
 
+  // Verify CRON_SECRET
+  const cronSecret = Deno.env.get("CRON_SECRET");
+  const providedSecret = req.headers.get("x-cron-secret");
+
+  if (!cronSecret || providedSecret !== cronSecret) {
+    console.error("Unauthorized: Invalid or missing CRON_SECRET");
+    return new Response(
+      JSON.stringify({ error: "Unauthorized" }),
+      {
+        status: 401,
+        headers: { ...corsHeaders, "Content-Type": "application/json" },
+      }
+    );
+  }
+
   try {
     console.log("Starting contribution reminder check...");
 

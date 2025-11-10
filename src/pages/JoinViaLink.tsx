@@ -1,5 +1,5 @@
 import { useEffect, useState } from "react";
-import { useNavigate, useParams } from "react-router-dom";
+import { useNavigate, useParams, useSearchParams } from "react-router-dom";
 import { Button } from "@/components/ui/button";
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from "@/components/ui/card";
 import { Badge } from "@/components/ui/badge";
@@ -14,6 +14,8 @@ const JoinViaLink = () => {
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState(false);
 
+  const [isAuthenticated, setIsAuthenticated] = useState(false);
+
   useEffect(() => {
     const loadGroupFromCode = async () => {
       if (!code) {
@@ -27,18 +29,12 @@ const JoinViaLink = () => {
         return;
       }
 
-      // First check if user is authenticated
+      // Check authentication status
       const { data: { session } } = await supabase.auth.getSession();
-      
-      if (!session) {
-        // Store the invite code and redirect to auth
-        sessionStorage.setItem("pendingInviteCode", code);
-        navigate("/auth");
-        return;
-      }
+      setIsAuthenticated(!!session);
 
       try {
-        // Use edge function to validate invite code and get group info
+        // Load group info regardless of auth status (so user can see what they're joining)
         const { data, error: functionError } = await supabase.functions.invoke('validate-invite', {
           body: { inviteCode: code }
         });
@@ -73,21 +69,17 @@ const JoinViaLink = () => {
     };
 
     loadGroupFromCode();
-  }, [code]);
+  }, [code, navigate, toast]);
+
+  const handleAuthRedirect = () => {
+    if (!code) return;
+    // Store the invite code and redirect to auth
+    sessionStorage.setItem("redirectTo", `/join/${code}`);
+    navigate("/auth");
+  };
 
   const handleJoinGroup = async () => {
     if (!groupInfo) return;
-    
-    // Check if user is authenticated
-    const { data: { session } } = await supabase.auth.getSession();
-    
-    if (!session) {
-      // Store group info and redirect to auth
-      sessionStorage.setItem("joinGroupInfo", JSON.stringify(groupInfo));
-      sessionStorage.setItem("returnToJoin", "true");
-      navigate("/auth");
-      return;
-    }
     
     // User is authenticated, proceed to join
     sessionStorage.setItem("joinGroupInfo", JSON.stringify(groupInfo));
@@ -147,11 +139,11 @@ const JoinViaLink = () => {
       <div className="container max-w-2xl mx-auto px-4">
         <Button 
           variant="ghost" 
-          onClick={() => navigate("/dashboard")}
+          onClick={() => navigate(isAuthenticated ? "/dashboard" : "/")}
           className="mb-6 hover:bg-gold/10"
         >
           <ArrowLeft className="mr-2 h-4 w-4" />
-          Back to Dashboard
+          {isAuthenticated ? "Back to Dashboard" : "Back to Home"}
         </Button>
 
         <Card className="shadow-[var(--shadow-elegant)] border-gold/20 backdrop-blur-sm animate-fade-in">
@@ -161,7 +153,9 @@ const JoinViaLink = () => {
             </div>
             <CardTitle className="text-3xl md:text-4xl font-bold">You're Invited!</CardTitle>
             <CardDescription className="text-base mt-2">
-              Join this trusted savings circle and start building wealth together
+              {isAuthenticated 
+                ? "Join this trusted savings circle and start building wealth together"
+                : "Sign in or create an account to join this group"}
             </CardDescription>
           </CardHeader>
           <CardContent className="space-y-6">
@@ -211,15 +205,37 @@ const JoinViaLink = () => {
               </div>
             </div>
 
-            <Button 
-              variant="hero" 
-              size="lg" 
-              className="w-full text-lg h-14 shadow-[var(--shadow-soft)]"
-              onClick={handleJoinGroup}
-            >
-              Join This Ajor
-              <ArrowRight className="ml-2 h-5 w-5" />
-            </Button>
+            {!isAuthenticated ? (
+              <div className="space-y-3">
+                <div className="bg-primary/5 border border-primary/20 rounded-lg p-4 text-center">
+                  <p className="text-sm font-medium text-foreground mb-1">
+                    🔒 Authentication Required
+                  </p>
+                  <p className="text-xs text-muted-foreground">
+                    You need an account to join this Ajor group
+                  </p>
+                </div>
+                <Button 
+                  variant="hero" 
+                  size="lg" 
+                  className="w-full text-lg h-14 shadow-[var(--shadow-soft)]"
+                  onClick={handleAuthRedirect}
+                >
+                  Sign In or Create Account
+                  <ArrowRight className="ml-2 h-5 w-5" />
+                </Button>
+              </div>
+            ) : (
+              <Button 
+                variant="hero" 
+                size="lg" 
+                className="w-full text-lg h-14 shadow-[var(--shadow-soft)]"
+                onClick={handleJoinGroup}
+              >
+                Join This Ajor
+                <ArrowRight className="ml-2 h-5 w-5" />
+              </Button>
+            )}
 
             <div className="text-center pt-2">
               <button

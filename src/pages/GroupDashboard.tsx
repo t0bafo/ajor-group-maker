@@ -10,17 +10,21 @@ import AppNavigation from "@/components/AppNavigation";
 import ArchiveGroupModal from "@/components/ArchiveGroupModal";
 import StartAjorModal from "@/components/StartAjorModal";
 import BatchContributionModal from "@/components/BatchContributionModal";
+import PendingRequestsCard from "@/components/PendingRequestsCard";
 import UnpaidMembersCard from "@/components/UnpaidMembersCard";
 import { GroupDashboardSkeleton } from "@/components/SkeletonLoader";
 import { supabase } from "@/integrations/supabase/client";
 import { useToast } from "@/hooks/use-toast";
+import { useNotification } from "@/hooks/useNotification";
 import { getCurrentCycle } from "@/lib/dateUtils";
 
 const GroupDashboard = () => {
   const navigate = useNavigate();
   const { toast } = useToast();
+  const { sendNotification } = useNotification();
   const [groupData, setGroupData] = useState<any>({});
   const [members, setMembers] = useState<any[]>([]);
+  const [pendingRequests, setPendingRequests] = useState<any[]>([]);
   const [contributions, setContributions] = useState<any[]>([]);
   const [payouts, setPayouts] = useState<any[]>([]);
   const [user, setUser] = useState<any>(null);
@@ -61,7 +65,7 @@ const GroupDashboard = () => {
           { data: { user: currentUser } }
         ] = await Promise.all([
           supabase.from('groups').select('*').eq('id', groupId).maybeSingle(),
-          supabase.from('members').select('*').eq('group_id', groupId).order('position'),
+          supabase.from('members').select('*').eq('group_id', groupId).eq('status', 'approved').order('position'),
           supabase.from('contributions').select('*, members(name)').eq('group_id', groupId).order('created_at', { ascending: false }),
           supabase.from('payouts').select('*').eq('group_id', groupId).order('created_at', { ascending: false }),
           supabase.auth.getUser()
@@ -111,6 +115,18 @@ const GroupDashboard = () => {
           role: m.role,
           userId: m.user_id,
         })));
+
+        // Fetch pending requests if user is host
+        if (userIsHost) {
+          const { data: pendingData } = await supabase
+            .from('members')
+            .select('id, name, email, requested_at, join_message')
+            .eq('group_id', groupId)
+            .eq('status', 'pending')
+            .order('requested_at', { ascending: true });
+
+          setPendingRequests(pendingData || []);
+        }
 
         setContributions(contributionsData.map((c: any) => ({
           id: c.id,
@@ -444,6 +460,133 @@ const GroupDashboard = () => {
       });
     } finally {
       setSendingReminders(false);
+    }
+  };
+
+  const handleApproveMember = async (memberId: string, welcomeMessage?: string) => {
+    try {
+      // Update member status to approved
+      const { error: updateError } = await supabase
+        .from('members')
+        .update({
+          status: 'approved',
+          reviewed_at: new Date().toISOString(),
+          reviewed_by: user?.id,
+        })
+        .eq('id', memberId);
+
+      if (updateError) throw updateError;
+
+      // Get the approved member's details
+      const { data: approvedMember } = await supabase
+        .from('members')
+        .select('name, email')
+        .eq('id', memberId)
+        .single();
+
+      if (approvedMember) {
+        // Send approval notification
+        try {
+          await sendNotification({
+            type: "request_approved",
+            recipientEmail: approvedMember.email,
+            recipientName: approvedMember.name,
+            data: {
+              groupName: groupData.groupName,
+              hostName: user?.user_metadata?.full_name || user?.email?.split('@')[0] || 'Host',
+              welcomeMessage,
+              contributionAmount: parseFloat(groupData.contributionAmount),
+              frequency: groupData.frequency,
+            },
+          });
+        } catch (notifError) {
+          console.error("Failed to send approval notification:", notifError);
+        }
+      }
+
+      toast({
+        title: "Member Approved",
+        description: `${approvedMember?.name || 'Member'} has been added to the group`,
+      });
+
+      // Reload pending requests and members
+      const groupId = sessionStorage.getItem("currentGroupId");
+      if (groupId) {
+        const [{ data: pendingData }, { data: membersData }] = await Promise.all([
+          supabase
+            .from('members')
+            .select('id, name, email, requested_at, join_message')
+            .eq('group_id', groupId)
+            .eq('status', 'pending')
+            .order('requested_at', { ascending: true }),
+          supabase
+            .from('members')
+            .select('*')
+            .eq('group_id', groupId)
+            .eq('status', 'approved')
+            .order('position'),
+        ]);
+
+        setPendingRequests(pendingData || []);
+        if (membersData) {
+          setMembers(membersData.map((m: any) => ({
+            id: m.id,
+            name: m.name,
+            email: m.email,
+            role: m.role,
+            userId: m.user_id,
+          })));
+        }
+      }
+    } catch (error: any) {
+      console.error('Error approving member:', error);
+      toast({
+        title: "Error",
+        description: "Failed to approve member. Please try again.",
+        variant: "destructive",
+      });
+    }
+  };
+
+  const handleRejectMember = async (memberId: string, reason: string) => {
+    try {
+      // Update member status to rejected
+      const { error: updateError } = await supabase
+        .from('members')
+        .update({
+          status: 'rejected',
+          reviewed_at: new Date().toISOString(),
+          reviewed_by: user?.id,
+          rejection_reason: reason,
+        })
+        .eq('id', memberId);
+
+      if (updateError) throw updateError;
+
+      toast({
+        title: "Request Rejected",
+        description: "The join request has been declined",
+      });
+
+      // Reload pending requests
+      const groupId = sessionStorage.getItem("currentGroupId");
+      if (groupId) {
+        const { data: pendingData } = await supabase
+          .from('members')
+          .select('id, name, email, requested_at, join_message')
+          .eq('group_id', groupId)
+          .eq('status', 'pending')
+          .order('requested_at', { ascending: true });
+
+        setPendingRequests(pendingData || []);
+      }
+    } catch (error: any) {
+      console.error('Error rejecting member:', error);
+      toast({
+        title: "Error",
+        description: "Failed to reject request. Please try again.",
+        variant: "destructive",
+      });
     }
   };
 
@@ -795,6 +938,17 @@ const GroupDashboard = () => {
             )}
           </CardContent>
         </Card>
+
+        {/* Pending Requests Card - Show for hosts when there are pending requests */}
+        {isHost && pendingRequests.length > 0 && (
+          <div className="mb-8">
+            <PendingRequestsCard
+              requests={pendingRequests}
+              onApprove={handleApproveMember}
+              onReject={handleRejectMember}
+            />
+          </div>
+        )}
 
         {/* Unpaid Members Card - Show when Ajor has started and there are unpaid members */}
         {groupData.start_date && unpaidMembers.length > 0 && (

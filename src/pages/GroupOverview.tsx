@@ -55,31 +55,58 @@ const GroupOverview = () => {
         return;
       }
 
-      // Check if user is already a member
+      // Check if user is already a member or has pending request
       const { data: existingMember } = await supabase
         .from('members')
-        .select('id')
+        .select('id, status')
         .eq('group_id', groupInfo.id)
         .eq('user_id', user.id)
-        .single();
+        .maybeSingle();
 
       if (existingMember) {
-        toast({
-          title: "Already a Member",
-          description: "You're already part of this group",
-        });
-        sessionStorage.setItem("currentGroupId", groupInfo.id);
-        navigate("/group-dashboard");
-        return;
+        if (existingMember.status === 'approved') {
+          toast({
+            title: "Already a Member",
+            description: "You're already part of this group",
+          });
+          sessionStorage.setItem("currentGroupId", groupInfo.id);
+          navigate("/group-dashboard");
+          return;
+        } else if (existingMember.status === 'pending') {
+          toast({
+            title: "Request Pending",
+            description: "Your join request is awaiting approval",
+          });
+          navigate("/dashboard");
+          return;
+        } else if (existingMember.status === 'rejected') {
+          toast({
+            title: "Previous Request Declined",
+            description: "Your previous request was not approved. You can submit a new request.",
+            variant: "destructive",
+          });
+          // Allow them to submit a new request by continuing
+        }
       }
 
-      // Get next position
-      const { count: memberCount } = await supabase
+      // Check if group requires approval
+      const { data: groupSettings } = await supabase
+        .from('groups')
+        .select('auto_approve_members, host_id')
+        .eq('id', groupInfo.id)
+        .single();
+
+      const requiresApproval = !groupSettings?.auto_approve_members;
+      const memberStatus = requiresApproval ? 'pending' : 'approved';
+
+      // Get next position (only count approved members)
+      const { count: approvedCount } = await supabase
         .from('members')
         .select('*', { count: 'exact', head: true })
-        .eq('group_id', groupInfo.id);
+        .eq('group_id', groupInfo.id)
+        .eq('status', 'approved');
 
-      // Add user as member
+      // Add user as member (pending or approved)
       const { error } = await supabase
         .from('members')
         .insert({
@@ -88,46 +115,87 @@ const GroupOverview = () => {
           name: user.user_metadata?.full_name || user.email?.split('@')[0] || 'Member',
           email: user.email || '',
           role: 'Member',
-          position: (memberCount || 0) + 1,
+          position: (approvedCount || 0) + 1,
+          status: memberStatus,
+          requested_at: new Date().toISOString(),
         });
 
       if (error) throw error;
 
-      // Send notification to host about new member
-      try {
-        // We can't fetch host email directly due to RLS, so we'll send it from the edge function
-        // For now, we'll just notify the existing group members
-        const { data: allMembers } = await supabase
-          .from('members')
-          .select('email, name')
-          .eq('group_id', groupInfo.id);
+      if (requiresApproval) {
+        // Send join request notification to host
+        try {
+          const { data: hostData } = await supabase
+            .from('members')
+            .select('email, name')
+            .eq('group_id', groupInfo.id)
+            .eq('user_id', groupSettings.host_id)
+            .maybeSingle();
 
-        // Notify all existing members about the new member
-        if (allMembers && allMembers.length > 0) {
-          for (const member of allMembers) {
-            if (member.email) {
-              await sendNotification({
-                type: "member_activity",
-                recipientEmail: member.email,
-                recipientName: member.name,
-                data: {
-                  groupName: groupInfo.groupName,
-                  memberName: user.user_metadata?.full_name || user.email?.split('@')[0] || 'Member',
-                  activityType: "joined",
-                },
-              });
+          if (hostData?.email) {
+            await sendNotification({
+              type: "join_request",
+              recipientEmail: hostData.email,
+              recipientName: hostData.name || groupInfo.hostName,
+              data: {
+                groupName: groupInfo.groupName,
+                memberName: user.user_metadata?.full_name || user.email?.split('@')[0] || 'Member',
+                memberEmail: user.email || '',
+                requestedAt: new Date().toLocaleDateString("en-US", {
+                  weekday: "long",
+                  year: "numeric",
+                  month: "long",
+                  day: "numeric",
+                }),
+              },
+            });
+          }
+        } catch (notifError) {
+          console.error("Failed to send join request notification:", notifError);
+        }
+
+        toast({
+          title: "Request Submitted",
+          description: `Your request to join ${groupInfo.groupName} has been sent to ${groupInfo.hostName}`,
+        });
+        
+        // Store the pending status
+        sessionStorage.setItem("joinRequestStatus", "pending");
+        setShowSuccess(true);
+      } else {
+        // Auto-approved - send notification to all members
+        try {
+          const { data: allMembers } = await supabase
+            .from('members')
+            .select('email, name')
+            .eq('group_id', groupInfo.id)
+            .eq('status', 'approved');
+
+          if (allMembers && allMembers.length > 0) {
+            for (const member of allMembers) {
+              if (member.email && member.email !== user.email) {
+                await sendNotification({
+                  type: "member_activity",
+                  recipientEmail: member.email,
+                  recipientName: member.name,
+                  data: {
+                    groupName: groupInfo.groupName,
+                    memberName: user.user_metadata?.full_name || user.email?.split('@')[0] || 'Member',
+                    activityType: "joined",
+                  },
+                });
+              }
             }
           }
+        } catch (notifError) {
+          console.error("Failed to send member join notification:", notifError);
         }
-      } catch (notifError) {
-        console.error("Failed to send member join notification:", notifError);
-        // Don't block the join process if notification fails
-      }
 
-      // Store group ID for dashboard
-      sessionStorage.setItem("currentGroupId", groupInfo.id);
-      
-      setShowSuccess(true);
+        // Store group ID for dashboard
+        sessionStorage.setItem("currentGroupId", groupInfo.id);
+        sessionStorage.removeItem("joinRequestStatus");
+        setShowSuccess(true);
+      }
     } catch (error: any) {
       console.error('Error joining group:', error);
       toast({
@@ -140,7 +208,13 @@ const GroupOverview = () => {
 
   const handleSuccessClose = () => {
     setShowSuccess(false);
-    navigate("/group-dashboard");
+    const isPending = sessionStorage.getItem("joinRequestStatus") === "pending";
+    if (isPending) {
+      sessionStorage.removeItem("joinRequestStatus");
+      navigate("/dashboard");
+    } else {
+      navigate("/group-dashboard");
+    }
   };
 
   if (!groupInfo) {
@@ -306,6 +380,7 @@ const GroupOverview = () => {
         onOpenChange={setShowSuccess}
         groupName={groupInfo.groupName}
         onContinue={handleSuccessClose}
+        isPending={sessionStorage.getItem("joinRequestStatus") === "pending"}
       />
     </div>
   );

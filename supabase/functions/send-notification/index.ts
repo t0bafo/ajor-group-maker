@@ -9,6 +9,8 @@ import { PayoutNotificationEmail } from "./_templates/payout-notification.tsx";
 import { MemberActivityEmail } from "./_templates/member-activity.tsx";
 import { GroupCreatedEmail } from "./_templates/group-created.tsx";
 import { WelcomeEmail } from "./_templates/welcome-email.tsx";
+import { JoinRequestEmail } from "./_templates/join-request.tsx";
+import { RequestApprovedEmail } from "./_templates/request-approved.tsx";
 
 const resend = new Resend(Deno.env.get("RESEND_API_KEY"));
 const supabaseUrl = Deno.env.get("SUPABASE_URL")!;
@@ -22,7 +24,7 @@ const corsHeaders = {
 
 // Input validation schema
 const notificationSchema = z.object({
-  type: z.enum(['contribution_reminder', 'payout_notification', 'member_activity', 'group_created', 'welcome_email']),
+  type: z.enum(['contribution_reminder', 'payout_notification', 'member_activity', 'group_created', 'welcome_email', 'join_request', 'request_approved']),
   recipientEmail: z.string().email().max(255),
   recipientName: z.string().trim().min(1).max(100),
   data: z.object({
@@ -37,11 +39,16 @@ const notificationSchema = z.object({
     numberOfMembers: z.number().int().positive().max(100).optional(),
     inviteCode: z.string().length(9).optional(),
     customMessage: z.string().max(500).optional(),
+    memberEmail: z.string().email().max(255).optional(),
+    joinMessage: z.string().max(500).optional(),
+    requestedAt: z.string().max(100).optional(),
+    hostName: z.string().trim().max(100).optional(),
+    welcomeMessage: z.string().max(300).optional(),
   }),
 });
 
 interface NotificationRequest {
-  type: "contribution_reminder" | "payout_notification" | "member_activity" | "group_created" | "welcome_email";
+  type: "contribution_reminder" | "payout_notification" | "member_activity" | "group_created" | "welcome_email" | "join_request" | "request_approved";
   recipientEmail: string;
   recipientName: string;
   data: {
@@ -56,6 +63,11 @@ interface NotificationRequest {
     numberOfMembers?: number;
     inviteCode?: string;
     customMessage?: string;
+    memberEmail?: string;
+    joinMessage?: string;
+    requestedAt?: string;
+    hostName?: string;
+    welcomeMessage?: string;
   };
 }
 
@@ -145,6 +157,34 @@ const handler = async (req: Request): Promise<Response> => {
           })
         );
         subject = "Welcome to Ajor - Let's get started!";
+        break;
+
+      case "join_request":
+        html = await renderAsync(
+          React.createElement(JoinRequestEmail, {
+            recipientName,
+            groupName: data.groupName!,
+            memberName: data.memberName!,
+            memberEmail: data.memberEmail!,
+            joinMessage: data.joinMessage,
+            requestedAt: data.requestedAt!,
+          })
+        );
+        subject = `New join request for ${data.groupName}`;
+        break;
+
+      case "request_approved":
+        html = await renderAsync(
+          React.createElement(RequestApprovedEmail, {
+            recipientName,
+            groupName: data.groupName!,
+            hostName: data.hostName!,
+            welcomeMessage: data.welcomeMessage,
+            contributionAmount: data.contributionAmount!,
+            frequency: data.frequency!,
+          })
+        );
+        subject = `Welcome to ${data.groupName}! Your request was approved`;
         break;
 
       default:

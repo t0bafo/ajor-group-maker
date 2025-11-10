@@ -80,6 +80,7 @@ export type Database = {
       groups: {
         Row: {
           archived: boolean
+          auto_approve_members: boolean
           contribution_amount: number
           created_at: string | null
           description: string | null
@@ -90,13 +91,16 @@ export type Database = {
           id: string
           invite_code: string
           number_of_members: number
+          request_expiry_days: number | null
           rotation_order: string
+          send_rejection_email: boolean
           start_date: string | null
           status: string
           updated_at: string | null
         }
         Insert: {
           archived?: boolean
+          auto_approve_members?: boolean
           contribution_amount: number
           created_at?: string | null
           description?: string | null
@@ -107,13 +111,16 @@ export type Database = {
           id?: string
           invite_code: string
           number_of_members: number
+          request_expiry_days?: number | null
           rotation_order: string
+          send_rejection_email?: boolean
           start_date?: string | null
           status?: string
           updated_at?: string | null
         }
         Update: {
           archived?: boolean
+          auto_approve_members?: boolean
           contribution_amount?: number
           created_at?: string | null
           description?: string | null
@@ -124,7 +131,9 @@ export type Database = {
           id?: string
           invite_code?: string
           number_of_members?: number
+          request_expiry_days?: number | null
           rotation_order?: string
+          send_rejection_email?: boolean
           start_date?: string | null
           status?: string
           updated_at?: string | null
@@ -136,30 +145,48 @@ export type Database = {
           email: string
           group_id: string
           id: string
+          join_message: string | null
           joined_at: string | null
           name: string
           position: number | null
+          rejection_reason: string | null
+          requested_at: string | null
+          reviewed_at: string | null
+          reviewed_by: string | null
           role: string
+          status: string
           user_id: string | null
         }
         Insert: {
           email: string
           group_id: string
           id?: string
+          join_message?: string | null
           joined_at?: string | null
           name: string
           position?: number | null
+          rejection_reason?: string | null
+          requested_at?: string | null
+          reviewed_at?: string | null
+          reviewed_by?: string | null
           role: string
+          status?: string
           user_id?: string | null
         }
         Update: {
           email?: string
           group_id?: string
           id?: string
+          join_message?: string | null
           joined_at?: string | null
           name?: string
           position?: number | null
+          rejection_reason?: string | null
+          requested_at?: string | null
+          reviewed_at?: string | null
+          reviewed_by?: string | null
           role?: string
+          status?: string
           user_id?: string | null
         }
         Relationships: [
@@ -321,7 +348,13 @@ export type Database = {
       [_ in never]: never
     }
     Functions: {
+      count_approved_members: {
+        Args: { group_id_param: string }
+        Returns: number
+      }
+      expire_old_pending_requests: { Args: never; Returns: number }
       generate_invite_code: { Args: never; Returns: string }
+      is_group_full: { Args: { group_id_param: string }; Returns: boolean }
       is_user_in_group: {
         Args: { _group_id: string; _user_id: string }
         Returns: boolean

@@ -38,10 +38,18 @@ const GroupSetup = () => {
 
   const steps = ["Basic Info", "Financial Details", "Rotation Setup"];
 
-  // Generate idempotency key on mount
+  // Generate idempotency key on mount and clear old group data
   useEffect(() => {
+    // Clear any previous group data when starting fresh
     const existingKey = sessionStorage.getItem("groupCreationKey");
-    if (!existingKey) {
+    const existingGroupId = sessionStorage.getItem("currentGroupId");
+    
+    // If we have an existing key and group, user is returning to an in-progress creation
+    // Otherwise, clear everything for a fresh start
+    if (!existingKey || !existingGroupId) {
+      sessionStorage.removeItem("currentGroupId");
+      sessionStorage.removeItem("groupCreationKey");
+      
       const newKey = `group_${Date.now()}_${Math.random().toString(36).substring(2, 15)}`;
       sessionStorage.setItem("groupCreationKey", newKey);
       idempotencyKey.current = newKey;

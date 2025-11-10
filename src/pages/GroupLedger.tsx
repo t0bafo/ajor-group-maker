@@ -18,6 +18,8 @@ interface LedgerEntry {
   date: string;
   paymentMethod?: string;
   status: string;
+  isLate?: boolean;
+  dueDate?: string;
 }
 
 const GroupLedger = () => {
@@ -63,6 +65,8 @@ const GroupLedger = () => {
             created_at,
             payment_method,
             status,
+            is_late,
+            due_date,
             member_id,
             members!inner(name)
           `)
@@ -98,6 +102,8 @@ const GroupLedger = () => {
             date: c.created_at,
             paymentMethod: c.payment_method,
             status: c.status,
+            isLate: c.is_late,
+            dueDate: c.due_date,
           })),
           ...(payouts || []).map((p: any) => ({
             id: p.id,
@@ -267,6 +273,11 @@ const GroupLedger = () => {
                               >
                                 {entry.type === 'contribution' ? 'Contribution' : 'Payout'}
                               </Badge>
+                              {entry.isLate && (
+                                <Badge variant="destructive" className="text-xs">
+                                  Late
+                                </Badge>
+                              )}
                             </div>
                             <div className="flex flex-wrap gap-x-4 gap-y-1 text-sm text-muted-foreground mt-1">
                               <span className="flex items-center gap-1">

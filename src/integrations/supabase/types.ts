@@ -20,10 +20,13 @@ export type Database = {
           created_at: string | null
           cycle: number
           cycle_label: string
+          due_date: string | null
           group_id: string
           id: string
+          is_late: boolean | null
           member_id: string
           note: string | null
+          paid_at: string | null
           payment_method: string | null
           status: string
         }
@@ -32,10 +35,13 @@ export type Database = {
           created_at?: string | null
           cycle: number
           cycle_label: string
+          due_date?: string | null
           group_id: string
           id?: string
+          is_late?: boolean | null
           member_id: string
           note?: string | null
+          paid_at?: string | null
           payment_method?: string | null
           status?: string
         }
@@ -44,10 +50,13 @@ export type Database = {
           created_at?: string | null
           cycle?: number
           cycle_label?: string
+          due_date?: string | null
           group_id?: string
           id?: string
+          is_late?: boolean | null
           member_id?: string
           note?: string | null
+          paid_at?: string | null
           payment_method?: string | null
           status?: string
         }
@@ -75,6 +84,7 @@ export type Database = {
           created_at: string | null
           description: string | null
           frequency: string
+          grace_period_days: number | null
           group_name: string
           host_id: string
           id: string
@@ -91,6 +101,7 @@ export type Database = {
           created_at?: string | null
           description?: string | null
           frequency: string
+          grace_period_days?: number | null
           group_name: string
           host_id: string
           id?: string
@@ -107,6 +118,7 @@ export type Database = {
           created_at?: string | null
           description?: string | null
           frequency?: string
+          grace_period_days?: number | null
           group_name?: string
           host_id?: string
           id?: string

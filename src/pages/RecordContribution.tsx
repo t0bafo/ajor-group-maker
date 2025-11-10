@@ -11,6 +11,7 @@ import { ArrowLeft, DollarSign, Calendar } from "lucide-react";
 import { useToast } from "@/hooks/use-toast";
 import { supabase } from "@/integrations/supabase/client";
 import { contributionSchema } from "@/lib/validation";
+import { getDueDateForCycle, isPaymentLate } from "@/lib/dateUtils";
 
 const RecordContribution = () => {
   const navigate = useNavigate();
@@ -226,6 +227,23 @@ const RecordContribution = () => {
       const selectedCycle = generateCycles().find(c => c.id.toString() === cycle);
       const selectedMember = members.find(m => m.id === selectedMemberId);
       
+      // Fetch full group data including start_date and grace_period_days
+      const { data: fullGroup } = await supabase
+        .from('groups')
+        .select('start_date, grace_period_days')
+        .eq('id', groupData.id)
+        .single();
+
+      if (!fullGroup?.start_date) {
+        throw new Error("Group start date not found");
+      }
+
+      // Calculate due date and check if late
+      const dueDate = getDueDateForCycle(fullGroup.start_date, groupData.frequency, parseInt(cycle));
+      const paidAt = new Date();
+      const gracePeriodDays = fullGroup.grace_period_days || 3;
+      const isLate = isPaymentLate(paidAt, dueDate, gracePeriodDays);
+      
       // Save contribution to database
       const { error } = await supabase
         .from('contributions')
@@ -237,6 +255,9 @@ const RecordContribution = () => {
           cycle_label: selectedCycle?.label || `Cycle ${cycle}`,
           payment_method: paymentMethod,
           status: 'paid',
+          due_date: dueDate.toISOString(),
+          paid_at: paidAt.toISOString(),
+          is_late: isLate,
         });
 
       if (error) throw error;

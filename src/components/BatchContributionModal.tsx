@@ -7,6 +7,7 @@ import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@
 import { useToast } from "@/hooks/use-toast";
 import { supabase } from "@/integrations/supabase/client";
 import { DollarSign, Calendar, Loader2 } from "lucide-react";
+import { getDueDateForCycle, isPaymentLate } from "@/lib/dateUtils";
 
 interface Member {
   id: string;
@@ -167,6 +168,18 @@ const BatchContributionModal = ({ open, onOpenChange, groupData, members, onSucc
         return;
       }
 
+      // Fetch full group data for grace period
+      const { data: fullGroup } = await supabase
+        .from('groups')
+        .select('grace_period_days')
+        .eq('id', groupData.id)
+        .single();
+
+      const gracePeriodDays = fullGroup?.grace_period_days || 3;
+      const dueDate = getDueDateForCycle(groupData.start_date, groupData.frequency, parseInt(cycle));
+      const paidAt = new Date();
+      const isLate = isPaymentLate(paidAt, dueDate, gracePeriodDays);
+
       // Record contributions for new members
       const contributions = newMembers.map(memberId => ({
         group_id: groupData.id,
@@ -176,6 +189,9 @@ const BatchContributionModal = ({ open, onOpenChange, groupData, members, onSucc
         cycle_label: selectedCycle?.label || `Cycle ${cycle}`,
         payment_method: paymentMethod,
         status: 'paid',
+        due_date: dueDate.toISOString(),
+        paid_at: paidAt.toISOString(),
+        is_late: isLate,
       }));
 
       const { error } = await supabase

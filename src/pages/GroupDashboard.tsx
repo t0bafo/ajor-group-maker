@@ -10,9 +10,11 @@ import AppNavigation from "@/components/AppNavigation";
 import ArchiveGroupModal from "@/components/ArchiveGroupModal";
 import StartAjorModal from "@/components/StartAjorModal";
 import BatchContributionModal from "@/components/BatchContributionModal";
+import UnpaidMembersCard from "@/components/UnpaidMembersCard";
 import { GroupDashboardSkeleton } from "@/components/SkeletonLoader";
 import { supabase } from "@/integrations/supabase/client";
 import { useToast } from "@/hooks/use-toast";
+import { getCurrentCycle } from "@/lib/dateUtils";
 
 const GroupDashboard = () => {
   const navigate = useNavigate();
@@ -99,6 +101,7 @@ const GroupDashboard = () => {
           hostId: group.host_id,
           archived: group.archived || false,
           start_date: group.start_date,
+          grace_period_days: group.grace_period_days || 3,
         });
 
         setMembers(membersData.map((m: any) => ({
@@ -204,6 +207,17 @@ const GroupDashboard = () => {
   const totalPayouts = payouts.length;
   const currentCycle = totalPayouts + 1; // Next cycle to be paid
   const latestCompletedCycle = totalPayouts; // Last cycle that was paid
+  
+  // Calculate unpaid members for current cycle (if Ajor has started)
+  const unpaidMembers = groupData.start_date ? (() => {
+    const actualCurrentCycle = getCurrentCycle(groupData.start_date, groupData.frequency);
+    const contributedMemberIds = new Set(
+      contributions
+        .filter(c => c.cycle === actualCurrentCycle)
+        .map(c => c.memberId)
+    );
+    return members.filter(m => !contributedMemberIds.has(m.id));
+  })() : [];
   
   // Progress in current rotation (0 to members.length)
   const payoutsInCurrentRotation = members.length > 0 ? totalPayouts % members.length : 0;
@@ -781,6 +795,20 @@ const GroupDashboard = () => {
             )}
           </CardContent>
         </Card>
+
+        {/* Unpaid Members Card - Show when Ajor has started and there are unpaid members */}
+        {groupData.start_date && unpaidMembers.length > 0 && (
+          <div className="mb-8">
+            <UnpaidMembersCard
+              unpaidMembers={unpaidMembers}
+              groupData={{
+                start_date: groupData.start_date,
+                frequency: groupData.frequency,
+                grace_period_days: groupData.grace_period_days,
+              }}
+            />
+          </div>
+        )}
 
         {/* Group Setup Progress */}
         {members.length < parseInt(groupData.numberOfMembers || 0) && (

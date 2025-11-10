@@ -211,12 +211,15 @@ const GroupSetup = () => {
                     <Label htmlFor="description">Description (Optional)</Label>
                     <Textarea
                       id="description"
-                      placeholder="Describe the purpose or goals of this group"
+                      placeholder="Describe the purpose or goals of this group. Grace Period Policy: 3-day grace period for late payments."
                       value={formData.description}
                       onChange={(e) => handleInputChange("description", e.target.value)}
                       rows={3}
                       className="text-base resize-none"
                     />
+                    <p className="text-xs text-muted-foreground">
+                      💡 Tip: Include your late payment policy (default: 3-day grace period)
+                    </p>
                   </div>
                 </div>
               )}

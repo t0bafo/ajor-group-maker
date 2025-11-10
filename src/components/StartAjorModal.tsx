@@ -7,6 +7,10 @@ import { Alert, AlertDescription } from "@/components/ui/alert";
 import { Calendar, Users, AlertCircle, ArrowUpDown } from "lucide-react";
 import { LoadingButton } from "./LoadingButton";
 import ReorderMembersModal from "./ReorderMembersModal";
+import { Popover, PopoverContent, PopoverTrigger } from "@/components/ui/popover";
+import { Calendar as CalendarComponent } from "@/components/ui/calendar";
+import { format } from "date-fns";
+import { cn } from "@/lib/utils";
 
 interface Member {
   id: string;
@@ -22,7 +26,7 @@ interface StartAjorModalProps {
   currentMemberCount: number;
   plannedMemberCount: number;
   members: Member[];
-  onConfirm: (adjustedMemberCount: number, reorderedMembers?: Member[]) => void;
+  onConfirm: (adjustedMemberCount: number, startDate: Date, reorderedMembers?: Member[]) => void;
   loading?: boolean;
 }
 
@@ -40,6 +44,7 @@ const StartAjorModal = ({
   const [showConfirmation, setShowConfirmation] = useState(false);
   const [showReorderModal, setShowReorderModal] = useState(false);
   const [reorderedMembers, setReorderedMembers] = useState<Member[]>(members);
+  const [startDate, setStartDate] = useState<Date>(new Date());
   const needsAdjustment = currentMemberCount !== plannedMemberCount;
 
   const handleConfirm = () => {
@@ -55,13 +60,14 @@ const StartAjorModal = ({
     }
 
     // Proceed with starting
-    onConfirm(adjustedCount, reorderedMembers);
+    onConfirm(adjustedCount, startDate, reorderedMembers);
   };
 
   const handleCancel = () => {
     setShowConfirmation(false);
     setAdjustedCount(currentMemberCount);
     setReorderedMembers(members);
+    setStartDate(new Date());
     onOpenChange(false);
   };
 
@@ -132,6 +138,40 @@ const StartAjorModal = ({
                 </p>
               </div>
 
+              <div className="space-y-2">
+                <Label className="flex items-center gap-2">
+                  <Calendar className="h-4 w-4" />
+                  Start Date
+                </Label>
+                <Popover>
+                  <PopoverTrigger asChild>
+                    <Button
+                      variant="outline"
+                      className={cn(
+                        "w-full justify-start text-left font-normal",
+                        !startDate && "text-muted-foreground"
+                      )}
+                      disabled={loading}
+                    >
+                      <Calendar className="mr-2 h-4 w-4" />
+                      {startDate ? format(startDate, "PPP") : <span>Pick a date</span>}
+                    </Button>
+                  </PopoverTrigger>
+                  <PopoverContent className="w-auto p-0" align="start">
+                    <CalendarComponent
+                      mode="single"
+                      selected={startDate}
+                      onSelect={(date) => date && setStartDate(date)}
+                      disabled={(date) => date < new Date(new Date().setHours(0, 0, 0, 0))}
+                      initialFocus
+                    />
+                  </PopoverContent>
+                </Popover>
+                <p className="text-xs text-muted-foreground">
+                  Choose when your Ajor will officially start. This date will be used for all payout calculations and cycle tracking.
+                </p>
+              </div>
+
               <div className="space-y-3">
                 <Button
                   type="button"
@@ -147,14 +187,6 @@ const StartAjorModal = ({
                   Customize the order in which members will receive payouts
                 </p>
               </div>
-
-              <Alert className="bg-primary/5 border-primary/20">
-                <Calendar className="h-4 w-4 text-primary" />
-                <AlertDescription className="text-sm">
-                  The start date will be recorded as <strong>{new Date().toLocaleDateString()}</strong>. 
-                  This date will be used for all payout calculations and cycle tracking.
-                </AlertDescription>
-              </Alert>
             </>
           ) : (
             <Alert variant="destructive" className="bg-orange-50 dark:bg-orange-950 border-orange-200 dark:border-orange-800">

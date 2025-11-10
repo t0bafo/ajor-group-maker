@@ -261,7 +261,7 @@ const GroupDashboard = () => {
   // Check if group is locked (has any payouts recorded)
   const isGroupLocked = payouts.length > 0;
 
-  const handleStartAjor = async (adjustedMemberCount: number, reorderedMembers?: any[]) => {
+  const handleStartAjor = async (adjustedMemberCount: number, startDate: Date, reorderedMembers?: any[]) => {
     setStartingAjor(true);
     try {
       // Update member positions if reordered
@@ -283,7 +283,7 @@ const GroupDashboard = () => {
       const { error } = await supabase
         .from('groups')
         .update({ 
-          start_date: new Date().toISOString(),
+          start_date: startDate.toISOString(),
           number_of_members: adjustedMemberCount 
         })
         .eq('id', groupData.id);
@@ -300,7 +300,7 @@ const GroupDashboard = () => {
       // Update local state
       setGroupData({
         ...groupData,
-        start_date: new Date().toISOString(),
+        start_date: startDate.toISOString(),
         numberOfMembers: adjustedMemberCount,
       });
 

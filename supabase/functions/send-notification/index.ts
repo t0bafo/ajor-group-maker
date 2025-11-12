@@ -106,6 +106,14 @@ const handler = async (req: Request): Promise<Response> => {
 
     const { type, recipientEmail, recipientName, recipientPhone, channel, data }: NotificationRequest = validationResult.data;
 
+    console.log('Processing notification:', {
+      type,
+      email: recipientEmail,
+      name: recipientName,
+      phone: recipientPhone,
+      channel,
+    });
+
     let html: string;
     let subject: string;
     let smsMessage: string;
@@ -248,6 +256,13 @@ const handler = async (req: Request): Promise<Response> => {
 
     if ((channel === 'sms' || channel === 'both') && recipientPhone && twilioAccountSid && twilioAuthToken && twilioPhoneNumber) {
       try {
+        console.log('Attempting to send SMS:', {
+          to: recipientPhone,
+          from: twilioPhoneNumber,
+          hasAccountSid: !!twilioAccountSid,
+          hasAuthToken: !!twilioAuthToken,
+        });
+
         const twilioUrl = `https://api.twilio.com/2010-04-01/Accounts/${twilioAccountSid}/Messages.json`;
         const auth = btoa(`${twilioAccountSid}:${twilioAuthToken}`);
         
@@ -264,15 +279,28 @@ const handler = async (req: Request): Promise<Response> => {
           }),
         });
 
+        const responseText = await smsResponse.text();
+        
         if (smsResponse.ok) {
+          console.log('SMS sent successfully:', responseText);
           results.sms = true;
         } else {
-          const errorData = await smsResponse.text();
-          console.error("Failed to send SMS:", errorData);
+          console.error('Failed to send SMS - Status:', smsResponse.status);
+          console.error('Failed to send SMS - Response:', responseText);
+          console.error('Failed to send SMS - Phone:', recipientPhone);
         }
       } catch (smsError: any) {
-        console.error("Error sending SMS:", smsError);
+        console.error('Error sending SMS:', smsError.message);
+        console.error('SMS Error stack:', smsError.stack);
       }
+    } else {
+      console.log('SMS not sent - Missing requirements:', {
+        channel,
+        hasPhone: !!recipientPhone,
+        hasTwilioAccountSid: !!twilioAccountSid,
+        hasTwilioAuthToken: !!twilioAuthToken,
+        hasTwilioPhoneNumber: !!twilioPhoneNumber,
+      });
     }
 
     if (!results.email && !results.sms) {

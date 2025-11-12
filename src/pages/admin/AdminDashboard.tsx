@@ -5,7 +5,7 @@ import { useAdmin } from "@/hooks/useAdmin";
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from "@/components/ui/card";
 import { Badge } from "@/components/ui/badge";
 import { Button } from "@/components/ui/button";
-import { Users, DollarSign, TrendingUp, Shield, Eye, MoreVertical, Edit, RotateCcw, Trash2 } from "lucide-react";
+import { Users, DollarSign, TrendingUp, Shield, Eye, MoreVertical, Edit, RotateCcw, Trash2, ArrowLeft } from "lucide-react";
 import { AdminBadge } from "@/components/admin/AdminBadge";
 import {
   DropdownMenu,
@@ -127,12 +127,22 @@ export default function AdminDashboard() {
       <AdminBadge />
       
       <div className="flex items-center justify-between">
-        <div>
-          <h1 className="text-3xl font-bold flex items-center gap-2">
-            <Shield className="h-8 w-8" />
-            Admin Dashboard
-          </h1>
-          <p className="text-muted-foreground mt-1">System-wide overview and controls</p>
+        <div className="flex items-center gap-4">
+          <Button
+            variant="ghost"
+            size="icon"
+            onClick={() => navigate('/dashboard')}
+            className="shrink-0"
+          >
+            <ArrowLeft className="h-5 w-5" />
+          </Button>
+          <div>
+            <h1 className="text-3xl font-bold flex items-center gap-2">
+              <Shield className="h-8 w-8" />
+              Admin Dashboard
+            </h1>
+            <p className="text-muted-foreground mt-1">System-wide overview and controls</p>
+          </div>
         </div>
         <Badge variant="destructive" className="text-sm">Pilot Mode</Badge>
       </div>

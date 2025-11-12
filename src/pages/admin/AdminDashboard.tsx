@@ -199,7 +199,10 @@ export default function AdminDashboard() {
                     <Button
                       variant="outline"
                       size="sm"
-                      onClick={() => navigate(`/group/${group.id}/dashboard`)}
+                      onClick={() => {
+                        sessionStorage.setItem('currentGroupId', group.id);
+                        navigate('/group-dashboard');
+                      }}
                     >
                       <Eye className="h-4 w-4 mr-1" />
                       View

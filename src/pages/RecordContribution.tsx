@@ -4,14 +4,17 @@ import { Button } from "@/components/ui/button";
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from "@/components/ui/card";
 import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
-
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select";
 import { Dialog, DialogContent, DialogDescription, DialogFooter, DialogHeader, DialogTitle } from "@/components/ui/dialog";
-import { ArrowLeft, DollarSign, Calendar } from "lucide-react";
+import { Popover, PopoverContent, PopoverTrigger } from "@/components/ui/popover";
+import { Calendar as CalendarComponent } from "@/components/ui/calendar";
+import { ArrowLeft, DollarSign, Calendar, CalendarIcon } from "lucide-react";
 import { useToast } from "@/hooks/use-toast";
 import { supabase } from "@/integrations/supabase/client";
 import { contributionSchema } from "@/lib/validation";
 import { getDueDateForCycle, isPaymentLate } from "@/lib/dateUtils";
+import { format } from "date-fns";
+import { cn } from "@/lib/utils";
 
 const RecordContribution = () => {
   const navigate = useNavigate();
@@ -22,6 +25,7 @@ const RecordContribution = () => {
   const [amount, setAmount] = useState("");
   const [cycle, setCycle] = useState("");
   const [paymentMethod, setPaymentMethod] = useState("");
+  const [contributionDate, setContributionDate] = useState<Date>(new Date());
   const [showConfirmation, setShowConfirmation] = useState(false);
   const [errors, setErrors] = useState<any>({});
   const [isHost, setIsHost] = useState(false);
@@ -240,7 +244,7 @@ const RecordContribution = () => {
 
       // Calculate due date and check if late
       const dueDate = getDueDateForCycle(fullGroup.start_date, groupData.frequency, parseInt(cycle));
-      const paidAt = new Date();
+      const paidAt = contributionDate;
       const gracePeriodDays = fullGroup.grace_period_days || 3;
       const isLate = isPaymentLate(paidAt, dueDate, gracePeriodDays);
       
@@ -415,6 +419,35 @@ const RecordContribution = () => {
                 )}
               </div>
 
+              {/* Contribution Date */}
+              <div className="space-y-2">
+                <Label htmlFor="contribution-date">Contribution Date *</Label>
+                <Popover>
+                  <PopoverTrigger asChild>
+                    <Button
+                      id="contribution-date"
+                      variant="outline"
+                      className={cn(
+                        "w-full justify-start text-left font-normal",
+                        !contributionDate && "text-muted-foreground"
+                      )}
+                    >
+                      <CalendarIcon className="mr-2 h-4 w-4" />
+                      {contributionDate ? format(contributionDate, "PPP") : <span>Pick a date</span>}
+                    </Button>
+                  </PopoverTrigger>
+                  <PopoverContent className="w-auto p-0" align="start">
+                    <CalendarComponent
+                      mode="single"
+                      selected={contributionDate}
+                      onSelect={(date) => date && setContributionDate(date)}
+                      initialFocus
+                      className={cn("p-3 pointer-events-auto")}
+                    />
+                  </PopoverContent>
+                </Popover>
+              </div>
+
               {/* Summary Card */}
               {amount && cycle && selectedMemberId && paymentMethod && (
                 <div className="p-4 bg-gradient-to-r from-primary/10 via-accent/10 to-secondary/20 border border-primary/20 rounded-lg space-y-2 animate-fade-in">
@@ -438,9 +471,7 @@ const RecordContribution = () => {
                     </div>
                     <div className="flex justify-between">
                       <span className="text-muted-foreground">Date:</span>
-                      <span className="font-semibold">
-                        {new Date().toLocaleDateString("en-US", { month: "short", day: "numeric", year: "numeric" })}
-                      </span>
+                      <span className="font-semibold">{format(contributionDate, "MMM d, yyyy")}</span>
                     </div>
                   </div>
                 </div>

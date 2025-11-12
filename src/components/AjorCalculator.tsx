@@ -49,12 +49,12 @@ const AjorCalculator = () => {
             <Slider
               value={[members]}
               onValueChange={([value]) => setMembers(value)}
-              min={4}
+              min={2}
               max={20}
               step={1}
               className="w-full"
             />
-            <p className="text-xs text-muted-foreground">Minimum 4, maximum 20 members</p>
+            <p className="text-xs text-muted-foreground">Minimum 2, maximum 20 members</p>
           </div>
 
           {/* Contribution Amount */}

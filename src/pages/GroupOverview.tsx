@@ -212,11 +212,6 @@ const GroupOverview = () => {
           console.error("Failed to send join request notification:", notifError);
         }
 
-        toast({
-          title: "Request Submitted",
-          description: `Your request to join ${groupInfo.groupName} has been sent to ${groupInfo.hostName}`,
-        });
-        
         // Store the pending status
         sessionStorage.setItem("joinRequestStatus", "pending");
         setShowSuccess(true);

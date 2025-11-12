@@ -21,6 +21,7 @@ import {
 import ArchiveGroupModal from "@/components/ArchiveGroupModal";
 import OnboardingTour from "@/components/OnboardingTour";
 import { useOnboarding } from "@/hooks/useOnboarding";
+import PendingJoinRequestsCard from "@/components/PendingJoinRequestsCard";
 
 const Dashboard = () => {
   const navigate = useNavigate();
@@ -28,6 +29,7 @@ const Dashboard = () => {
   const [user, setUser] = useState<any>(null);
   const [isLoading, setIsLoading] = useState(true);
   const [userGroups, setUserGroups] = useState<any[]>([]);
+  const [pendingRequests, setPendingRequests] = useState<any[]>([]);
   const [inviteModalOpen, setInviteModalOpen] = useState(false);
   const [selectedGroup, setSelectedGroup] = useState<{ name: string; code: string } | null>(null);
   const [showArchived, setShowArchived] = useState(false);
@@ -74,6 +76,34 @@ const Dashboard = () => {
 
   const loadUserGroups = async (userId: string) => {
     try {
+      // Get pending join requests
+      const { data: pendingMemberships, error: pendingError } = await supabase
+        .from('members')
+        .select(`
+          id,
+          requested_at,
+          group_id,
+          groups!inner (
+            group_name,
+            contribution_amount,
+            frequency
+          )
+        `)
+        .eq('user_id', userId)
+        .eq('status', 'pending');
+
+      if (pendingError) throw pendingError;
+
+      const formattedPending = pendingMemberships?.map((m: any) => ({
+        id: m.id,
+        groupName: m.groups.group_name,
+        contributionAmount: m.groups.contribution_amount,
+        frequency: m.groups.frequency,
+        requestedAt: m.requested_at,
+      })) || [];
+
+      setPendingRequests(formattedPending);
+
       // Get groups where user is host (including archived status)
       const { data: hostedGroups, error: hostError } = await supabase
         .from('groups')
@@ -295,6 +325,9 @@ const Dashboard = () => {
                 : "Start saving together with your trusted community"}
             </p>
           </div>
+
+          {/* Pending Join Requests */}
+          <PendingJoinRequestsCard requests={pendingRequests} />
 
           {/* Active/Archived Groups or Empty State */}
           {userGroups.length > 0 ? (

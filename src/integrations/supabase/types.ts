@@ -17,6 +17,7 @@ export type Database = {
       contributions: {
         Row: {
           amount: number
+          contribution_status: string | null
           created_at: string | null
           cycle: number
           cycle_label: string
@@ -27,11 +28,13 @@ export type Database = {
           member_id: string
           note: string | null
           paid_at: string | null
+          payment_date: string | null
           payment_method: string | null
           status: string
         }
         Insert: {
           amount: number
+          contribution_status?: string | null
           created_at?: string | null
           cycle: number
           cycle_label: string
@@ -42,11 +45,13 @@ export type Database = {
           member_id: string
           note?: string | null
           paid_at?: string | null
+          payment_date?: string | null
           payment_method?: string | null
           status?: string
         }
         Update: {
           amount?: number
+          contribution_status?: string | null
           created_at?: string | null
           cycle?: number
           cycle_label?: string
@@ -57,6 +62,7 @@ export type Database = {
           member_id?: string
           note?: string | null
           paid_at?: string | null
+          payment_date?: string | null
           payment_method?: string | null
           status?: string
         }
@@ -71,6 +77,60 @@ export type Database = {
           {
             foreignKeyName: "contributions_member_id_fkey"
             columns: ["member_id"]
+            isOneToOne: false
+            referencedRelation: "members"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
+      cycles: {
+        Row: {
+          created_at: string
+          cycle_number: number
+          end_date: string
+          group_id: string
+          id: string
+          payout_date: string | null
+          payout_recipient_id: string
+          payout_status: string
+          start_date: string
+          updated_at: string
+        }
+        Insert: {
+          created_at?: string
+          cycle_number: number
+          end_date: string
+          group_id: string
+          id?: string
+          payout_date?: string | null
+          payout_recipient_id: string
+          payout_status?: string
+          start_date: string
+          updated_at?: string
+        }
+        Update: {
+          created_at?: string
+          cycle_number?: number
+          end_date?: string
+          group_id?: string
+          id?: string
+          payout_date?: string | null
+          payout_recipient_id?: string
+          payout_status?: string
+          start_date?: string
+          updated_at?: string
+        }
+        Relationships: [
+          {
+            foreignKeyName: "cycles_group_id_fkey"
+            columns: ["group_id"]
+            isOneToOne: false
+            referencedRelation: "groups"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "cycles_payout_recipient_id_fkey"
+            columns: ["payout_recipient_id"]
             isOneToOne: false
             referencedRelation: "members"
             referencedColumns: ["id"]

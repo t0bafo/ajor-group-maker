@@ -17,6 +17,9 @@ import { supabase } from "@/integrations/supabase/client";
 import { useToast } from "@/hooks/use-toast";
 import { useNotification } from "@/hooks/useNotification";
 import { getCurrentCycle } from "@/lib/dateUtils";
+import { generateCycles, getCurrentCycleNumber } from "@/lib/cycleUtils";
+import { CycleTimeline } from "@/components/CycleTimeline";
+import { CycleCard } from "@/components/CycleCard";
 
 const GroupDashboard = () => {
   const navigate = useNavigate();
@@ -27,6 +30,8 @@ const GroupDashboard = () => {
   const [pendingRequests, setPendingRequests] = useState<any[]>([]);
   const [contributions, setContributions] = useState<any[]>([]);
   const [payouts, setPayouts] = useState<any[]>([]);
+  const [cycles, setCycles] = useState<any[]>([]);
+  const [selectedCycle, setSelectedCycle] = useState<number | null>(null);
   const [user, setUser] = useState<any>(null);
   const [isHost, setIsHost] = useState(false);
   const [showArchiveModal, setShowArchiveModal] = useState(false);
@@ -35,6 +40,40 @@ const GroupDashboard = () => {
   const [startingAjor, setStartingAjor] = useState(false);
   const [loading, setLoading] = useState(true);
   const [sendingReminders, setSendingReminders] = useState(false);
+
+  // Sync cycles: create/update cycles in database based on group config
+  const syncCycles = async (group: any, membersData: any[], existingCycles: any[]) => {
+    const groupId = group.id;
+    const generatedCycles = generateCycles(
+      group.start_date,
+      group.frequency,
+      membersData.length
+    );
+
+    // Check if we need to create cycles
+    if (existingCycles.length === 0) {
+      // Create all cycles
+      const cyclesToInsert = generatedCycles.map((cycle, index) => ({
+        group_id: groupId,
+        cycle_number: cycle.cycle_number,
+        start_date: cycle.start_date.toISOString(),
+        end_date: cycle.end_date.toISOString(),
+        payout_recipient_id: membersData[index]?.id,
+        payout_status: 'pending',
+      }));
+
+      const { data, error } = await supabase
+        .from('cycles')
+        .insert(cyclesToInsert)
+        .select('*, members(id, name)');
+
+      if (!error && data) {
+        setCycles(data);
+      }
+    } else {
+      setCycles(existingCycles);
+    }
+  };
 
   useEffect(() => {
     // Get current user
@@ -62,12 +101,14 @@ const GroupDashboard = () => {
           { data: membersData, error: membersError },
           { data: contributionsData, error: contributionsError },
           { data: payoutsData, error: payoutsError },
+          { data: cyclesData, error: cyclesError },
           { data: { user: currentUser } }
         ] = await Promise.all([
           supabase.from('groups').select('*').eq('id', groupId).maybeSingle(),
           supabase.from('members').select('*').eq('group_id', groupId).eq('status', 'approved').order('position'),
           supabase.from('contributions').select('*, members(name)').eq('group_id', groupId).order('created_at', { ascending: false }),
           supabase.from('payouts').select('*').eq('group_id', groupId).order('created_at', { ascending: false }),
+          supabase.from('cycles').select('*, members(id, name)').eq('group_id', groupId).order('cycle_number'),
           supabase.auth.getUser()
         ]);
 
@@ -76,6 +117,7 @@ const GroupDashboard = () => {
         if (membersError) throw membersError;
         if (contributionsError) throw contributionsError;
         if (payoutsError) throw payoutsError;
+        if (cyclesError) throw cyclesError;
         
         // Check if group exists
         if (!group) {
@@ -149,6 +191,13 @@ const GroupDashboard = () => {
           status: p.status,
         })));
 
+        // Sync cycles if group has started
+        if (group.start_date && membersData.length > 0) {
+          await syncCycles(group, membersData, cyclesData || []);
+        } else if (cyclesData) {
+          setCycles(cyclesData);
+        }
+
       } catch (error: any) {
         console.error('Error loading group data:', error);
         toast({
@@ -172,9 +221,11 @@ const GroupDashboard = () => {
       const [
         { data: contributionsData },
         { data: payoutsData },
+        { data: cyclesData },
       ] = await Promise.all([
         supabase.from('contributions').select('*, members(name)').eq('group_id', groupId).order('created_at', { ascending: false }),
         supabase.from('payouts').select('*').eq('group_id', groupId).order('created_at', { ascending: false }),
+        supabase.from('cycles').select('*, members(id, name)').eq('group_id', groupId).order('cycle_number'),
       ]);
 
       if (contributionsData) {
@@ -200,6 +251,10 @@ const GroupDashboard = () => {
           date: p.payout_date,
           status: p.status,
         })));
+      }
+      
+      if (cyclesData) {
+        setCycles(cyclesData);
       }
     } catch (error) {
       console.error('Error reloading data:', error);
@@ -812,8 +867,12 @@ const GroupDashboard = () => {
           <CardHeader>
             <div className="flex flex-col sm:flex-row items-start sm:items-center justify-between gap-3">
               <div className="flex-1">
-                <CardTitle className="text-lg sm:text-xl">Contribution Tracking</CardTitle>
-                <CardDescription className="text-sm">Track all member contributions for this cycle</CardDescription>
+                <CardTitle className="text-lg sm:text-xl">Cycle Tracking</CardTitle>
+                <CardDescription className="text-sm">
+                  {cycles.length > 0 && groupData.start_date && (
+                    <span>Cycle {getCurrentCycleNumber(groupData.start_date, groupData.frequency, members.length)} of {members.length}</span>
+                  )}
+                </CardDescription>
               </div>
               {isHost && !groupData.archived && (
                 <div className="flex gap-2 w-full sm:w-auto">
@@ -848,92 +907,91 @@ const GroupDashboard = () => {
               )}
             </div>
           </CardHeader>
-          <CardContent className="space-y-4">
-            <div className="space-y-2">
-              <div className="flex items-center justify-between text-sm">
-                <span className="font-medium">Current Cycle Progress</span>
-                <span className="text-muted-foreground">
-                  ${totalCollected.toFixed(2)} of ${expectedPerCycle.toFixed(2)}
-                </span>
-              </div>
-              <Progress value={contributionProgress} className="h-3" />
-            </div>
-
-            {/* Contribution Table - Mobile Responsive */}
-            {contributions.length > 0 ? (
+          <CardContent className="space-y-6">
+            {cycles.length > 0 && groupData.start_date ? (
               <>
-                {/* Desktop Table */}
-                <div className="hidden md:block border rounded-lg overflow-hidden">
-                  <Table>
-                    <TableHeader>
-                      <TableRow>
-                        <TableHead>Member</TableHead>
-                        <TableHead>Cycle</TableHead>
-                        <TableHead>Amount</TableHead>
-                        <TableHead>Date</TableHead>
-                        <TableHead>Status</TableHead>
-                      </TableRow>
-                    </TableHeader>
-                    <TableBody>
-                      {contributions.map((contribution) => (
-                        <TableRow key={contribution.id}>
-                          <TableCell className="font-medium">{contribution.memberName}</TableCell>
-                          <TableCell>{contribution.cycleLabel}</TableCell>
-                          <TableCell>${contribution.amount.toFixed(2)}</TableCell>
-                          <TableCell>
-                            {new Date(contribution.date).toLocaleDateString("en-US", { 
-                              month: "short", 
-                              day: "numeric" 
-                            })}
-                          </TableCell>
-                          <TableCell>
-                            <Badge variant="default" className="bg-green-600">
-                              {contribution.status}
-                            </Badge>
-                          </TableCell>
-                        </TableRow>
-                      ))}
-                    </TableBody>
-                  </Table>
-                </div>
-                
-                {/* Mobile Card View */}
-                <div className="md:hidden space-y-3">
-                  {contributions.map((contribution) => (
-                    <div key={contribution.id} className="p-4 border rounded-lg space-y-2 bg-secondary/30">
-                      <div className="flex justify-between items-start">
-                        <div>
-                          <p className="font-medium">{contribution.memberName}</p>
-                          <p className="text-sm text-muted-foreground">{contribution.cycleLabel}</p>
-                        </div>
-                        <Badge variant="default" className="bg-green-600">
-                          {contribution.status}
-                        </Badge>
-                      </div>
-                      <div className="flex justify-between text-sm">
-                        <span className="text-muted-foreground">Amount:</span>
-                        <span className="font-semibold">${contribution.amount.toFixed(2)}</span>
-                      </div>
-                      <div className="flex justify-between text-sm">
-                        <span className="text-muted-foreground">Date:</span>
-                        <span>
-                          {new Date(contribution.date).toLocaleDateString("en-US", { 
-                            month: "short", 
-                            day: "numeric" 
-                          })}
-                        </span>
-                      </div>
-                    </div>
-                  ))}
-                </div>
+                {/* Cycle Timeline */}
+                <CycleTimeline
+                  cycles={cycles.map((c: any) => ({
+                    id: c.id,
+                    cycle_number: c.cycle_number,
+                    status: (() => {
+                      const currentCycle = getCurrentCycleNumber(groupData.start_date, groupData.frequency, members.length);
+                      if (c.cycle_number < currentCycle) return 'completed';
+                      if (c.cycle_number === currentCycle) return 'current';
+                      return 'upcoming';
+                    })(),
+                  }))}
+                  currentCycle={getCurrentCycleNumber(groupData.start_date, groupData.frequency, members.length)}
+                  onCycleClick={(cycleNumber) => setSelectedCycle(cycleNumber)}
+                />
+
+                {/* Current or Selected Cycle Card */}
+                {(() => {
+                  const currentCycleNum = getCurrentCycleNumber(groupData.start_date, groupData.frequency, members.length);
+                  const displayCycle = selectedCycle || currentCycleNum;
+                  const cycleData = cycles.find((c: any) => c.cycle_number === displayCycle);
+                  
+                  if (!cycleData) return null;
+
+                  // Get contributions for this cycle
+                  const cycleContributions = contributions
+                    .filter((c) => c.cycle === displayCycle)
+                    .map((c) => ({
+                      member_id: c.memberId,
+                      member_name: c.memberName,
+                      amount: c.amount,
+                      contribution_status: c.status || 'paid',
+                      payment_date: c.date,
+                    }));
+
+                  // Add missing members as pending
+                  const contributedMemberIds = new Set(cycleContributions.map((c) => c.member_id));
+                  members.forEach((member) => {
+                    if (!contributedMemberIds.has(member.id)) {
+                      cycleContributions.push({
+                        member_id: member.id,
+                        member_name: member.name,
+                        amount: 0,
+                        contribution_status: 'pending',
+                        payment_date: null,
+                      });
+                    }
+                  });
+
+                  return (
+                    <CycleCard
+                      cycle={{
+                        id: cycleData.id,
+                        cycle_number: cycleData.cycle_number,
+                        start_date: cycleData.start_date,
+                        end_date: cycleData.end_date,
+                        payout_date: cycleData.payout_date,
+                        payout_status: cycleData.payout_status,
+                        group_name: groupData.groupName,
+                        payout_recipient: {
+                          id: cycleData.members?.id || '',
+                          name: cycleData.members?.name || 'Unknown',
+                          email: members.find((m: any) => m.id === cycleData.payout_recipient_id)?.email || '',
+                        },
+                      }}
+                      contributions={cycleContributions}
+                      expectedAmount={expectedPerCycle}
+                      isHost={isHost}
+                      onPayoutDateUpdated={reloadGroupData}
+                    />
+                  );
+                })()}
               </>
             ) : (
               <div className="text-center py-8 text-muted-foreground">
-                <p className="mb-4 text-sm sm:text-base">No contributions recorded yet</p>
-                {isHost && (
-                  <Button onClick={() => navigate("/record-contribution")} variant="outline" className="w-full sm:w-auto">
-                    <Plus className="mr-2 h-4 w-4" />
-                    Record First Contribution
+                <p className="mb-4 text-sm sm:text-base">
+                  {!groupData.start_date ? "Start the Ajor to begin tracking cycles" : "No cycles available"}
+                </p>
+                {isHost && !groupData.start_date && (
+                  <Button onClick={() => setShowStartModal(true)} className="w-full sm:w-auto">
+                    <Play className="mr-2 h-4 w-4" />
+                    Start Ajor
                   </Button>
                 )}
               </div>

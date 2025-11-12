@@ -322,7 +322,7 @@ const Dashboard = () => {
                     </CardDescription>
                   </CardHeader>
                   <CardContent>
-                    <div className="text-3xl font-bold">{userGroups.length}</div>
+                    <div className="text-3xl font-bold">{userGroups.filter(g => !g.archived).length}</div>
                   </CardContent>
                 </Card>
                 <Card className="shadow-[var(--shadow-medium)] border-border/50">

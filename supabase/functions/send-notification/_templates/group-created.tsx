@@ -33,7 +33,7 @@ export const GroupCreatedEmail = ({
     <Preview>Your Ajor group "{groupName}" has been created!</Preview>
     <Body style={main}>
       <Container style={container}>
-        <Heading style={h1}>🎉 Your Ajor is Ready!</Heading>
+        <Heading style={h1}>Your Ajor is Ready!</Heading>
         <Text style={text}>Hi {recipientName},</Text>
         <Text style={text}>
           Congratulations! Your Ajor group <strong>{groupName}</strong> has been successfully created.

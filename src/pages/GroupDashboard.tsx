@@ -45,9 +45,11 @@ const GroupDashboard = () => {
   const [sendingReminders, setSendingReminders] = useState(false);
   
   // Admin features
-  const { isAdmin } = useAdmin();
+  const { isAdmin, updateContribution, removeMember } = useAdmin();
   const [showEditContribution, setShowEditContribution] = useState(false);
   const [selectedContribution, setSelectedContribution] = useState<any>(null);
+  const [showRemoveMemberDialog, setShowRemoveMemberDialog] = useState(false);
+  const [memberToRemove, setMemberToRemove] = useState<any>(null);
 
   // Sync cycles: create/update cycles in database based on group config
   const syncCycles = async (group: any, membersData: any[], existingCycles: any[]) => {
@@ -722,6 +724,63 @@ const GroupDashboard = () => {
               <AdminControls 
                 groupId={groupData.id}
                 groupName={groupData.groupName}
+                onEditContribution={() => {
+                  // Show dialog to select contribution to edit
+                  toast({
+                    title: "Select Contribution",
+                    description: "Click on a contribution in the table below to edit it",
+                  });
+                }}
+                onAdjustDates={() => {
+                  toast({
+                    title: "Adjust Dates",
+                    description: "This feature allows you to manually adjust cycle dates and payout dates",
+                  });
+                }}
+                onRemoveMember={() => {
+                  if (members.length > 0) {
+                    setMemberToRemove(members[0]);
+                    setShowRemoveMemberDialog(true);
+                  } else {
+                    toast({
+                      title: "No Members",
+                      description: "This group has no members to remove",
+                      variant: "destructive",
+                    });
+                  }
+                }}
+                onRecalculateBalances={async () => {
+                  try {
+                    toast({
+                      title: "Recalculating...",
+                      description: "Recalculating all member balances and cycle data",
+                    });
+                    
+                    // Trigger sync cycles which recalculates everything
+                    const { data: cyclesData } = await supabase
+                      .from('cycles')
+                      .select('*, members(id, name)')
+                      .eq('group_id', groupData.id)
+                      .order('cycle_number');
+                    
+                    if (groupData.start_date && members.length > 0) {
+                      await syncCycles(groupData, members, cyclesData || []);
+                    }
+                    
+                    await reloadGroupData();
+                    
+                    toast({
+                      title: "Balances Recalculated",
+                      description: "All cycle data and balances have been updated",
+                    });
+                  } catch (error: any) {
+                    toast({
+                      title: "Error",
+                      description: error.message || "Failed to recalculate balances",
+                      variant: "destructive",
+                    });
+                  }
+                }}
               />
             )}
             {isHost && !groupData.archived && (

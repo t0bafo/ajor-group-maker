@@ -199,7 +199,7 @@ export default function AdminDashboard() {
                     <Button
                       variant="outline"
                       size="sm"
-                      onClick={() => navigate(`/group/${group.id}`)}
+                      onClick={() => navigate(`/group/${group.id}/dashboard`)}
                     >
                       <Eye className="h-4 w-4 mr-1" />
                       View

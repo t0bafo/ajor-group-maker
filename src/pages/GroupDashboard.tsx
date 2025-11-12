@@ -50,9 +50,22 @@ const GroupDashboard = () => {
       membersData.length
     );
 
-    // Check if we need to create cycles
-    if (existingCycles.length === 0) {
-      // Create all cycles
+    // Check if cycles need to be regenerated
+    const needsRegeneration = existingCycles.length === 0 || 
+      existingCycles.length !== membersData.length ||
+      (existingCycles.length > 0 && 
+       new Date(existingCycles[0].start_date).toISOString() !== new Date(group.start_date).toISOString());
+
+    if (needsRegeneration) {
+      // Delete existing cycles if any
+      if (existingCycles.length > 0) {
+        await supabase
+          .from('cycles')
+          .delete()
+          .eq('group_id', groupId);
+      }
+
+      // Create all cycles with correct dates
       const cyclesToInsert = generatedCycles.map((cycle, index) => ({
         group_id: groupId,
         cycle_number: cycle.cycle_number,

@@ -8,7 +8,7 @@ import { Separator } from "@/components/ui/separator";
 import { supabase } from "@/integrations/supabase/client";
 import { useToast } from "@/hooks/use-toast";
 import AppNavigation from "@/components/AppNavigation";
-import { User, Mail, Calendar, Bell, Shield, Crown, Users, PlayCircle } from "lucide-react";
+import { User, Mail, Calendar, Bell, Shield, Crown, Users, PlayCircle, Phone } from "lucide-react";
 import { Avatar, AvatarFallback } from "@/components/ui/avatar";
 import { Badge } from "@/components/ui/badge";
 import { useOnboarding } from "@/hooks/useOnboarding";
@@ -20,6 +20,7 @@ const Profile = () => {
   const [isLoading, setIsLoading] = useState(true);
   const [isUpdating, setIsUpdating] = useState(false);
   const [fullName, setFullName] = useState("");
+  const [phone, setPhone] = useState("");
   const [groupStats, setGroupStats] = useState({
     totalGroups: 0,
     hostedGroups: 0,
@@ -41,6 +42,16 @@ const Profile = () => {
     
     setUser(session.user);
     setFullName(session.user.user_metadata?.full_name || "");
+    
+    // Load phone from profiles table
+    const { data: profile } = await supabase
+      .from('profiles')
+      .select('phone')
+      .eq('id', session.user.id)
+      .maybeSingle();
+    
+    setPhone(profile?.phone || session.user.user_metadata?.phone || "");
+    
     await loadGroupStats(session.user.id);
     setIsLoading(false);
   };
@@ -73,16 +84,69 @@ const Profile = () => {
     }
   };
 
+  const validatePhone = (phoneNumber: string): boolean => {
+    if (!phoneNumber) return true; // Phone is optional
+    
+    // Remove all non-digit characters for validation
+    const digitsOnly = phoneNumber.replace(/\D/g, '');
+    
+    // Must be 10-15 digits (international format)
+    if (digitsOnly.length < 10 || digitsOnly.length > 15) {
+      return false;
+    }
+    
+    // Must start with + for international format
+    if (!phoneNumber.startsWith('+')) {
+      return false;
+    }
+    
+    return true;
+  };
+
+  const formatPhoneInput = (value: string): string => {
+    // Allow only digits, plus sign at start, and spaces/dashes
+    let formatted = value.replace(/[^\d+\s-]/g, '');
+    
+    // Ensure + only at the start
+    if (formatted.includes('+') && !formatted.startsWith('+')) {
+      formatted = '+' + formatted.replace(/\+/g, '');
+    }
+    
+    return formatted;
+  };
+
   const handleUpdateProfile = async () => {
     if (!user) return;
 
+    // Validate phone if provided
+    if (phone && !validatePhone(phone)) {
+      toast({
+        title: "Invalid Phone Number",
+        description: "Please enter a valid phone number in international format (e.g., +1 234 567 8900)",
+        variant: "destructive",
+      });
+      return;
+    }
+
     setIsUpdating(true);
     try {
-      const { error } = await supabase.auth.updateUser({
-        data: { full_name: fullName }
+      // Update auth metadata
+      const { error: authError } = await supabase.auth.updateUser({
+        data: { full_name: fullName, phone }
       });
 
-      if (error) throw error;
+      if (authError) throw authError;
+
+      // Update profiles table
+      const { error: profileError } = await supabase
+        .from('profiles')
+        .update({ 
+          full_name: fullName,
+          phone: phone || null 
+        })
+        .eq('id', user.id);
+
+      if (profileError) throw profileError;
 
       toast({
         title: "Profile Updated",
@@ -248,6 +312,22 @@ const Profile = () => {
                 />
               </div>
               <div className="space-y-2">
+                <Label htmlFor="phone">
+                  <Phone className="inline h-4 w-4 mr-1" />
+                  Phone Number (for SMS notifications)
+                </Label>
+                <Input
+                  id="phone"
+                  type="tel"
+                  value={phone}
+                  onChange={(e) => setPhone(formatPhoneInput(e.target.value))}
+                  placeholder="+1 234 567 8900"
+                />
+                <p className="text-xs text-muted-foreground">
+                  Enter your phone number in international format (e.g., +1 for US, +44 for UK)
+                </p>
+              </div>
+              <div className="space-y-2">
                 <Label htmlFor="email">Email Address</Label>
                 <Input
                   id="email"
@@ -259,7 +339,7 @@ const Profile = () => {
                   Email address cannot be changed
                 </p>
               </div>
-              <Button 
+              <Button
                 onClick={handleUpdateProfile} 
                 disabled={isUpdating}
                 className="w-full sm:w-auto"

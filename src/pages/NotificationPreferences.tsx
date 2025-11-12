@@ -5,7 +5,7 @@ import { Card, CardContent, CardDescription, CardHeader, CardTitle } from "@/com
 import { Switch } from "@/components/ui/switch";
 import { Label } from "@/components/ui/label";
 import { Separator } from "@/components/ui/separator";
-import { Bell, Mail, DollarSign, Users, Loader2 } from "lucide-react";
+import { Bell, Mail, DollarSign, Users, Loader2, MessageSquare } from "lucide-react";
 import AppNavigation from "@/components/AppNavigation";
 import { supabase } from "@/integrations/supabase/client";
 import { useToast } from "@/hooks/use-toast";
@@ -22,6 +22,10 @@ const NotificationPreferences = () => {
     contribution_reminders: true,
     payout_notifications: true,
     member_activity: true,
+    sms_notifications: true,
+    sms_contribution_reminders: true,
+    sms_payout_notifications: true,
+    sms_member_activity: true,
   });
 
   useEffect(() => {
@@ -56,6 +60,10 @@ const NotificationPreferences = () => {
           contribution_reminders: data.contribution_reminders,
           payout_notifications: data.payout_notifications,
           member_activity: data.member_activity,
+          sms_notifications: data.sms_notifications,
+          sms_contribution_reminders: data.sms_contribution_reminders,
+          sms_payout_notifications: data.sms_payout_notifications,
+          sms_member_activity: data.sms_member_activity,
         });
       } else {
         // Create default preferences
@@ -67,6 +75,10 @@ const NotificationPreferences = () => {
             contribution_reminders: true,
             payout_notifications: true,
             member_activity: true,
+            sms_notifications: true,
+            sms_contribution_reminders: true,
+            sms_payout_notifications: true,
+            sms_member_activity: true,
           });
 
         if (insertError) throw insertError;
@@ -237,6 +249,96 @@ const NotificationPreferences = () => {
                   checked={preferences.member_activity}
                   onCheckedChange={() => handleToggle('member_activity')}
                   disabled={!preferences.email_notifications}
+                />
+              </div>
+            </div>
+          </CardContent>
+        </Card>
+
+        <Card className="shadow-[var(--shadow-medium)] mt-6">
+          <CardHeader>
+            <CardTitle className="flex items-center gap-2">
+              <MessageSquare className="h-5 w-5 text-primary" />
+              SMS Notifications
+            </CardTitle>
+            <CardDescription>
+              Control which SMS notifications you want to receive
+            </CardDescription>
+          </CardHeader>
+          <CardContent className="space-y-6">
+            {/* Master SMS Toggle */}
+            <div className="flex items-center justify-between p-4 bg-secondary/20 rounded-lg">
+              <div className="space-y-0.5">
+                <Label htmlFor="sms-notifications" className="text-base font-semibold">
+                  <MessageSquare className="inline h-4 w-4 mr-2" />
+                  All SMS Notifications
+                </Label>
+                <p className="text-sm text-muted-foreground">
+                  Enable or disable all SMS notifications
+                </p>
+              </div>
+              <Switch
+                id="sms-notifications"
+                checked={preferences.sms_notifications}
+                onCheckedChange={() => handleToggle('sms_notifications')}
+              />
+            </div>
+
+            <Separator />
+
+            {/* Individual SMS Notification Types */}
+            <div className="space-y-4">
+              <div className="flex items-center justify-between p-4 hover:bg-secondary/10 rounded-lg transition-colors">
+                <div className="space-y-0.5">
+                  <Label htmlFor="sms-contribution-reminders" className="text-base">
+                    <Bell className="inline h-4 w-4 mr-2 text-primary" />
+                    SMS Contribution Reminders
+                  </Label>
+                  <p className="text-sm text-muted-foreground">
+                    Get SMS reminders 2-3 days before your contribution is due
+                  </p>
+                </div>
+                <Switch
+                  id="sms-contribution-reminders"
+                  checked={preferences.sms_contribution_reminders}
+                  onCheckedChange={() => handleToggle('sms_contribution_reminders')}
+                  disabled={!preferences.sms_notifications}
+                />
+              </div>
+
+              <div className="flex items-center justify-between p-4 hover:bg-secondary/10 rounded-lg transition-colors">
+                <div className="space-y-0.5">
+                  <Label htmlFor="sms-payout-notifications" className="text-base">
+                    <DollarSign className="inline h-4 w-4 mr-2 text-green-600 dark:text-green-400" />
+                    SMS Payout Notifications
+                  </Label>
+                  <p className="text-sm text-muted-foreground">
+                    Get SMS alerts when it's your turn to receive a payout
+                  </p>
+                </div>
+                <Switch
+                  id="sms-payout-notifications"
+                  checked={preferences.sms_payout_notifications}
+                  onCheckedChange={() => handleToggle('sms_payout_notifications')}
+                  disabled={!preferences.sms_notifications}
+                />
+              </div>
+
+              <div className="flex items-center justify-between p-4 hover:bg-secondary/10 rounded-lg transition-colors">
+                <div className="space-y-0.5">
+                  <Label htmlFor="sms-member-activity" className="text-base">
+                    <Users className="inline h-4 w-4 mr-2 text-blue-600 dark:text-blue-400" />
+                    SMS Member Activity
+                  </Label>
+                  <p className="text-sm text-muted-foreground">
+                    Get SMS updates when members join or leave your groups
+                  </p>
+                </div>
+                <Switch
+                  id="sms-member-activity"
+                  checked={preferences.sms_member_activity}
+                  onCheckedChange={() => handleToggle('sms_member_activity')}
+                  disabled={!preferences.sms_notifications}
                 />
               </div>
             </div>

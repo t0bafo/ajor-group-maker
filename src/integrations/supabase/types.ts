@@ -249,6 +249,10 @@ export type Database = {
           id: string
           member_activity: boolean
           payout_notifications: boolean
+          sms_contribution_reminders: boolean
+          sms_member_activity: boolean
+          sms_notifications: boolean
+          sms_payout_notifications: boolean
           updated_at: string
           user_id: string
         }
@@ -259,6 +263,10 @@ export type Database = {
           id?: string
           member_activity?: boolean
           payout_notifications?: boolean
+          sms_contribution_reminders?: boolean
+          sms_member_activity?: boolean
+          sms_notifications?: boolean
+          sms_payout_notifications?: boolean
           updated_at?: string
           user_id: string
         }
@@ -269,6 +277,10 @@ export type Database = {
           id?: string
           member_activity?: boolean
           payout_notifications?: boolean
+          sms_contribution_reminders?: boolean
+          sms_member_activity?: boolean
+          sms_notifications?: boolean
+          sms_payout_notifications?: boolean
           updated_at?: string
           user_id?: string
         }

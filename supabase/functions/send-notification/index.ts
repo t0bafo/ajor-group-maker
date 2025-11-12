@@ -18,6 +18,11 @@ const supabaseUrl = Deno.env.get("SUPABASE_URL")!;
 const supabaseServiceKey = Deno.env.get("SUPABASE_SERVICE_ROLE_KEY")!;
 const supabase = createClient(supabaseUrl, supabaseServiceKey);
 
+// Twilio configuration
+const twilioAccountSid = Deno.env.get("TWILIO_ACCOUNT_SID");
+const twilioAuthToken = Deno.env.get("TWILIO_AUTH_TOKEN");
+const twilioPhoneNumber = Deno.env.get("TWILIO_PHONE_NUMBER");
+
 const corsHeaders = {
   "Access-Control-Allow-Origin": "*",
   "Access-Control-Allow-Headers": "authorization, x-client-info, apikey, content-type",
@@ -28,6 +33,8 @@ const notificationSchema = z.object({
   type: z.enum(['contribution_reminder', 'payout_notification', 'member_activity', 'group_created', 'welcome_email', 'join_request', 'request_approved', 'member_invited']),
   recipientEmail: z.string().email().max(255),
   recipientName: z.string().trim().min(1).max(100),
+  recipientPhone: z.string().optional(),
+  channel: z.enum(['email', 'sms', 'both']).default('email'),
   data: z.object({
     groupName: z.string().trim().max(100).optional(),
     amount: z.number().positive().max(1000000).optional(),
@@ -53,6 +60,8 @@ interface NotificationRequest {
   type: "contribution_reminder" | "payout_notification" | "member_activity" | "group_created" | "welcome_email" | "join_request" | "request_approved" | "member_invited";
   recipientEmail: string;
   recipientName: string;
+  recipientPhone?: string;
+  channel: "email" | "sms" | "both";
   data: {
     groupName?: string;
     amount?: number;
@@ -95,10 +104,11 @@ const handler = async (req: Request): Promise<Response> => {
       );
     }
 
-    const { type, recipientEmail, recipientName, data }: NotificationRequest = validationResult.data;
+    const { type, recipientEmail, recipientName, recipientPhone, channel, data }: NotificationRequest = validationResult.data;
 
     let html: string;
     let subject: string;
+    let smsMessage: string;
 
     // Render appropriate email template based on notification type
     switch (type) {
@@ -113,6 +123,7 @@ const handler = async (req: Request): Promise<Response> => {
           })
         );
         subject = `Reminder: ${data.cycleLabel} contribution due`;
+        smsMessage = `Hi ${recipientName}, reminder: Your ${data.cycleLabel} contribution of $${data.amount} for ${data.groupName} is due on ${data.dueDate}.`;
         break;
 
       case "payout_notification":
@@ -125,6 +136,7 @@ const handler = async (req: Request): Promise<Response> => {
           })
         );
         subject = `Your payout for ${data.cycleLabel} is ready!`;
+        smsMessage = `Hi ${recipientName}, great news! Your payout of $${data.amount} for ${data.cycleLabel} in ${data.groupName} is ready.`;
         break;
 
       case "member_activity":
@@ -137,6 +149,7 @@ const handler = async (req: Request): Promise<Response> => {
           })
         );
         subject = `${data.memberName} ${data.activityType === "joined" ? "joined" : "left"} ${data.groupName}`;
+        smsMessage = `Hi ${recipientName}, ${data.memberName} ${data.activityType === "joined" ? "joined" : "left"} ${data.groupName}.`;
         break;
 
       case "group_created":
@@ -151,6 +164,7 @@ const handler = async (req: Request): Promise<Response> => {
           })
         );
         subject = `Your Ajor group "${data.groupName}" has been created!`;
+        smsMessage = `Hi ${recipientName}, your Ajor group "${data.groupName}" has been created! Invite code: ${data.inviteCode}`;
         break;
 
       case "welcome_email":
@@ -160,6 +174,7 @@ const handler = async (req: Request): Promise<Response> => {
           })
         );
         subject = "Welcome to Ajor - Let's get started!";
+        smsMessage = `Welcome to Ajor, ${recipientName}! Let's get started with your rotating savings groups.`;
         break;
 
       case "join_request":
@@ -174,6 +189,7 @@ const handler = async (req: Request): Promise<Response> => {
           })
         );
         subject = `New join request for ${data.groupName}`;
+        smsMessage = `Hi ${recipientName}, ${data.memberName} requested to join ${data.groupName}.`;
         break;
 
       case "request_approved":
@@ -188,6 +204,7 @@ const handler = async (req: Request): Promise<Response> => {
           })
         );
         subject = `Welcome to ${data.groupName}! Your request was approved`;
+        smsMessage = `Hi ${recipientName}, welcome to ${data.groupName}! Your join request was approved by ${data.hostName}.`;
         break;
 
       case "member_invited":
@@ -204,22 +221,62 @@ const handler = async (req: Request): Promise<Response> => {
           })
         );
         subject = `You're invited to join ${data.groupName} on Ajor`;
+        smsMessage = `Hi ${recipientName}, ${data.hostName} invited you to join ${data.groupName} on Ajor. Code: ${data.inviteCode}`;
         break;
 
       default:
         throw new Error(`Unknown notification type: ${type}`);
     }
 
-    // Send email using Resend
-    const { error } = await resend.emails.send({
-      from: "Ajor <onboarding@resend.dev>",
-      to: [recipientEmail],
-      subject,
-      html,
-    });
+    // Send notifications based on channel
+    const results = { email: false, sms: false };
 
-    if (error) {
-      throw new Error("Failed to send email");
+    if (channel === 'email' || channel === 'both') {
+      const { error } = await resend.emails.send({
+        from: "Ajor <onboarding@resend.dev>",
+        to: [recipientEmail],
+        subject,
+        html,
+      });
+
+      if (error) {
+        console.error("Failed to send email:", error);
+      } else {
+        results.email = true;
+      }
+    }
+
+    if ((channel === 'sms' || channel === 'both') && recipientPhone && twilioAccountSid && twilioAuthToken && twilioPhoneNumber) {
+      try {
+        const twilioUrl = `https://api.twilio.com/2010-04-01/Accounts/${twilioAccountSid}/Messages.json`;
+        const auth = btoa(`${twilioAccountSid}:${twilioAuthToken}`);
+        
+        const smsResponse = await fetch(twilioUrl, {
+          method: 'POST',
+          headers: {
+            'Authorization': `Basic ${auth}`,
+            'Content-Type': 'application/x-www-form-urlencoded',
+          },
+          body: new URLSearchParams({
+            To: recipientPhone,
+            From: twilioPhoneNumber,
+            Body: smsMessage,
+          }),
+        });
+
+        if (smsResponse.ok) {
+          results.sms = true;
+        } else {
+          const errorData = await smsResponse.text();
+          console.error("Failed to send SMS:", errorData);
+        }
+      } catch (smsError: any) {
+        console.error("Error sending SMS:", smsError);
+      }
+    }
+
+    if (!results.email && !results.sms) {
+      throw new Error("Failed to send notification via any channel");
     }
 
     // Log to notification history
@@ -249,7 +306,11 @@ const handler = async (req: Request): Promise<Response> => {
     }
 
     return new Response(
-      JSON.stringify({ success: true, message: "Notification sent" }),
+      JSON.stringify({ 
+        success: true, 
+        message: "Notification sent",
+        channels: results,
+      }),
       {
         status: 200,
         headers: { ...corsHeaders, "Content-Type": "application/json" },

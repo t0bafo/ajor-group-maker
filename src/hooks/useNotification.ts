@@ -5,6 +5,8 @@ interface SendNotificationParams {
   type: "contribution_reminder" | "payout_notification" | "member_activity" | "group_created" | "welcome_email" | "join_request" | "request_approved" | "member_invited";
   recipientEmail: string;
   recipientName: string;
+  recipientPhone?: string;
+  channel?: "email" | "sms" | "both";
   data: {
     groupName?: string;
     amount?: number;

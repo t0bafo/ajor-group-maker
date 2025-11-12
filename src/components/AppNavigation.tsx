@@ -8,10 +8,11 @@ import {
   DropdownMenuTrigger,
 } from "@/components/ui/dropdown-menu";
 import { Avatar, AvatarFallback } from "@/components/ui/avatar";
-import { Home, UserPlus, Users, User, Settings, LogOut, Bell, History } from "lucide-react";
+import { Home, UserPlus, Users, User, Settings, LogOut, Bell, History, Shield } from "lucide-react";
 import { useToast } from "@/hooks/use-toast";
 import { supabase } from "@/integrations/supabase/client";
 import logoImage from "@/assets/ajor-logo.png";
+import { useAdmin } from "@/hooks/useAdmin";
 
 interface AppNavigationProps {
   userEmail?: string;
@@ -22,6 +23,7 @@ const AppNavigation = ({ userEmail, userName }: AppNavigationProps) => {
   const navigate = useNavigate();
   const location = useLocation();
   const { toast } = useToast();
+  const { isAdmin } = useAdmin();
   
   const initials = userName 
     ? userName.split(' ').map(n => n[0]).join('').toUpperCase().slice(0, 2)
@@ -96,6 +98,17 @@ const AppNavigation = ({ userEmail, userName }: AppNavigationProps) => {
             <Users className="h-4 w-4" />
             Join Ajor
           </Button>
+          {isAdmin && (
+            <Button
+              variant={isActive("/admin/dashboard") ? "secondary" : "ghost"}
+              size="sm"
+              onClick={() => navigate("/admin/dashboard")}
+              className="gap-2 border-destructive/20"
+            >
+              <Shield className="h-4 w-4" />
+              Admin
+            </Button>
+          )}
         </nav>
 
         {/* Mobile & Desktop Profile Menu */}
@@ -136,6 +149,12 @@ const AppNavigation = ({ userEmail, userName }: AppNavigationProps) => {
                 <Users className="mr-2 h-4 w-4" />
                 Join Ajor
               </DropdownMenuItem>
+              {isAdmin && (
+                <DropdownMenuItem onClick={() => navigate("/admin/dashboard")} className="cursor-pointer">
+                  <Shield className="mr-2 h-4 w-4" />
+                  Admin Dashboard
+                </DropdownMenuItem>
+              )}
               <DropdownMenuSeparator />
             </div>
             <DropdownMenuItem onClick={() => navigate("/profile")} className="cursor-pointer">

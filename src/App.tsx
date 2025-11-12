@@ -26,8 +26,48 @@ import FAQ from "./pages/FAQ";
 import MobileTestPage from "./pages/MobileTestPage";
 import DarkModeTest from "./pages/DarkModeTest";
 import NotFound from "./pages/NotFound";
+import AdminDashboard from "./pages/admin/AdminDashboard";
+import { AdminBadge } from "./components/admin/AdminBadge";
+import { useAdmin } from "./hooks/useAdmin";
 
 const queryClient = new QueryClient();
+
+const AppContent = () => {
+  const { isAdmin } = useAdmin();
+  
+  return (
+    <>
+      {isAdmin && <AdminBadge />}
+      <Routes>
+        <Route path="/" element={<Index />} />
+        <Route path="/auth" element={<Auth />} />
+        <Route path="/verify-email" element={<VerifyEmail />} />
+        <Route path="/dashboard" element={<Dashboard />} />
+        <Route path="/group-setup" element={<GroupSetup />} />
+        <Route path="/invite-members" element={<InviteMembers />} />
+        <Route path="/group-dashboard" element={<GroupDashboard />} />
+        <Route path="/join-group" element={<JoinGroup />} />
+        <Route path="/join/:code" element={<JoinViaLink />} />
+        <Route path="/group-overview" element={<GroupOverview />} />
+        <Route path="/member-dashboard" element={<MemberDashboard />} />
+        <Route path="/record-contribution" element={<RecordContribution />} />
+        <Route path="/payout-management" element={<PayoutManagement />} />
+        <Route path="/group-ledger" element={<GroupLedger />} />
+        <Route path="/notification-preferences" element={<NotificationPreferences />} />
+        <Route path="/notification-history" element={<NotificationHistory />} />
+        <Route path="/profile" element={<Profile />} />
+        <Route path="/privacy" element={<Privacy />} />
+        <Route path="/terms" element={<Terms />} />
+        <Route path="/faq" element={<FAQ />} />
+        <Route path="/mobile-test" element={<MobileTestPage />} />
+        <Route path="/dark-mode-test" element={<DarkModeTest />} />
+        <Route path="/admin/dashboard" element={<AdminDashboard />} />
+        {/* ADD ALL CUSTOM ROUTES ABOVE THE CATCH-ALL "*" ROUTE */}
+        <Route path="*" element={<NotFound />} />
+      </Routes>
+    </>
+  );
+};
 
 const App = () => (
   <QueryClientProvider client={queryClient}>
@@ -35,32 +75,7 @@ const App = () => (
       <Toaster />
       <Sonner />
       <BrowserRouter>
-        <Routes>
-          <Route path="/" element={<Index />} />
-          <Route path="/auth" element={<Auth />} />
-          <Route path="/verify-email" element={<VerifyEmail />} />
-          <Route path="/dashboard" element={<Dashboard />} />
-          <Route path="/group-setup" element={<GroupSetup />} />
-          <Route path="/invite-members" element={<InviteMembers />} />
-          <Route path="/group-dashboard" element={<GroupDashboard />} />
-          <Route path="/join-group" element={<JoinGroup />} />
-          <Route path="/join/:code" element={<JoinViaLink />} />
-          <Route path="/group-overview" element={<GroupOverview />} />
-          <Route path="/member-dashboard" element={<MemberDashboard />} />
-          <Route path="/record-contribution" element={<RecordContribution />} />
-          <Route path="/payout-management" element={<PayoutManagement />} />
-          <Route path="/group-ledger" element={<GroupLedger />} />
-          <Route path="/notification-preferences" element={<NotificationPreferences />} />
-          <Route path="/notification-history" element={<NotificationHistory />} />
-          <Route path="/profile" element={<Profile />} />
-          <Route path="/privacy" element={<Privacy />} />
-          <Route path="/terms" element={<Terms />} />
-          <Route path="/faq" element={<FAQ />} />
-          <Route path="/mobile-test" element={<MobileTestPage />} />
-          <Route path="/dark-mode-test" element={<DarkModeTest />} />
-          {/* ADD ALL CUSTOM ROUTES ABOVE THE CATCH-ALL "*" ROUTE */}
-          <Route path="*" element={<NotFound />} />
-        </Routes>
+        <AppContent />
       </BrowserRouter>
     </TooltipProvider>
   </QueryClientProvider>

@@ -20,6 +20,9 @@ import { getCurrentCycle } from "@/lib/dateUtils";
 import { generateCycles, getCurrentCycleNumber } from "@/lib/cycleUtils";
 import { CycleTimeline } from "@/components/CycleTimeline";
 import { CycleCard } from "@/components/CycleCard";
+import { useAdmin } from "@/hooks/useAdmin";
+import { AdminControls } from "@/components/admin/AdminControls";
+import { EditContributionDialog } from "@/components/admin/EditContributionDialog";
 
 const GroupDashboard = () => {
   const navigate = useNavigate();
@@ -40,6 +43,11 @@ const GroupDashboard = () => {
   const [startingAjor, setStartingAjor] = useState(false);
   const [loading, setLoading] = useState(true);
   const [sendingReminders, setSendingReminders] = useState(false);
+  
+  // Admin features
+  const { isAdmin } = useAdmin();
+  const [showEditContribution, setShowEditContribution] = useState(false);
+  const [selectedContribution, setSelectedContribution] = useState<any>(null);
 
   // Sync cycles: create/update cycles in database based on group config
   const syncCycles = async (group: any, membersData: any[], existingCycles: any[]) => {
@@ -710,6 +718,12 @@ const GroupDashboard = () => {
             )}
           </div>
           <div className="flex items-center gap-2">
+            {isAdmin && (
+              <AdminControls 
+                groupId={groupData.id}
+                groupName={groupData.groupName}
+              />
+            )}
             {isHost && !groupData.archived && (
               <>
                 {!groupData.start_date && !isGroupLocked && (
@@ -1152,6 +1166,20 @@ const GroupDashboard = () => {
         members={members}
         onSuccess={reloadGroupData}
       />
+
+      {selectedContribution && (
+        <EditContributionDialog
+          open={showEditContribution}
+          onOpenChange={setShowEditContribution}
+          contribution={selectedContribution}
+          memberName={selectedContribution.memberName || 'Unknown'}
+          onSuccess={() => {
+            reloadGroupData();
+            setShowEditContribution(false);
+            setSelectedContribution(null);
+          }}
+        />
+      )}
     </div>
   );
 };

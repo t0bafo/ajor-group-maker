@@ -58,26 +58,32 @@ const Profile = () => {
 
   const loadGroupStats = async (userId: string) => {
     try {
-      // Get hosted groups
-      const { data: hostedGroups } = await supabase
+      // Get hosted groups (excluding archived)
+      const { count: hostedCount, error: hostedError } = await supabase
         .from('groups')
-        .select('id', { count: 'exact', head: true })
+        .select('*', { count: 'exact', head: true })
         .eq('host_id', userId)
         .eq('archived', false);
 
-      // Get member groups
-      const { data: memberGroups } = await supabase
-        .from('members')
-        .select('group_id', { count: 'exact', head: true })
-        .eq('user_id', userId);
+      if (hostedError) throw hostedError;
 
-      const hosted = hostedGroups?.length || 0;
-      const member = memberGroups?.length || 0;
+      // Get member groups where user is approved member (excluding archived groups)
+      const { data: memberData, error: memberError } = await supabase
+        .from('members')
+        .select('group_id, groups!inner(archived)')
+        .eq('user_id', userId)
+        .eq('status', 'approved')
+        .eq('groups.archived', false);
+
+      if (memberError) throw memberError;
+
+      const memberCount = memberData?.length || 0;
+      const hosted = hostedCount || 0;
 
       setGroupStats({
-        totalGroups: hosted + member,
+        totalGroups: hosted + memberCount,
         hostedGroups: hosted,
-        memberGroups: member,
+        memberGroups: memberCount,
       });
     } catch (error) {
       console.error('Error loading group stats:', error);

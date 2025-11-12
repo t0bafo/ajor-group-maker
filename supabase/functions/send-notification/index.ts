@@ -11,6 +11,7 @@ import { GroupCreatedEmail } from "./_templates/group-created.tsx";
 import { WelcomeEmail } from "./_templates/welcome-email.tsx";
 import { JoinRequestEmail } from "./_templates/join-request.tsx";
 import { RequestApprovedEmail } from "./_templates/request-approved.tsx";
+import { MemberInvitedEmail } from "./_templates/member-invited.tsx";
 
 const resend = new Resend(Deno.env.get("RESEND_API_KEY"));
 const supabaseUrl = Deno.env.get("SUPABASE_URL")!;
@@ -24,7 +25,7 @@ const corsHeaders = {
 
 // Input validation schema
 const notificationSchema = z.object({
-  type: z.enum(['contribution_reminder', 'payout_notification', 'member_activity', 'group_created', 'welcome_email', 'join_request', 'request_approved']),
+  type: z.enum(['contribution_reminder', 'payout_notification', 'member_activity', 'group_created', 'welcome_email', 'join_request', 'request_approved', 'member_invited']),
   recipientEmail: z.string().email().max(255),
   recipientName: z.string().trim().min(1).max(100),
   data: z.object({
@@ -44,11 +45,12 @@ const notificationSchema = z.object({
     requestedAt: z.string().max(100).optional(),
     hostName: z.string().trim().max(100).optional(),
     welcomeMessage: z.string().max(300).optional(),
+    inviteLink: z.string().url().max(500).optional(),
   }),
 });
 
 interface NotificationRequest {
-  type: "contribution_reminder" | "payout_notification" | "member_activity" | "group_created" | "welcome_email" | "join_request" | "request_approved";
+  type: "contribution_reminder" | "payout_notification" | "member_activity" | "group_created" | "welcome_email" | "join_request" | "request_approved" | "member_invited";
   recipientEmail: string;
   recipientName: string;
   data: {
@@ -68,6 +70,7 @@ interface NotificationRequest {
     requestedAt?: string;
     hostName?: string;
     welcomeMessage?: string;
+    inviteLink?: string;
   };
 }
 
@@ -185,6 +188,22 @@ const handler = async (req: Request): Promise<Response> => {
           })
         );
         subject = `Welcome to ${data.groupName}! Your request was approved`;
+        break;
+
+      case "member_invited":
+        html = await renderAsync(
+          React.createElement(MemberInvitedEmail, {
+            recipientName,
+            recipientEmail,
+            groupName: data.groupName!,
+            hostName: data.hostName!,
+            contributionAmount: data.contributionAmount!,
+            frequency: data.frequency!,
+            inviteLink: data.inviteLink!,
+            inviteCode: data.inviteCode!,
+          })
+        );
+        subject = `You're invited to join ${data.groupName} on Ajor`;
         break;
 
       default:

@@ -11,9 +11,11 @@ import { toast } from "@/hooks/use-toast";
 import { supabase } from "@/integrations/supabase/client";
 import { celebrationConfetti } from "@/lib/confetti";
 import { emailSchema } from "@/lib/validation";
+import { useNotification } from "@/hooks/useNotification";
 
 const InviteMembers = () => {
   const navigate = useNavigate();
+  const { sendNotification } = useNotification();
   const [inviteEmail, setInviteEmail] = useState("");
   const [members, setMembers] = useState<any[]>([]);
   const [copied, setCopied] = useState(false);
@@ -58,6 +60,8 @@ const InviteMembers = () => {
           numberOfMembers: group.number_of_members,
           inviteCode: group.invite_code,
           startDate: group.start_date,
+          contributionAmount: group.contribution_amount,
+          frequency: group.frequency,
         });
 
         setMembers(membersData.map((m: any) => ({
@@ -141,6 +145,28 @@ const InviteMembers = () => {
         .single();
 
       if (error) throw error;
+
+      // Send invitation email
+      try {
+        const { data: { user } } = await supabase.auth.getUser();
+        await sendNotification({
+          type: "member_invited",
+          recipientEmail: trimmedEmail,
+          recipientName: trimmedEmail.split("@")[0],
+          data: {
+            groupName: groupData.groupName,
+            hostName: user?.user_metadata?.full_name || user?.email?.split('@')[0] || 'Host',
+            contributionAmount: parseFloat(groupData.contributionAmount || '0'),
+            frequency: groupData.frequency || 'Monthly',
+            inviteLink,
+            inviteCode: groupData.inviteCode,
+          },
+        });
+        console.log('Invitation email sent successfully to:', trimmedEmail);
+      } catch (notificationError: any) {
+        console.error('Failed to send invitation email:', notificationError);
+        // Don't block the invite if email fails
+      }
 
       setMembers([...members, {
         id: newMember.id,

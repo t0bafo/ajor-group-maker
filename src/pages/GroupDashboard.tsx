@@ -635,7 +635,7 @@ const GroupDashboard = () => {
             <p className="text-muted-foreground mt-1 text-sm sm:text-base">{groupData.description}</p>
             {isGroupLocked && (
               <Badge variant="outline" className="mt-2 bg-accent/10 text-accent border-accent/30">
-                🔒 Locked - Payouts in progress
+                Locked - Payouts in progress
               </Badge>
             )}
           </div>

@@ -9,7 +9,7 @@ const CommitmentCallout = () => {
           <div className="w-12 h-12 rounded-xl bg-gradient-to-br from-primary via-cta to-accent flex items-center justify-center shadow-sm">
             <Lock className="h-6 w-6 text-card" />
           </div>
-          <h3 className="text-2xl font-bold">Commitment is Key 🔑</h3>
+          <h3 className="text-2xl font-bold">Commitment is Key</h3>
         </div>
 
         <div className="space-y-4">

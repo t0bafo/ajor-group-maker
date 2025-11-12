@@ -51,9 +51,7 @@ const FAQ = () => {
 
           {/* Getting Started */}
           <Card className="p-6 shadow-[var(--shadow-medium)]">
-            <h2 className="text-2xl font-bold mb-4 flex items-center gap-2">
-              <span className="text-primary">📚</span> Getting Started
-            </h2>
+            <h2 className="text-2xl font-bold mb-4">Getting Started</h2>
             <Accordion type="single" collapsible className="w-full">
               <AccordionItem value="what-is-ajor">
                 <AccordionTrigger className="text-left">
@@ -118,9 +116,7 @@ const FAQ = () => {
 
           {/* Managing Groups */}
           <Card className="p-6 shadow-[var(--shadow-medium)]">
-            <h2 className="text-2xl font-bold mb-4 flex items-center gap-2">
-              <span className="text-primary">👥</span> Managing Groups
-            </h2>
+            <h2 className="text-2xl font-bold mb-4">Managing Groups</h2>
             <Accordion type="single" collapsible className="w-full">
               <AccordionItem value="invite-members">
                 <AccordionTrigger className="text-left">
@@ -188,9 +184,7 @@ const FAQ = () => {
 
           {/* Contributions & Payouts */}
           <Card className="p-6 shadow-[var(--shadow-medium)]">
-            <h2 className="text-2xl font-bold mb-4 flex items-center gap-2">
-              <span className="text-primary">💰</span> Contributions & Payouts
-            </h2>
+            <h2 className="text-2xl font-bold mb-4">Contributions & Payouts</h2>
             <Accordion type="single" collapsible className="w-full">
               <AccordionItem value="record-contribution">
                 <AccordionTrigger className="text-left">
@@ -266,9 +260,7 @@ const FAQ = () => {
 
           {/* Trust & Safety */}
           <Card className="p-6 shadow-[var(--shadow-medium)]">
-            <h2 className="text-2xl font-bold mb-4 flex items-center gap-2">
-              <span className="text-primary">🤝</span> Trust & Safety
-            </h2>
+            <h2 className="text-2xl font-bold mb-4">Trust & Safety</h2>
             <Accordion type="single" collapsible className="w-full">
               <AccordionItem value="dispute">
                 <AccordionTrigger className="text-left">

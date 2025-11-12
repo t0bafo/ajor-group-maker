@@ -295,7 +295,7 @@ const GroupSetup = () => {
                       className="text-base resize-none"
                     />
                     <p className="text-xs text-muted-foreground">
-                      💡 Tip: Include your late payment policy (default: 3-day grace period)
+                      Tip: Include your late payment policy (default: 3-day grace period)
                     </p>
                   </div>
                 </div>

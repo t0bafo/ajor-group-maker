@@ -23,7 +23,7 @@ const OnboardingTour = ({ onComplete, onSkip }: OnboardingTourProps) => {
             <div className="w-10 h-10 rounded-full bg-gradient-to-br from-primary via-cta to-accent flex items-center justify-center">
               <Sparkles className="h-5 w-5 text-card" />
             </div>
-            <h2 className="text-2xl font-bold">Welcome to Ajor! 👋</h2>
+            <h2 className="text-2xl font-bold">Welcome to Ajor!</h2>
           </div>
           <p className="text-muted-foreground">
             Let's take 2 minutes to show you around and help you get started with your first savings group.
@@ -73,7 +73,7 @@ const OnboardingTour = ({ onComplete, onSkip }: OnboardingTourProps) => {
                 <DollarSign className="h-4 w-4 text-primary" />
               </div>
               <div>
-                <p className="font-semibold">1️⃣ Contributions</p>
+                <p className="font-semibold">1. Contributions</p>
                 <p className="text-sm text-muted-foreground">Everyone pays the same amount on the same schedule</p>
               </div>
             </div>
@@ -82,7 +82,7 @@ const OnboardingTour = ({ onComplete, onSkip }: OnboardingTourProps) => {
                 <Repeat className="h-4 w-4 text-accent" />
               </div>
               <div>
-                <p className="font-semibold">2️⃣ Rotation</p>
+                <p className="font-semibold">2. Rotation</p>
                 <p className="text-sm text-muted-foreground">One person gets the full pot each cycle</p>
               </div>
             </div>
@@ -91,7 +91,7 @@ const OnboardingTour = ({ onComplete, onSkip }: OnboardingTourProps) => {
                 <Shield className="h-4 w-4 text-emerald" />
               </div>
               <div>
-                <p className="font-semibold">3️⃣ Commitment</p>
+                <p className="font-semibold">3. Commitment</p>
                 <p className="text-sm text-muted-foreground">You pay for FULL duration—even after receiving your payout</p>
               </div>
             </div>
@@ -133,7 +133,7 @@ const OnboardingTour = ({ onComplete, onSkip }: OnboardingTourProps) => {
               <Sparkles className="h-8 w-8 text-card" />
             </div>
           </div>
-          <h2 className="text-2xl font-bold">You're All Set! 🎉</h2>
+          <h2 className="text-2xl font-bold">You're All Set!</h2>
           <p className="text-muted-foreground">
             You can replay this tour anytime from your Profile settings.
           </p>

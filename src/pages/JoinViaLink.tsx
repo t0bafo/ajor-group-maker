@@ -209,7 +209,7 @@ const JoinViaLink = () => {
               <div className="space-y-3">
                 <div className="bg-primary/5 border border-primary/20 rounded-lg p-4 text-center">
                   <p className="text-sm font-medium text-foreground mb-1">
-                    🔒 Authentication Required
+                    Authentication Required
                   </p>
                   <p className="text-xs text-muted-foreground">
                     You need an account to join this Ajor group

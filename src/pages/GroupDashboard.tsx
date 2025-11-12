@@ -214,8 +214,10 @@ const GroupDashboard = () => {
   else if (groupData.frequency === "biweekly") nextPayoutDate.setDate(nextPayoutDate.getDate() + 14);
   else nextPayoutDate.setMonth(nextPayoutDate.getMonth() + 1);
 
-  // Calculate contribution stats
-  const totalCollected = contributions.reduce((sum, c) => sum + c.amount, 0);
+  // Calculate contribution stats - only for current cycle
+  const actualCurrentCycle = groupData.start_date ? getCurrentCycle(groupData.start_date, groupData.frequency) : null;
+  const currentCycleContributions = contributions.filter(c => c.cycle === actualCurrentCycle);
+  const totalCollected = currentCycleContributions.reduce((sum, c) => sum + c.amount, 0);
   const expectedPerCycle = parseFloat(groupData.contributionAmount || 0) * members.length;
   const contributionProgress = expectedPerCycle > 0 ? (totalCollected / expectedPerCycle) * 100 : 0;
 

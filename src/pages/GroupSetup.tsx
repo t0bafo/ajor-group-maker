@@ -426,8 +426,7 @@ const GroupSetup = () => {
                             <SelectValue />
                           </SelectTrigger>
                           <SelectContent className="bg-background z-50">
-                            <SelectItem value="+1">🇺🇸 +1 (US)</SelectItem>
-                            <SelectItem value="+1">🇨🇦 +1 (CA)</SelectItem>
+                            <SelectItem value="+1">🇺🇸 +1 (US/CA)</SelectItem>
                             <SelectItem value="+44">🇬🇧 +44 (UK)</SelectItem>
                             <SelectItem value="+234">🇳🇬 +234 (NG)</SelectItem>
                             <SelectItem value="+233">🇬🇭 +233 (GH)</SelectItem>

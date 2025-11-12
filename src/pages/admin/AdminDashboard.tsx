@@ -5,8 +5,15 @@ import { useAdmin } from "@/hooks/useAdmin";
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from "@/components/ui/card";
 import { Badge } from "@/components/ui/badge";
 import { Button } from "@/components/ui/button";
-import { Users, DollarSign, TrendingUp, Shield, Eye } from "lucide-react";
+import { Users, DollarSign, TrendingUp, Shield, Eye, MoreVertical, Edit, RotateCcw, Trash2 } from "lucide-react";
 import { AdminBadge } from "@/components/admin/AdminBadge";
+import {
+  DropdownMenu,
+  DropdownMenuContent,
+  DropdownMenuItem,
+  DropdownMenuSeparator,
+  DropdownMenuTrigger,
+} from "@/components/ui/dropdown-menu";
 import {
   Table,
   TableBody,
@@ -16,6 +23,9 @@ import {
   TableRow,
 } from "@/components/ui/table";
 import { format } from "date-fns";
+import { EditGroupDialog } from "@/components/admin/EditGroupDialog";
+import { ResetGroupDialog } from "@/components/admin/ResetGroupDialog";
+import { DeleteGroupDialog } from "@/components/admin/DeleteGroupDialog";
 
 export default function AdminDashboard() {
   const navigate = useNavigate();
@@ -28,6 +38,9 @@ export default function AdminDashboard() {
   });
   const [groups, setGroups] = useState<any[]>([]);
   const [logs, setLogs] = useState<any[]>([]);
+  const [editGroup, setEditGroup] = useState<any>(null);
+  const [resetGroup, setResetGroup] = useState<any>(null);
+  const [deleteGroup, setDeleteGroup] = useState<any>(null);
 
   useEffect(() => {
     if (!isLoading && !isAdmin) {
@@ -196,17 +209,51 @@ export default function AdminDashboard() {
                   <TableCell>{group.number_of_members}</TableCell>
                   <TableCell>{format(new Date(group.created_at), 'MMM d, yyyy')}</TableCell>
                   <TableCell>
-                    <Button
-                      variant="outline"
-                      size="sm"
-                      onClick={() => {
-                        sessionStorage.setItem('currentGroupId', group.id);
-                        navigate('/group-dashboard');
-                      }}
-                    >
-                      <Eye className="h-4 w-4 mr-1" />
-                      View
-                    </Button>
+                    <div className="flex items-center gap-2">
+                      <Button
+                        variant="outline"
+                        size="sm"
+                        onClick={() => {
+                          sessionStorage.setItem('currentGroupId', group.id);
+                          navigate('/group-dashboard');
+                        }}
+                      >
+                        <Eye className="h-4 w-4 mr-1" />
+                        View
+                      </Button>
+                      
+                      <DropdownMenu>
+                        <DropdownMenuTrigger asChild>
+                          <Button variant="ghost" size="sm" className="h-8 w-8 p-0">
+                            <MoreVertical className="h-4 w-4" />
+                          </Button>
+                        </DropdownMenuTrigger>
+                        <DropdownMenuContent align="end" className="w-[200px]">
+                          <DropdownMenuItem
+                            onClick={() => setEditGroup(group)}
+                            className="cursor-pointer"
+                          >
+                            <Edit className="h-4 w-4 mr-2" />
+                            Edit
+                          </DropdownMenuItem>
+                          <DropdownMenuItem
+                            onClick={() => setResetGroup(group)}
+                            className="cursor-pointer text-amber-600 dark:text-amber-500"
+                          >
+                            <RotateCcw className="h-4 w-4 mr-2" />
+                            Reset
+                          </DropdownMenuItem>
+                          <DropdownMenuSeparator />
+                          <DropdownMenuItem
+                            onClick={() => setDeleteGroup(group)}
+                            className="cursor-pointer text-destructive"
+                          >
+                            <Trash2 className="h-4 w-4 mr-2" />
+                            Delete
+                          </DropdownMenuItem>
+                        </DropdownMenuContent>
+                      </DropdownMenu>
+                    </div>
                   </TableCell>
                 </TableRow>
               ))}
@@ -214,6 +261,34 @@ export default function AdminDashboard() {
           </Table>
         </CardContent>
       </Card>
+
+      {/* Admin Action Dialogs */}
+      {editGroup && (
+        <EditGroupDialog
+          open={!!editGroup}
+          onOpenChange={(open) => !open && setEditGroup(null)}
+          group={editGroup}
+          onSuccess={fetchDashboardData}
+        />
+      )}
+      
+      {resetGroup && (
+        <ResetGroupDialog
+          open={!!resetGroup}
+          onOpenChange={(open) => !open && setResetGroup(null)}
+          group={resetGroup}
+          onSuccess={fetchDashboardData}
+        />
+      )}
+      
+      {deleteGroup && (
+        <DeleteGroupDialog
+          open={!!deleteGroup}
+          onOpenChange={(open) => !open && setDeleteGroup(null)}
+          group={deleteGroup}
+          onSuccess={fetchDashboardData}
+        />
+      )}
 
       {/* Recent Admin Activity */}
       <Card>

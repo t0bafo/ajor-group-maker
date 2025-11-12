@@ -1,11 +1,13 @@
 import { useState, useEffect } from "react";
 import { useNavigate } from "react-router-dom";
 import { Button } from "@/components/ui/button";
+import { Input } from "@/components/ui/input";
+import { Label } from "@/components/ui/label";
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from "@/components/ui/card";
 import { Checkbox } from "@/components/ui/checkbox";
 import { Badge } from "@/components/ui/badge";
 import { Separator } from "@/components/ui/separator";
-import { ArrowLeft, Calendar, DollarSign, Users, TrendingUp, CheckCircle2 } from "lucide-react";
+import { ArrowLeft, Calendar, DollarSign, Users, TrendingUp, CheckCircle2, Phone } from "lucide-react";
 import { toast } from "@/hooks/use-toast";
 import JoinSuccessModal from "@/components/JoinSuccessModal";
 import { supabase } from "@/integrations/supabase/client";
@@ -17,11 +19,14 @@ const GroupOverview = () => {
   const [groupInfo, setGroupInfo] = useState<any>(null);
   const [agreed, setAgreed] = useState(false);
   const [showSuccess, setShowSuccess] = useState(false);
+  const [userPhone, setUserPhone] = useState<string>("");
+  const [needsPhone, setNeedsPhone] = useState(false);
 
   useEffect(() => {
     const storedInfo = sessionStorage.getItem("joinGroupInfo");
     if (storedInfo) {
       setGroupInfo(JSON.parse(storedInfo));
+      checkUserPhone();
     } else {
       toast({
         title: "No Group Selected",
@@ -32,11 +37,52 @@ const GroupOverview = () => {
     }
   }, [navigate]);
 
+  const checkUserPhone = async () => {
+    const { data: { user } } = await supabase.auth.getUser();
+    if (!user) return;
+
+    const { data: profile } = await supabase
+      .from('profiles')
+      .select('phone')
+      .eq('id', user.id)
+      .maybeSingle();
+
+    if (!profile?.phone) {
+      setNeedsPhone(true);
+    }
+  };
+
+  const validatePhone = (phoneNumber: string): boolean => {
+    if (!phoneNumber) return false;
+    const digitsOnly = phoneNumber.replace(/\D/g, '');
+    if (digitsOnly.length < 10 || digitsOnly.length > 15) return false;
+    if (!phoneNumber.startsWith('+')) return false;
+    return true;
+  };
+
+  const formatPhoneInput = (value: string): string => {
+    let formatted = value.replace(/[^\d+\s-]/g, '');
+    if (formatted.includes('+') && !formatted.startsWith('+')) {
+      formatted = '+' + formatted.replace(/\+/g, '');
+    }
+    return formatted;
+  };
+
   const handleConfirmJoin = async () => {
     if (!agreed) {
       toast({
         title: "Agreement Required",
         description: "Please confirm that you agree to the rotation and contribution schedule",
+        variant: "destructive",
+      });
+      return;
+    }
+
+    // Validate phone if needed
+    if (needsPhone && !validatePhone(userPhone)) {
+      toast({
+        title: "Phone Number Required",
+        description: "Host needs your phone number to coordinate payments",
         variant: "destructive",
       });
       return;
@@ -121,6 +167,14 @@ const GroupOverview = () => {
         });
 
       if (error) throw error;
+
+      // Save phone if provided
+      if (needsPhone && userPhone) {
+        await supabase
+          .from('profiles')
+          .update({ phone: userPhone })
+          .eq('id', user.id);
+      }
 
       if (requiresApproval) {
         // Send join request notification to host
@@ -328,6 +382,33 @@ const GroupOverview = () => {
             </div>
           </CardContent>
         </Card>
+
+        {/* Phone Collection */}
+        {needsPhone && (
+          <Card className="shadow-[var(--shadow-medium)] mb-6">
+            <CardContent className="pt-6">
+              <div className="space-y-3">
+                <div className="flex items-center gap-2">
+                  <Phone className="h-5 w-5 text-primary" />
+                  <Label htmlFor="userPhone" className="text-base font-semibold">
+                    Host needs your phone number
+                  </Label>
+                </div>
+                <Input
+                  id="userPhone"
+                  type="tel"
+                  placeholder="+1 234 567 8900"
+                  value={userPhone}
+                  onChange={(e) => setUserPhone(formatPhoneInput(e.target.value))}
+                  className="text-base"
+                />
+                <p className="text-xs text-muted-foreground">
+                  Required for payment coordination and group communication
+                </p>
+              </div>
+            </CardContent>
+          </Card>
+        )}
 
         {/* Agreement Section */}
         <Card className="shadow-[var(--shadow-medium)] mb-6">

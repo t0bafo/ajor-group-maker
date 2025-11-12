@@ -6,7 +6,7 @@ import { Label } from "@/components/ui/label";
 import { Textarea } from "@/components/ui/textarea";
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select";
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from "@/components/ui/card";
-import { ArrowLeft, ArrowRight } from "lucide-react";
+import { ArrowLeft, ArrowRight, Phone } from "lucide-react";
 import { toast } from "@/hooks/use-toast";
 import { supabase } from "@/integrations/supabase/client";
 import StepIndicator from "@/components/StepIndicator";
@@ -29,6 +29,8 @@ const GroupSetup = () => {
     numberOfMembers: "",
     rotationOrder: "sequential",
   });
+  const [userPhone, setUserPhone] = useState<string>("");
+  const [needsPhone, setNeedsPhone] = useState(false);
 
   // Layer 2: Request deduplication - prevent concurrent submissions
   const isCreatingGroup = useRef(false);
@@ -48,7 +50,41 @@ const GroupSetup = () => {
     const newKey = `group_${Date.now()}_${Math.random().toString(36).substring(2, 15)}`;
     sessionStorage.setItem("groupCreationKey", newKey);
     idempotencyKey.current = newKey;
+
+    // Check if user has phone number
+    checkUserPhone();
   }, []);
+
+  const checkUserPhone = async () => {
+    const { data: { user } } = await supabase.auth.getUser();
+    if (!user) return;
+
+    const { data: profile } = await supabase
+      .from('profiles')
+      .select('phone')
+      .eq('id', user.id)
+      .maybeSingle();
+
+    if (!profile?.phone) {
+      setNeedsPhone(true);
+    }
+  };
+
+  const validatePhone = (phoneNumber: string): boolean => {
+    if (!phoneNumber) return false;
+    const digitsOnly = phoneNumber.replace(/\D/g, '');
+    if (digitsOnly.length < 10 || digitsOnly.length > 15) return false;
+    if (!phoneNumber.startsWith('+')) return false;
+    return true;
+  };
+
+  const formatPhoneInput = (value: string): string => {
+    let formatted = value.replace(/[^\d+\s-]/g, '');
+    if (formatted.includes('+') && !formatted.startsWith('+')) {
+      formatted = '+' + formatted.replace(/\+/g, '');
+    }
+    return formatted;
+  };
 
   const handleInputChange = (field: string, value: string) => {
     setFormData((prev) => ({ ...prev, [field]: value }));
@@ -93,6 +129,16 @@ const GroupSetup = () => {
     }
     
     // Final step - create group
+
+    // Validate phone if needed
+    if (needsPhone && !validatePhone(userPhone)) {
+      toast({
+        title: "Phone Number Required",
+        description: "Please enter a valid phone number in international format for payment coordination",
+        variant: "destructive",
+      });
+      return;
+    }
     
     // Layer 2: Check if request is already in progress
     if (isCreatingGroup.current) {
@@ -154,6 +200,14 @@ const GroupSetup = () => {
         .single();
 
       if (groupError) throw groupError;
+
+      // Save phone if provided
+      if (needsPhone && userPhone) {
+        await supabase
+          .from('profiles')
+          .update({ phone: userPhone })
+          .eq('id', user.id);
+      }
 
       // Add host as first member
       const { error: memberError } = await supabase
@@ -356,6 +410,28 @@ const GroupSetup = () => {
 
               {currentStep === 2 && (
                 <div className="space-y-6 animate-fade-in">
+                  {needsPhone && (
+                    <div className="space-y-2 p-4 bg-primary/5 rounded-lg border border-primary/20">
+                      <div className="flex items-center gap-2 mb-2">
+                        <Phone className="h-5 w-5 text-primary" />
+                        <Label htmlFor="userPhone" className="text-base font-semibold">
+                          Add phone for payment coordination
+                        </Label>
+                      </div>
+                      <Input
+                        id="userPhone"
+                        type="tel"
+                        placeholder="+1 234 567 8900"
+                        value={userPhone}
+                        onChange={(e) => setUserPhone(formatPhoneInput(e.target.value))}
+                        className="text-base"
+                      />
+                      <p className="text-xs text-muted-foreground">
+                        Your phone helps coordinate contributions and payouts with the group
+                      </p>
+                    </div>
+                  )}
+
                   <div className="space-y-2">
                     <div className="flex items-center gap-2">
                       <Label htmlFor="rotationOrder">Rotation Order *</Label>

@@ -4,6 +4,7 @@ import { Button } from "@/components/ui/button";
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from "@/components/ui/card";
 import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
+import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select";
 import { Separator } from "@/components/ui/separator";
 import { supabase } from "@/integrations/supabase/client";
 import { useToast } from "@/hooks/use-toast";
@@ -21,6 +22,7 @@ const Profile = () => {
   const [isUpdating, setIsUpdating] = useState(false);
   const [fullName, setFullName] = useState("");
   const [phone, setPhone] = useState("");
+  const [countryCode, setCountryCode] = useState<string>("+1");
   const [groupStats, setGroupStats] = useState({
     totalGroups: 0,
     hostedGroups: 0,
@@ -50,7 +52,20 @@ const Profile = () => {
       .eq('id', session.user.id)
       .maybeSingle();
     
-    setPhone(profile?.phone || session.user.user_metadata?.phone || "");
+    const fullPhone = profile?.phone || session.user.user_metadata?.phone || "";
+    
+    // Parse country code from full phone if available
+    if (fullPhone && fullPhone.startsWith('+')) {
+      const match = fullPhone.match(/^(\+\d+)\s*/);
+      if (match) {
+        setCountryCode(match[1]);
+        setPhone(fullPhone.substring(match[0].length).trim());
+      } else {
+        setPhone(fullPhone);
+      }
+    } else {
+      setPhone(fullPhone);
+    }
     
     await loadGroupStats(session.user.id);
     setIsLoading(false);
@@ -90,19 +105,14 @@ const Profile = () => {
     }
   };
 
-  const validatePhone = (phoneNumber: string): boolean => {
+  const validatePhone = (phoneNumber: string, code: string): boolean => {
     if (!phoneNumber) return true; // Phone is optional
     
     // Remove all non-digit characters for validation
     const digitsOnly = phoneNumber.replace(/\D/g, '');
     
-    // Must be 10-15 digits (international format)
-    if (digitsOnly.length < 10 || digitsOnly.length > 15) {
-      return false;
-    }
-    
-    // Must start with + for international format
-    if (!phoneNumber.startsWith('+')) {
+    // Must be 7-15 digits
+    if (digitsOnly.length < 7 || digitsOnly.length > 15) {
       return false;
     }
     
@@ -110,25 +120,24 @@ const Profile = () => {
   };
 
   const formatPhoneInput = (value: string): string => {
-    // Allow only digits, plus sign at start, and spaces/dashes
-    let formatted = value.replace(/[^\d+\s-]/g, '');
-    
-    // Ensure + only at the start
-    if (formatted.includes('+') && !formatted.startsWith('+')) {
-      formatted = '+' + formatted.replace(/\+/g, '');
-    }
-    
+    // Allow only digits, spaces, and dashes
+    let formatted = value.replace(/[^\d\s-]/g, '');
     return formatted;
+  };
+
+  const getFullPhoneNumber = (): string => {
+    if (!phone) return "";
+    return `${countryCode} ${phone}`;
   };
 
   const handleUpdateProfile = async () => {
     if (!user) return;
 
     // Validate phone if provided
-    if (phone && !validatePhone(phone)) {
+    if (phone && !validatePhone(phone, countryCode)) {
       toast({
         title: "Invalid Phone Number",
-        description: "Please enter a valid phone number in international format (e.g., +1 234 567 8900)",
+        description: "Please enter a valid phone number",
         variant: "destructive",
       });
       return;
@@ -136,9 +145,11 @@ const Profile = () => {
 
     setIsUpdating(true);
     try {
+      const fullPhone = getFullPhoneNumber();
+      
       // Update auth metadata
       const { error: authError } = await supabase.auth.updateUser({
-        data: { full_name: fullName, phone }
+        data: { full_name: fullName, phone: fullPhone }
       });
 
       if (authError) throw authError;
@@ -148,7 +159,7 @@ const Profile = () => {
         .from('profiles')
         .update({ 
           full_name: fullName,
-          phone: phone || null 
+          phone: fullPhone || null 
         })
         .eq('id', user.id);
 
@@ -322,15 +333,40 @@ const Profile = () => {
                   <Phone className="inline h-4 w-4 mr-1" />
                   Phone Number (for SMS notifications)
                 </Label>
-                <Input
-                  id="phone"
-                  type="tel"
-                  value={phone}
-                  onChange={(e) => setPhone(formatPhoneInput(e.target.value))}
-                  placeholder="+1 234 567 8900"
-                />
+                <div className="flex gap-2">
+                  <Select value={countryCode} onValueChange={setCountryCode}>
+                    <SelectTrigger className="w-[140px]">
+                      <SelectValue />
+                    </SelectTrigger>
+                    <SelectContent className="bg-background z-50">
+                      <SelectItem value="+1">🇺🇸 +1 (US)</SelectItem>
+                      <SelectItem value="+1">🇨🇦 +1 (CA)</SelectItem>
+                      <SelectItem value="+44">🇬🇧 +44 (UK)</SelectItem>
+                      <SelectItem value="+234">🇳🇬 +234 (NG)</SelectItem>
+                      <SelectItem value="+233">🇬🇭 +233 (GH)</SelectItem>
+                      <SelectItem value="+254">🇰🇪 +254 (KE)</SelectItem>
+                      <SelectItem value="+27">🇿🇦 +27 (ZA)</SelectItem>
+                      <SelectItem value="+91">🇮🇳 +91 (IN)</SelectItem>
+                      <SelectItem value="+86">🇨🇳 +86 (CN)</SelectItem>
+                      <SelectItem value="+81">🇯🇵 +81 (JP)</SelectItem>
+                      <SelectItem value="+61">🇦🇺 +61 (AU)</SelectItem>
+                      <SelectItem value="+49">🇩🇪 +49 (DE)</SelectItem>
+                      <SelectItem value="+33">🇫🇷 +33 (FR)</SelectItem>
+                      <SelectItem value="+39">🇮🇹 +39 (IT)</SelectItem>
+                      <SelectItem value="+34">🇪🇸 +34 (ES)</SelectItem>
+                    </SelectContent>
+                  </Select>
+                  <Input
+                    id="phone"
+                    type="tel"
+                    value={phone}
+                    onChange={(e) => setPhone(formatPhoneInput(e.target.value))}
+                    placeholder="234 567 8900"
+                    className="flex-1"
+                  />
+                </div>
                 <p className="text-xs text-muted-foreground">
-                  Enter your phone number in international format (e.g., +1 for US, +44 for UK)
+                  Your phone number for SMS notifications and group coordination
                 </p>
               </div>
               <div className="space-y-2">

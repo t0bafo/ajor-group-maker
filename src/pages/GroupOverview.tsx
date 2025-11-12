@@ -3,6 +3,7 @@ import { useNavigate } from "react-router-dom";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
+import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select";
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from "@/components/ui/card";
 import { Checkbox } from "@/components/ui/checkbox";
 import { Badge } from "@/components/ui/badge";
@@ -20,6 +21,7 @@ const GroupOverview = () => {
   const [agreed, setAgreed] = useState(false);
   const [showSuccess, setShowSuccess] = useState(false);
   const [userPhone, setUserPhone] = useState<string>("");
+  const [countryCode, setCountryCode] = useState<string>("+1");
   const [needsPhone, setNeedsPhone] = useState(false);
 
   useEffect(() => {
@@ -52,20 +54,21 @@ const GroupOverview = () => {
     }
   };
 
-  const validatePhone = (phoneNumber: string): boolean => {
+  const validatePhone = (phoneNumber: string, code: string): boolean => {
     if (!phoneNumber) return false;
     const digitsOnly = phoneNumber.replace(/\D/g, '');
-    if (digitsOnly.length < 10 || digitsOnly.length > 15) return false;
-    if (!phoneNumber.startsWith('+')) return false;
+    if (digitsOnly.length < 7 || digitsOnly.length > 15) return false;
     return true;
   };
 
   const formatPhoneInput = (value: string): string => {
-    let formatted = value.replace(/[^\d+\s-]/g, '');
-    if (formatted.includes('+') && !formatted.startsWith('+')) {
-      formatted = '+' + formatted.replace(/\+/g, '');
-    }
+    // Remove all non-digit characters except spaces and dashes
+    let formatted = value.replace(/[^\d\s-]/g, '');
     return formatted;
+  };
+
+  const getFullPhoneNumber = (): string => {
+    return `${countryCode} ${userPhone}`;
   };
 
   const handleConfirmJoin = async () => {
@@ -79,7 +82,7 @@ const GroupOverview = () => {
     }
 
     // Validate phone if needed
-    if (needsPhone && !validatePhone(userPhone)) {
+    if (needsPhone && !validatePhone(userPhone, countryCode)) {
       toast({
         title: "Phone Number Required",
         description: "Host needs your phone number to coordinate payments",
@@ -172,7 +175,7 @@ const GroupOverview = () => {
       if (needsPhone && userPhone) {
         await supabase
           .from('profiles')
-          .update({ phone: userPhone })
+          .update({ phone: getFullPhoneNumber() })
           .eq('id', user.id);
       }
 
@@ -394,14 +397,38 @@ const GroupOverview = () => {
                     Host needs your phone number
                   </Label>
                 </div>
-                <Input
-                  id="userPhone"
-                  type="tel"
-                  placeholder="+1 234 567 8900"
-                  value={userPhone}
-                  onChange={(e) => setUserPhone(formatPhoneInput(e.target.value))}
-                  className="text-base"
-                />
+                <div className="flex gap-2">
+                  <Select value={countryCode} onValueChange={setCountryCode}>
+                    <SelectTrigger className="w-[140px]">
+                      <SelectValue />
+                    </SelectTrigger>
+                    <SelectContent className="bg-background z-50">
+                      <SelectItem value="+1">🇺🇸 +1 (US)</SelectItem>
+                      <SelectItem value="+1">🇨🇦 +1 (CA)</SelectItem>
+                      <SelectItem value="+44">🇬🇧 +44 (UK)</SelectItem>
+                      <SelectItem value="+234">🇳🇬 +234 (NG)</SelectItem>
+                      <SelectItem value="+233">🇬🇭 +233 (GH)</SelectItem>
+                      <SelectItem value="+254">🇰🇪 +254 (KE)</SelectItem>
+                      <SelectItem value="+27">🇿🇦 +27 (ZA)</SelectItem>
+                      <SelectItem value="+91">🇮🇳 +91 (IN)</SelectItem>
+                      <SelectItem value="+86">🇨🇳 +86 (CN)</SelectItem>
+                      <SelectItem value="+81">🇯🇵 +81 (JP)</SelectItem>
+                      <SelectItem value="+61">🇦🇺 +61 (AU)</SelectItem>
+                      <SelectItem value="+49">🇩🇪 +49 (DE)</SelectItem>
+                      <SelectItem value="+33">🇫🇷 +33 (FR)</SelectItem>
+                      <SelectItem value="+39">🇮🇹 +39 (IT)</SelectItem>
+                      <SelectItem value="+34">🇪🇸 +34 (ES)</SelectItem>
+                    </SelectContent>
+                  </Select>
+                  <Input
+                    id="userPhone"
+                    type="tel"
+                    placeholder="234 567 8900"
+                    value={userPhone}
+                    onChange={(e) => setUserPhone(formatPhoneInput(e.target.value))}
+                    className="flex-1 text-base"
+                  />
+                </div>
                 <p className="text-xs text-muted-foreground">
                   Required for payment coordination and group communication
                 </p>

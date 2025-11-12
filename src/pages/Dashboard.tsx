@@ -334,7 +334,7 @@ const Dashboard = () => {
                   </CardHeader>
                   <CardContent>
                     <div className="text-3xl font-bold">
-                      {userGroups.reduce((sum, g) => sum + g.memberCount, 0)}
+                      {userGroups.filter(g => !g.archived).reduce((sum, g) => sum + g.memberCount, 0)}
                     </div>
                   </CardContent>
                 </Card>

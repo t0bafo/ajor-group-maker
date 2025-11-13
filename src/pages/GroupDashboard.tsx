@@ -23,6 +23,7 @@ import { CycleCard } from "@/components/CycleCard";
 import { useAdmin } from "@/hooks/useAdmin";
 import { AdminControls } from "@/components/admin/AdminControls";
 import { EditContributionDialog } from "@/components/admin/EditContributionDialog";
+import { RemoveMemberDialog } from "@/components/admin/RemoveMemberDialog";
 
 const GroupDashboard = () => {
   const navigate = useNavigate();
@@ -670,6 +671,50 @@ const GroupDashboard = () => {
     }
   };
 
+  const handleRemoveMember = async (reason: string) => {
+    if (!memberToRemove) return;
+
+    try {
+      const result = await removeMember(memberToRemove.id, reason);
+      
+      if (result?.success) {
+        // Reload all group data
+        await reloadGroupData();
+        
+        // Reload members list
+        const groupId = sessionStorage.getItem("currentGroupId");
+        if (groupId) {
+          const { data: membersData } = await supabase
+            .from('members')
+            .select('*')
+            .eq('group_id', groupId)
+            .eq('status', 'approved')
+            .order('position', { ascending: true, nullsFirst: false });
+
+          if (membersData) {
+            setMembers(membersData.map((m: any) => ({
+              id: m.id,
+              name: m.name,
+              email: m.email,
+              role: m.role,
+              userId: m.user_id,
+              position: m.position,
+            })));
+          }
+        }
+        
+        setMemberToRemove(null);
+      }
+    } catch (error: any) {
+      console.error('Error removing member:', error);
+      toast({
+        title: "Error",
+        description: "Failed to remove member. Please try again.",
+        variant: "destructive",
+      });
+    }
+  };
+
   if (loading) {
     return (
       <div className="min-h-screen bg-gradient-to-b from-background to-secondary/30">
@@ -1177,6 +1222,19 @@ const GroupDashboard = () => {
                     <Badge variant={member.role === "Host" ? "default" : "outline"}>
                       {member.role}
                     </Badge>
+                    {isAdmin && member.role !== "Host" && (
+                      <Button
+                        variant="ghost"
+                        size="sm"
+                        className="text-destructive hover:text-destructive hover:bg-destructive/10"
+                        onClick={() => {
+                          setMemberToRemove(member);
+                          setShowRemoveMemberDialog(true);
+                        }}
+                      >
+                        Remove
+                      </Button>
+                    )}
                   </div>
                 </div>
               ))}
@@ -1237,6 +1295,15 @@ const GroupDashboard = () => {
             setShowEditContribution(false);
             setSelectedContribution(null);
           }}
+        />
+      )}
+
+      {memberToRemove && (
+        <RemoveMemberDialog
+          open={showRemoveMemberDialog}
+          onOpenChange={setShowRemoveMemberDialog}
+          memberName={memberToRemove.name}
+          onConfirm={handleRemoveMember}
         />
       )}
     </div>

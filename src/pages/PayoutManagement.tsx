@@ -185,7 +185,7 @@ const PayoutManagement = () => {
     setShowPayoutModal(true);
   };
 
-  const confirmPayout = async (note: string) => {
+  const confirmPayout = async (note: string, notifyRecipient: boolean, notifyGroup: boolean) => {
     if (!selectedMember || !groupData) return;
 
     try {
@@ -211,9 +211,9 @@ const PayoutManagement = () => {
       // Increment to next cycle
       setCurrentCycle(currentCycle + 1);
 
-      // Send payout notification to the member
-      if (selectedMember.email) {
-        try {
+      // Send payout notifications based on user preferences
+      try {
+        if (notifyRecipient && selectedMember.email) {
           await sendNotification({
             type: "payout_notification",
             recipientEmail: selectedMember.email,
@@ -224,10 +224,27 @@ const PayoutManagement = () => {
               cycleLabel: `Cycle ${currentCycle}`,
             },
           });
-        } catch (notifError) {
-          console.error("Failed to send payout notification:", notifError);
-          // Don't block the payout process if notification fails
         }
+        
+        if (notifyGroup) {
+          // Send to all members except the recipient
+          const otherMembers = members.filter(m => m.id !== selectedMember.id && m.email);
+          await Promise.all(otherMembers.map(member => 
+            sendNotification({
+              type: "member_activity",
+              recipientEmail: member.email,
+              recipientName: member.name,
+              data: {
+                groupName: groupData.group_name,
+                memberName: selectedMember.name,
+                activityType: "joined" as const,
+              },
+            })
+          ));
+        }
+      } catch (notifError) {
+        console.error("Failed to send payout notifications:", notifError);
+        // Don't block the payout process if notification fails
       }
 
       // Check if rotation is complete (all members paid once)
@@ -492,10 +509,12 @@ const PayoutManagement = () => {
           member={{
             id: selectedMember.id,
             name: selectedMember.name,
+            email: selectedMember.email,
             position: members.findIndex((m) => m.id === selectedMember.id) + 1,
           }}
           amount={totalAmount}
           cycle={currentCycle}
+          groupName={groupData?.group_name || ""}
           onConfirm={confirmPayout}
         />
       )}

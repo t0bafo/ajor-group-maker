@@ -3,6 +3,7 @@ import { Dialog, DialogContent, DialogDescription, DialogFooter, DialogHeader, D
 import { Button } from "@/components/ui/button";
 import { Textarea } from "@/components/ui/textarea";
 import { Label } from "@/components/ui/label";
+import { Checkbox } from "@/components/ui/checkbox";
 import { useToast } from "@/hooks/use-toast";
 
 interface RecordPayoutModalProps {
@@ -11,11 +12,13 @@ interface RecordPayoutModalProps {
   member: {
     id: string | number;
     name: string;
+    email: string;
     position: number;
   };
   amount: number;
   cycle: number;
-  onConfirm: (note: string) => void;
+  groupName: string;
+  onConfirm: (note: string, notifyRecipient: boolean, notifyGroup: boolean) => void;
 }
 
 const RecordPayoutModal = ({
@@ -24,14 +27,19 @@ const RecordPayoutModal = ({
   member,
   amount,
   cycle,
+  groupName,
   onConfirm,
 }: RecordPayoutModalProps) => {
   const [note, setNote] = useState("");
+  const [notifyRecipient, setNotifyRecipient] = useState(true);
+  const [notifyGroup, setNotifyGroup] = useState(true);
   const { toast } = useToast();
 
   const handleConfirm = () => {
-    onConfirm(note);
+    onConfirm(note, notifyRecipient, notifyGroup);
     setNote("");
+    setNotifyRecipient(true);
+    setNotifyGroup(true);
     onOpenChange(false);
     
     toast({
@@ -94,6 +102,36 @@ const RecordPayoutModal = ({
               rows={3}
             />
           </div>
+
+          <div className="space-y-3 pt-2 border-t">
+            <p className="text-sm font-medium">Notifications</p>
+            <div className="flex items-center space-x-2">
+              <Checkbox
+                id="notify-recipient"
+                checked={notifyRecipient}
+                onCheckedChange={(checked) => setNotifyRecipient(checked as boolean)}
+              />
+              <Label
+                htmlFor="notify-recipient"
+                className="text-sm font-normal cursor-pointer"
+              >
+                Notify recipient via SMS
+              </Label>
+            </div>
+            <div className="flex items-center space-x-2">
+              <Checkbox
+                id="notify-group"
+                checked={notifyGroup}
+                onCheckedChange={(checked) => setNotifyGroup(checked as boolean)}
+              />
+              <Label
+                htmlFor="notify-group"
+                className="text-sm font-normal cursor-pointer"
+              >
+                Notify group via email
+              </Label>
+            </div>
+          </div>
         </div>
 
         <DialogFooter className="flex-col sm:flex-row gap-2">
@@ -101,6 +139,8 @@ const RecordPayoutModal = ({
             variant="outline"
             onClick={() => {
               setNote("");
+              setNotifyRecipient(true);
+              setNotifyGroup(true);
               onOpenChange(false);
             }}
             className="w-full sm:w-auto"

@@ -24,6 +24,7 @@ import { useAdmin } from "@/hooks/useAdmin";
 import { AdminControls } from "@/components/admin/AdminControls";
 import { EditContributionDialog } from "@/components/admin/EditContributionDialog";
 import { RemoveMemberDialog } from "@/components/admin/RemoveMemberDialog";
+import { SendReminderDialog } from "@/components/SendReminderDialog";
 
 const GroupDashboard = () => {
   const navigate = useNavigate();
@@ -44,6 +45,8 @@ const GroupDashboard = () => {
   const [startingAjor, setStartingAjor] = useState(false);
   const [loading, setLoading] = useState(true);
   const [sendingReminders, setSendingReminders] = useState(false);
+  const [showReminderDialog, setShowReminderDialog] = useState(false);
+  const [lastReminderTime, setLastReminderTime] = useState<Date | null>(null);
   
   // Admin features
   const { isAdmin, updateContribution, removeMember } = useAdmin();
@@ -441,6 +444,29 @@ const GroupDashboard = () => {
     }
   };
 
+  // Check when the last reminder was sent for cooldown
+  const checkLastReminderTime = async () => {
+    try {
+      const groupId = sessionStorage.getItem("currentGroupId");
+      if (!groupId) return null;
+      
+      const { data, error } = await supabase
+        .from('notification_history')
+        .select('sent_at')
+        .eq('type', 'contribution_reminder')
+        .eq('metadata->>groupId', groupId)
+        .order('sent_at', { ascending: false })
+        .limit(1)
+        .maybeSingle();
+      
+      if (error) throw error;
+      return data?.sent_at ? new Date(data.sent_at) : null;
+    } catch (error) {
+      console.error('Error checking last reminder time:', error);
+      return null;
+    }
+  };
+
   const handleSendReminders = async () => {
     if (!groupData.start_date) {
       toast({
@@ -500,31 +526,39 @@ const GroupDashboard = () => {
       let successCount = 0;
       for (const member of membersToRemind) {
         try {
-          const { error } = await supabase.functions.invoke("send-notification", {
-            body: {
-              type: "contribution_reminder",
-              recipientEmail: member.email,
-              recipientName: member.name,
-              data: {
-                groupName: groupData.groupName,
-                amount: parseFloat(groupData.contributionAmount),
-                cycleLabel: `Cycle ${currentCycle}`,
-                dueDate: nextCycleDate.toLocaleDateString("en-US", {
-                  weekday: "long",
-                  year: "numeric",
-                  month: "long",
-                  day: "numeric",
-                }),
-              },
+          await sendNotification({
+            type: "contribution_reminder",
+            recipientEmail: member.email,
+            recipientName: member.name,
+            data: {
+              groupName: groupData.groupName,
+              amount: parseFloat(groupData.contributionAmount),
+              cycleLabel: `Cycle ${currentCycle}`,
+              dueDate: nextCycleDate.toLocaleDateString("en-US", {
+                weekday: "long",
+                year: "numeric",
+                month: "long",
+                day: "numeric",
+              }),
             },
           });
-
-          if (!error) {
-            successCount++;
-          }
+          successCount++;
         } catch (error) {
           console.error(`Failed to send reminder to ${member.name}:`, error);
         }
+      }
+      
+      // Log the reminder to notification_history
+      const groupId = sessionStorage.getItem("currentGroupId");
+      if (groupId) {
+        await supabase.from('notification_history').insert({
+          type: 'contribution_reminder',
+          recipient_email: 'group',
+          recipient_name: 'Group Reminder',
+          subject: 'Contribution Reminder',
+          status: 'sent',
+          metadata: { groupId, cycleNumber: currentCycle, recipientCount: successCount }
+        });
       }
 
       toast({
@@ -1144,6 +1178,37 @@ const GroupDashboard = () => {
         {/* Unpaid Members Card - Show when Ajor has started and there are unpaid members */}
         {groupData.start_date && unpaidMembers.length > 0 && (
           <div className="mb-8">
+            <div className="flex items-center justify-between mb-4">
+              <h2 className="text-xl font-semibold">Unpaid Members</h2>
+              {isHost && (
+                <Button
+                  onClick={async () => {
+                    // Check cooldown
+                    const lastReminder = await checkLastReminderTime();
+                    if (lastReminder) {
+                      const hoursSinceLastReminder = (Date.now() - lastReminder.getTime()) / (1000 * 60 * 60);
+                      if (hoursSinceLastReminder < 6) {
+                        const hoursRemaining = Math.ceil(6 - hoursSinceLastReminder);
+                        toast({
+                          title: "Cooldown Active",
+                          description: `Please wait ${hoursRemaining} more ${hoursRemaining === 1 ? 'hour' : 'hours'} before sending another reminder`,
+                          variant: "destructive",
+                        });
+                        return;
+                      }
+                    }
+                    setShowReminderDialog(true);
+                  }}
+                  disabled={sendingReminders || unpaidMembers.length === 0}
+                  variant="default"
+                  size="sm"
+                  className="gap-2"
+                >
+                  <Bell className="h-4 w-4" />
+                  Send Reminder ({unpaidMembers.length})
+                </Button>
+              )}
+            </div>
             <UnpaidMembersCard
               unpaidMembers={unpaidMembers}
               groupData={{
@@ -1306,6 +1371,14 @@ const GroupDashboard = () => {
           onConfirm={handleRemoveMember}
         />
       )}
+
+      <SendReminderDialog
+        open={showReminderDialog}
+        onOpenChange={setShowReminderDialog}
+        unpaidMembers={unpaidMembers.map(m => ({ name: m.name, email: m.email }))}
+        onConfirm={handleSendReminders}
+        sending={sendingReminders}
+      />
     </div>
   );
 };

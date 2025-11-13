@@ -241,7 +241,7 @@ const handler = async (req: Request): Promise<Response> => {
 
     if (channel === 'email' || channel === 'both') {
       const { error } = await resend.emails.send({
-        from: "Ajor <onboarding@resend.dev>",
+        from: "Ajor <noreply@ajor.app>",
         to: [recipientEmail],
         subject,
         html,

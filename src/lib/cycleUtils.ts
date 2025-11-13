@@ -67,6 +67,12 @@ export const getCurrentCycleNumber = (
 ): number => {
   const cycles = generateCycles(startDate, frequency, numberOfMembers);
   const now = new Date();
+  const start = new Date(startDate);
+
+  // If Ajor hasn't started yet, return 1 so all cycles show as upcoming
+  if (now < start) {
+    return 1;
+  }
 
   for (const cycle of cycles) {
     if (now >= cycle.start_date && now <= cycle.end_date) {

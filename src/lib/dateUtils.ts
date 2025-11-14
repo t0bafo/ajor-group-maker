@@ -184,6 +184,7 @@ export function getDueDateForCycle(
 
 /**
  * Gets days until due date (negative if overdue)
+ * Returns 0 on the due date itself, negative only after due date has passed
  */
 export function getDaysUntilDue(dueDate: Date): number {
   const now = new Date();
@@ -192,7 +193,8 @@ export function getDaysUntilDue(dueDate: Date): number {
   due.setHours(0, 0, 0, 0);
   
   const diffTime = due.getTime() - now.getTime();
-  const diffDays = Math.ceil(diffTime / (1000 * 60 * 60 * 24));
+  // Use Math.floor for negative numbers to ensure we only go negative after the full day has passed
+  const diffDays = diffTime >= 0 ? Math.ceil(diffTime / (1000 * 60 * 60 * 24)) : Math.floor(diffTime / (1000 * 60 * 60 * 24));
   return diffDays;
 }
 

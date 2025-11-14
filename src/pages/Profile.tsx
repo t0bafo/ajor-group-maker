@@ -9,9 +9,10 @@ import { Separator } from "@/components/ui/separator";
 import { supabase } from "@/integrations/supabase/client";
 import { useToast } from "@/hooks/use-toast";
 import AppNavigation from "@/components/AppNavigation";
-import { User, Mail, Calendar, Bell, Shield, Crown, Users, PlayCircle, Phone } from "lucide-react";
+import { User, Mail, Calendar, Bell, Shield, Crown, Users, PlayCircle, Phone, AlertCircle } from "lucide-react";
 import { Avatar, AvatarFallback } from "@/components/ui/avatar";
 import { Badge } from "@/components/ui/badge";
+import { Alert, AlertDescription } from "@/components/ui/alert";
 import { useOnboarding } from "@/hooks/useOnboarding";
 
 const Profile = () => {
@@ -333,6 +334,14 @@ const Profile = () => {
                   <Phone className="inline h-4 w-4 mr-1" />
                   Phone Number (for SMS notifications)
                 </Label>
+                {!phone && (
+                  <Alert>
+                    <AlertCircle className="h-4 w-4" />
+                    <AlertDescription>
+                      Add your phone number to receive SMS notifications for contributions and payouts.
+                    </AlertDescription>
+                  </Alert>
+                )}
                 <div className="flex gap-2">
                   <Select value={countryCode} onValueChange={setCountryCode}>
                     <SelectTrigger className="w-[140px]">

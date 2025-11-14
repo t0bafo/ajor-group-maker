@@ -5,10 +5,11 @@ import { Card, CardContent, CardDescription, CardHeader, CardTitle } from "@/com
 import { Switch } from "@/components/ui/switch";
 import { Label } from "@/components/ui/label";
 import { Separator } from "@/components/ui/separator";
-import { Bell, Mail, DollarSign, Users, Loader2, MessageSquare } from "lucide-react";
+import { Bell, Mail, DollarSign, Users, Loader2, MessageSquare, AlertCircle } from "lucide-react";
 import AppNavigation from "@/components/AppNavigation";
 import { supabase } from "@/integrations/supabase/client";
 import { useToast } from "@/hooks/use-toast";
+import { Alert, AlertDescription } from "@/components/ui/alert";
 
 const NotificationPreferences = () => {
   const navigate = useNavigate();
@@ -27,6 +28,8 @@ const NotificationPreferences = () => {
     sms_payout_notifications: true,
     sms_member_activity: true,
   });
+  
+  const [hasPhoneNumber, setHasPhoneNumber] = useState(false);
 
   useEffect(() => {
     loadPreferences();
@@ -42,6 +45,15 @@ const NotificationPreferences = () => {
       }
 
       setUser(currentUser);
+
+      // Check if user has a phone number
+      const { data: profileData } = await supabase
+        .from('profiles')
+        .select('phone')
+        .eq('id', currentUser.id)
+        .maybeSingle();
+      
+      setHasPhoneNumber(!!profileData?.phone);
 
       // Load existing preferences or create defaults
       const { data, error } = await supabase
@@ -266,6 +278,24 @@ const NotificationPreferences = () => {
             </CardDescription>
           </CardHeader>
           <CardContent className="space-y-6">
+            {/* Warning if no phone number */}
+            {!hasPhoneNumber && (
+              <Alert variant="destructive">
+                <AlertCircle className="h-4 w-4" />
+                <AlertDescription>
+                  You need to add a phone number in your{" "}
+                  <Button
+                    variant="link"
+                    className="p-0 h-auto font-semibold"
+                    onClick={() => navigate("/profile")}
+                  >
+                    Profile
+                  </Button>
+                  {" "}to receive SMS notifications.
+                </AlertDescription>
+              </Alert>
+            )}
+            
             {/* Master SMS Toggle */}
             <div className="flex items-center justify-between p-4 bg-secondary/20 rounded-lg">
               <div className="space-y-0.5">

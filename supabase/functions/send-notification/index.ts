@@ -293,7 +293,8 @@ const handler = async (req: Request): Promise<Response> => {
         console.error('Error sending SMS:', smsError.message);
         console.error('SMS Error stack:', smsError.stack);
       }
-    } else {
+    } else if (channel === 'sms' || channel === 'both') {
+      // Only log when SMS was intended but couldn't be sent
       console.log('SMS not sent - Missing requirements:', {
         channel,
         hasPhone: !!recipientPhone,

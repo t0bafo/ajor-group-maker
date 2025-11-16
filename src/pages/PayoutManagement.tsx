@@ -117,9 +117,10 @@ const PayoutManagement = () => {
     loadData();
   }, [navigate, toast]);
 
+  // Payout amount is contribution amount * (N-1) since payout recipient doesn't contribute
   const totalAmount =
     parseFloat(groupData?.contribution_amount || 0) *
-    parseInt(groupData?.number_of_members || 0);
+    (parseInt(groupData?.number_of_members || 0) - 1);
 
   // Current cycle is the next payout to be made
   // Find next member in rotation based on position
@@ -144,7 +145,7 @@ const PayoutManagement = () => {
       return;
     }
 
-    // Check if all members have contributed for the current cycle
+    // Check if all members (except payout recipient) have contributed for the current cycle
     const { data: contributions } = await supabase
       .from('contributions')
       .select('member_id')
@@ -152,13 +153,16 @@ const PayoutManagement = () => {
       .eq('cycle', currentCycle);
 
     const contributedMemberIds = new Set(contributions?.map(c => c.member_id) || []);
-    const allMembersContributed = members.every(m => contributedMemberIds.has(m.id));
+    
+    // Exclude the payout recipient from the check - they don't need to contribute
+    const membersWhoShouldContribute = members.filter(m => m.id !== currentPayoutMember?.id);
+    const allMembersContributed = membersWhoShouldContribute.every(m => contributedMemberIds.has(m.id));
 
     if (!allMembersContributed) {
-      const missingCount = members.length - contributedMemberIds.size;
+      const missingCount = membersWhoShouldContribute.length - contributedMemberIds.size;
       toast({
         title: "Contributions Incomplete",
-        description: `${missingCount} member(s) still need to contribute for Cycle ${currentCycle} before payout can be made.`,
+        description: `${missingCount} member(s) still need to contribute for Cycle ${currentCycle} before payout can be made. (${currentPayoutMember?.name} is the payout recipient and doesn't need to contribute)`,
         variant: "destructive",
       });
       return;

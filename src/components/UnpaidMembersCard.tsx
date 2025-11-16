@@ -2,11 +2,13 @@ import { Card, CardContent, CardDescription, CardHeader, CardTitle } from "@/com
 import { Badge } from "@/components/ui/badge";
 import { AlertCircle, Clock, AlertTriangle, CheckCircle } from "lucide-react";
 import { getCurrentCycle, getDueDateForCycle, getDaysUntilDue, getDueDateLabel } from "@/lib/dateUtils";
+import { getPayoutRecipientForCycle } from "@/lib/cycleUtils";
 
 interface UnpaidMember {
   id: string;
   name: string;
   email: string;
+  position?: number;
 }
 
 interface UnpaidMembersCardProps {
@@ -16,11 +18,21 @@ interface UnpaidMembersCardProps {
     frequency: string;
     grace_period_days: number;
   };
+  allMembers?: UnpaidMember[];
 }
 
-const UnpaidMembersCard = ({ unpaidMembers, groupData }: UnpaidMembersCardProps) => {
-  // Don't show anything if no unpaid members
-  if (unpaidMembers.length === 0) return null;
+const UnpaidMembersCard = ({ unpaidMembers, groupData, allMembers = [] }: UnpaidMembersCardProps) => {
+  const currentCycleNum = groupData.start_date ? getCurrentCycle(groupData.start_date, groupData.frequency) : null;
+  
+  // Filter out the payout recipient for this cycle - they don't need to contribute
+  const payoutRecipient = currentCycleNum && allMembers.length > 0 
+    ? getPayoutRecipientForCycle(allMembers.sort((a, b) => (a.position || 0) - (b.position || 0)), currentCycleNum)
+    : null;
+  
+  const filteredUnpaidMembers = unpaidMembers.filter(m => m.id !== payoutRecipient?.id);
+  
+  // Don't show anything if no unpaid members (after filtering out payout recipient)
+  if (filteredUnpaidMembers.length === 0) return null;
 
   // If Ajor hasn't started, show waiting message
   if (!groupData.start_date) {
@@ -116,7 +128,7 @@ const UnpaidMembersCard = ({ unpaidMembers, groupData }: UnpaidMembersCardProps)
       </CardHeader>
       <CardContent>
         <div className="space-y-2">
-          {unpaidMembers.map((member) => (
+          {filteredUnpaidMembers.map((member) => (
             <div 
               key={member.id}
               className={`flex items-center justify-between p-3 rounded-lg border ${

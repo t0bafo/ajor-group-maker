@@ -69,6 +69,13 @@ function getCurrentCycle(startDate: string, frequency: string): number {
   }
 }
 
+function getPayoutRecipientForCycle(members: Member[], cycle: number): Member | null {
+  if (!members || members.length === 0) return null;
+  // Members rotation: cycle 1 -> member 0, cycle 2 -> member 1, etc.
+  const recipientIndex = (cycle - 1) % members.length;
+  return members[recipientIndex];
+}
+
 const handler = async (req: Request): Promise<Response> => {
   if (req.method === "OPTIONS") {
     return new Response(null, { headers: corsHeaders });
@@ -136,10 +143,20 @@ const handler = async (req: Request): Promise<Response> => {
         const contributedMemberIds = new Set(
           (contributions as Contribution[] || []).map((c) => c.member_id)
         );
+        
+        // Get the payout recipient for this cycle - they don't need to contribute
+        const payoutRecipient = getPayoutRecipientForCycle(members as Member[], currentCycle);
 
-        // Send reminders to members who haven't contributed yet
+        // Send reminders to members who haven't contributed yet (excluding payout recipient)
         for (const member of members as Member[]) {
+          // Skip if already contributed
           if (contributedMemberIds.has(member.id)) {
+            continue;
+          }
+          
+          // Skip if this member is the payout recipient for this cycle
+          if (payoutRecipient && member.id === payoutRecipient.id) {
+            console.log(`Skipping reminder for ${member.name} - they are the payout recipient for cycle ${currentCycle}`);
             continue;
           }
 

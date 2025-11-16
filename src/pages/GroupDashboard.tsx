@@ -288,7 +288,8 @@ const GroupDashboard = () => {
     }
   };
 
-  const totalAmount = parseFloat(groupData.contributionAmount || 0) * parseInt(groupData.numberOfMembers || 0);
+  // Calculate payout amount (N-1 members contribute)
+  const totalAmount = parseFloat(groupData.contributionAmount || 0) * (parseInt(groupData.numberOfMembers || 0) - 1);
   const currentProgress = (members.length / parseInt(groupData.numberOfMembers || 1)) * 100;
   
   const nextPayoutDate = new Date();
@@ -300,7 +301,8 @@ const GroupDashboard = () => {
   const actualCurrentCycle = groupData.start_date ? getCurrentCycle(groupData.start_date, groupData.frequency) : null;
   const currentCycleContributions = contributions.filter(c => c.cycle === actualCurrentCycle);
   const totalCollected = currentCycleContributions.reduce((sum, c) => sum + c.amount, 0);
-  const expectedPerCycle = parseFloat(groupData.contributionAmount || 0) * members.length;
+  // Expected per cycle is (N-1) * contribution amount since payout recipient doesn't contribute
+  const expectedPerCycle = parseFloat(groupData.contributionAmount || 0) * (members.length - 1);
   const contributionProgress = expectedPerCycle > 0 ? (totalCollected / expectedPerCycle) * 100 : 0;
 
   // Calculate payout stats - each payout is one cycle
@@ -1211,6 +1213,7 @@ const GroupDashboard = () => {
             </div>
             <UnpaidMembersCard
               unpaidMembers={unpaidMembers}
+              allMembers={members}
               groupData={{
                 start_date: groupData.start_date,
                 frequency: groupData.frequency,

@@ -8,13 +8,15 @@ import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@
 import { Dialog, DialogContent, DialogDescription, DialogFooter, DialogHeader, DialogTitle } from "@/components/ui/dialog";
 import { Popover, PopoverContent, PopoverTrigger } from "@/components/ui/popover";
 import { Calendar as CalendarComponent } from "@/components/ui/calendar";
-import { ArrowLeft, DollarSign, Calendar, CalendarIcon } from "lucide-react";
+import { ArrowLeft, DollarSign, Calendar, CalendarIcon, Info } from "lucide-react";
 import { useToast } from "@/hooks/use-toast";
 import { supabase } from "@/integrations/supabase/client";
 import { contributionSchema } from "@/lib/validation";
-import { getDueDateForCycle, isPaymentLate } from "@/lib/dateUtils";
+import { getDueDateForCycle, isPaymentLate, getCurrentCycle } from "@/lib/dateUtils";
+import { getPayoutRecipientForCycle } from "@/lib/cycleUtils";
 import { format } from "date-fns";
 import { cn } from "@/lib/utils";
+import { Alert, AlertDescription } from "@/components/ui/alert";
 
 const RecordContribution = () => {
   const navigate = useNavigate();
@@ -30,6 +32,8 @@ const RecordContribution = () => {
   const [errors, setErrors] = useState<any>({});
   const [isHost, setIsHost] = useState(false);
   const [loading, setLoading] = useState(true);
+  const [currentCycleNum, setCurrentCycleNum] = useState<number | null>(null);
+  const [payoutRecipient, setPayoutRecipient] = useState<any>(null);
 
   useEffect(() => {
     const loadData = async () => {
@@ -99,9 +103,19 @@ const RecordContribution = () => {
           groupName: group.group_name,
           contributionAmount: group.contribution_amount,
           frequency: group.frequency,
+          startDate: group.start_date,
         });
         setMembers(membersData || []);
         setAmount(group.contribution_amount.toString());
+        
+        // Get current cycle and payout recipient
+        const cycleNum = getCurrentCycle(group.start_date, group.frequency);
+        setCurrentCycleNum(cycleNum);
+        
+        if (cycleNum && membersData) {
+          const recipient = getPayoutRecipientForCycle(membersData, cycleNum);
+          setPayoutRecipient(recipient);
+        }
       } catch (error: any) {
         if (import.meta.env.DEV) {
           console.error('Error loading data:', error);
@@ -349,12 +363,22 @@ const RecordContribution = () => {
                     {members.map((member) => (
                       <SelectItem key={member.id} value={member.id}>
                         {member.name} - {member.email}
+                        {payoutRecipient?.id === member.id && ` (Payout Recipient - Cycle ${currentCycleNum})`}
                       </SelectItem>
                     ))}
                   </SelectContent>
                 </Select>
                 {errors.member && (
                   <p className="text-sm text-destructive">{errors.member}</p>
+                )}
+                {/* Warning if payout recipient is selected */}
+                {selectedMemberId === payoutRecipient?.id && (
+                  <Alert className="border-primary/50 bg-primary/5">
+                    <Info className="h-4 w-4 text-primary" />
+                    <AlertDescription className="text-primary">
+                      <strong>{payoutRecipient.name}</strong> is the payout recipient for Cycle {currentCycleNum} and does not need to contribute this cycle.
+                    </AlertDescription>
+                  </Alert>
                 )}
               </div>
 

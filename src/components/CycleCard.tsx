@@ -53,6 +53,7 @@ export const CycleCard = ({
 
   const paidContributions = contributions.filter((c) => c.contribution_status === "paid");
   const totalCollected = paidContributions.reduce((sum, c) => sum + c.amount, 0);
+  // Expected amount is (N-1) * expectedAmount since payout recipient doesn't contribute
   const progress = expectedAmount > 0 ? (totalCollected / expectedAmount) * 100 : 0;
 
   const getStatusBadge = () => {

@@ -83,3 +83,13 @@ export const getCurrentCycleNumber = (
   // If we're past all cycles, return the last cycle number
   return cycles[cycles.length - 1]?.cycle_number || 1;
 };
+
+/**
+ * Get the payout recipient for a given cycle based on rotation
+ */
+export const getPayoutRecipientForCycle = (members: any[], cycle: number) => {
+  if (!members || members.length === 0) return null;
+  // Members are already sorted by position, so we can use the cycle to determine the recipient
+  const recipientIndex = (cycle - 1) % members.length;
+  return members[recipientIndex];
+};

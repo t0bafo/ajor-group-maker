@@ -50,6 +50,66 @@ const Terms = () => {
           </section>
 
           <section className="mb-8">
+            <h2 className="text-2xl font-semibold mb-4">3.5 SMS Notifications and Consent</h2>
+            <p className="text-muted-foreground mb-4">
+              By providing your phone number and joining an Ajor savings group, you consent to receive SMS notifications related to your group activity.
+            </p>
+
+            <h3 className="text-xl font-semibold mb-3 mt-6">What You'll Receive</h3>
+            <ul className="list-disc pl-6 text-muted-foreground space-y-2">
+              <li>Payment reminders for upcoming contributions</li>
+              <li>Payout confirmations when funds are distributed</li>
+              <li>Important group updates from your organizer</li>
+              <li>Account security notifications</li>
+              <li>Group invitation confirmations</li>
+            </ul>
+
+            <h3 className="text-xl font-semibold mb-3 mt-6">Opt-In Process</h3>
+            <p className="text-muted-foreground mb-4">You opt-in to SMS notifications when you:</p>
+            <ul className="list-disc pl-6 text-muted-foreground space-y-2">
+              <li>Toggle "Enable SMS notifications" during profile setup or group joining</li>
+              <li>Provide and verify your mobile phone number</li>
+              <li>Complete your account registration</li>
+            </ul>
+
+            <h3 className="text-xl font-semibold mb-3 mt-6">Message Frequency</h3>
+            <p className="text-muted-foreground mb-4">
+              Message frequency varies by group activity. During active savings cycles, you may receive 1-4 messages per week. 
+              Messages are transactional and time-sensitive, related to your financial commitments.
+            </p>
+
+            <h3 className="text-xl font-semibold mb-3 mt-6">Opt-Out</h3>
+            <p className="text-muted-foreground mb-4">You can opt out of SMS notifications at any time by:</p>
+            <ul className="list-disc pl-6 text-muted-foreground space-y-2">
+              <li>Replying STOP to any SMS from Ajor</li>
+              <li>Disabling SMS notifications in your account settings</li>
+              <li>Contacting your group organizer</li>
+              <li>Emailing us at assist@tobiafo.com</li>
+            </ul>
+
+            <h3 className="text-xl font-semibold mb-3 mt-6">Costs</h3>
+            <p className="text-muted-foreground mb-4">
+              Standard message and data rates may apply from your mobile carrier. Ajor does not charge for SMS notifications, 
+              but your carrier may charge for text messages.
+            </p>
+
+            <h3 className="text-xl font-semibold mb-3 mt-6">Carrier Support</h3>
+            <p className="text-muted-foreground mb-4">
+              SMS notifications work with major U.S. carriers including AT&T, T-Mobile, Verizon, Sprint, and others. 
+              For help, text HELP to any Ajor message or contact assist@tobiafo.com.
+            </p>
+
+            <h3 className="text-xl font-semibold mb-3 mt-6">SMS Terms</h3>
+            <p className="text-muted-foreground mb-4">By opting in, you agree that:</p>
+            <ul className="list-disc pl-6 text-muted-foreground space-y-2">
+              <li>You are the account holder or have permission to use the phone number</li>
+              <li>The phone number you provide is capable of receiving SMS</li>
+              <li>You understand standard messaging rates apply</li>
+              <li>SMS is for transactional notifications only - we do not send marketing messages</li>
+            </ul>
+          </section>
+
+          <section className="mb-8">
             <h2 className="text-2xl font-semibold mb-4">4. Group Organizer Responsibilities</h2>
             <p className="text-muted-foreground mb-4">Group organizers have additional responsibilities:</p>
             <ul className="list-disc pl-6 text-muted-foreground space-y-2">

@@ -12,6 +12,7 @@ import { WelcomeEmail } from "./_templates/welcome-email.tsx";
 import { JoinRequestEmail } from "./_templates/join-request.tsx";
 import { RequestApprovedEmail } from "./_templates/request-approved.tsx";
 import { MemberInvitedEmail } from "./_templates/member-invited.tsx";
+import { WeeklyDigestEmail } from "./_templates/weekly-digest.tsx";
 
 const resend = new Resend(Deno.env.get("RESEND_API_KEY"));
 const supabaseUrl = Deno.env.get("SUPABASE_URL")!;
@@ -30,7 +31,7 @@ const corsHeaders = {
 
 // Input validation schema
 const notificationSchema = z.object({
-  type: z.enum(['contribution_reminder', 'payout_notification', 'member_activity', 'group_created', 'welcome_email', 'join_request', 'request_approved', 'member_invited']),
+  type: z.enum(['contribution_reminder', 'payout_notification', 'member_activity', 'group_created', 'welcome_email', 'join_request', 'request_approved', 'member_invited', 'payout_date_set', 'weekly_digest']),
   recipientEmail: z.string().email().max(255),
   recipientName: z.string().trim().min(1).max(100),
   recipientPhone: z.string().optional(),
@@ -53,11 +54,19 @@ const notificationSchema = z.object({
     hostName: z.string().trim().max(100).optional(),
     welcomeMessage: z.string().max(300).optional(),
     inviteLink: z.string().url().max(500).optional(),
+    payoutRecipient: z.string().max(100).optional(),
+    payoutDate: z.string().max(100).optional(),
+    cycleNumber: z.number().int().positive().optional(),
+    lastWeekStats: z.any().optional(),
+    personalStats: z.any().optional(),
+    leaderboard: z.array(z.any()).optional(),
+    thisWeek: z.any().optional(),
+    dashboardLink: z.string().url().max(500).optional(),
   }),
 });
 
 interface NotificationRequest {
-  type: "contribution_reminder" | "payout_notification" | "member_activity" | "group_created" | "welcome_email" | "join_request" | "request_approved" | "member_invited";
+  type: "contribution_reminder" | "payout_notification" | "member_activity" | "group_created" | "welcome_email" | "join_request" | "request_approved" | "member_invited" | "payout_date_set" | "weekly_digest";
   recipientEmail: string;
   recipientName: string;
   recipientPhone?: string;
@@ -80,6 +89,14 @@ interface NotificationRequest {
     hostName?: string;
     welcomeMessage?: string;
     inviteLink?: string;
+    payoutRecipient?: string;
+    payoutDate?: string;
+    cycleNumber?: number;
+    lastWeekStats?: any;
+    personalStats?: any;
+    leaderboard?: any[];
+    thisWeek?: any;
+    dashboardLink?: string;
   };
 }
 
@@ -230,6 +247,39 @@ const handler = async (req: Request): Promise<Response> => {
         );
         subject = `You're invited to join ${data.groupName} on Ajor`;
         smsMessage = `Hi ${recipientName}, ${data.hostName} invited you to join ${data.groupName} on Ajor. Code: ${data.inviteCode}`;
+        break;
+
+      case "payout_date_set":
+        html = await renderAsync(
+          React.createElement(MemberInvitedEmail, {
+            recipientName,
+            recipientEmail,
+            groupName: data.groupName!,
+            hostName: data.hostName!,
+            contributionAmount: data.amount!,
+            frequency: data.frequency!,
+            inviteLink: data.inviteLink!,
+            inviteCode: data.inviteCode!,
+          })
+        );
+        subject = `Payout Date Set - ${data.groupName}`;
+        smsMessage = `${data.groupName}: Payout for ${data.payoutRecipient} set for ${data.payoutDate}. Cycle ${data.cycleNumber}.`;
+        break;
+
+      case "weekly_digest":
+        html = await renderAsync(
+          React.createElement(WeeklyDigestEmail, {
+            recipientName,
+            groupName: data.groupName || 'your group',
+            lastWeekStats: data.lastWeekStats || { totalPaid: 0, totalMembers: 0, totalAmount: 0, avgPaymentTime: 'N/A' },
+            personalStats: data.personalStats || { contributedSoFar: 0, payoutWeek: 1, daysUntilPayout: 0, paymentStreak: 0 },
+            leaderboard: data.leaderboard || [],
+            thisWeek: data.thisWeek || { payoutRecipient: 'TBD', cycleNumber: 1, dueDate: 'TBD' },
+            dashboardLink: data.dashboardLink || 'https://ajor.app',
+          })
+        );
+        subject = `Your Weekly Ajor Update - ${data.groupName || 'Group'}`;
+        smsMessage = `${data.groupName}: Weekly update available. Check your email for stats and this week's info.`;
         break;
 
       default:

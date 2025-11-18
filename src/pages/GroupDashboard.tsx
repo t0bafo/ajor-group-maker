@@ -47,6 +47,7 @@ const GroupDashboard = () => {
   const [sendingReminders, setSendingReminders] = useState(false);
   const [showReminderDialog, setShowReminderDialog] = useState(false);
   const [lastReminderTime, setLastReminderTime] = useState<Date | null>(null);
+  const [sendingTestDigest, setSendingTestDigest] = useState(false);
   
   // Admin features
   const { isAdmin, updateContribution, removeMember } = useAdmin();
@@ -580,6 +581,39 @@ const GroupDashboard = () => {
     }
   };
 
+  const sendTestDigest = async () => {
+    try {
+      setSendingTestDigest(true);
+
+      const { data: { user: currentUser } } = await supabase.auth.getUser();
+      
+      const { data, error } = await supabase.functions.invoke('test-weekly-digest', {
+        body: { 
+          groupId: groupData.id,
+          userId: currentUser?.id // Send only to current user for testing
+        }
+      });
+
+      if (error) throw error;
+
+      toast({
+        title: "Test Email Sent! 📧",
+        description: `Weekly digest sent successfully. Check your inbox!`,
+      });
+      
+      console.log('Test digest result:', data);
+    } catch (error: any) {
+      console.error('Error sending test digest:', error);
+      toast({
+        title: "Error",
+        description: error.message || "Failed to send test digest",
+        variant: "destructive",
+      });
+    } finally {
+      setSendingTestDigest(false);
+    }
+  };
+
   const handleApproveMember = async (memberId: string, welcomeMessage?: string) => {
     try {
       // Update member status to approved
@@ -802,7 +836,18 @@ const GroupDashboard = () => {
           </div>
           <div className="flex items-center gap-2">
             {isAdmin && (
-              <AdminControls 
+              <>
+                <Button
+                  variant="outline"
+                  size="sm"
+                  onClick={sendTestDigest}
+                  disabled={sendingTestDigest || !groupData.start_date}
+                  className="gap-2"
+                >
+                  <Bell className="h-4 w-4" />
+                  {sendingTestDigest ? "Sending..." : "Test Weekly Digest"}
+                </Button>
+                <AdminControls
                 groupId={groupData.id}
                 groupName={groupData.groupName}
                 onEditContribution={() => {
@@ -863,6 +908,7 @@ const GroupDashboard = () => {
                   }
                 }}
               />
+              </>
             )}
             {isHost && !groupData.archived && (
               <>

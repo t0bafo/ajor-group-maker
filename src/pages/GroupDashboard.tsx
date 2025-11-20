@@ -326,9 +326,11 @@ const GroupDashboard = () => {
   const payoutsInCurrentRotation = members.length > 0 ? totalPayouts % members.length : 0;
   const rotationProgress = members.length > 0 ? (payoutsInCurrentRotation / members.length) * 100 : 0;
   
-  // Next member to receive payout
-  const nextPayoutMember = members.length > 0 
-    ? members[payoutsInCurrentRotation]
+  // Next member to receive payout (based on frozen payout order in cycles)
+  const nextPayoutCycleNumber = Math.min(currentCycle, cycles.length);
+  const nextPayoutCycle = cycles.find((c: any) => c.cycle_number === nextPayoutCycleNumber);
+  const nextPayoutMember = nextPayoutCycle
+    ? members.find((m: any) => m.id === nextPayoutCycle.payout_recipient_id) || null
     : null;
   
   // Latest payout info
@@ -1082,16 +1084,9 @@ const GroupDashboard = () => {
               <div className="flex-1">
                 <CardTitle className="text-lg sm:text-xl">Cycle Tracking</CardTitle>
                 <CardDescription className="text-sm">
-                  {cycles.length > 0 && (() => {
-                    const now = new Date();
-                    const currentCycleData = cycles.find((c: any) => {
-                      const start = new Date(c.start_date);
-                      const end = new Date(c.end_date);
-                      return now >= start && now <= end;
-                    });
-                    const currentCycleNum = currentCycleData?.cycle_number || 1;
-                    return <span>Cycle {currentCycleNum} of {cycles.length}</span>;
-                  })()}
+                  {cycles.length > 0 && (
+                    <span>Cycle {Math.min(currentCycle, cycles.length)} of {cycles.length}</span>
+                  )}
                 </CardDescription>
               </div>
               {isHost && !groupData.archived && (
@@ -1132,35 +1127,23 @@ const GroupDashboard = () => {
               <>
                 {/* Cycle Timeline */}
                 <CycleTimeline
-                  cycles={cycles.map((c: any) => {
-                    const now = new Date();
-                    const start = new Date(c.start_date);
-                    const end = new Date(c.end_date);
-                    const isCurrent = now >= start && now <= end;
-                    const isCompleted = now > end || c.payout_status === 'completed';
-                    
-                    return {
-                      id: c.id,
-                      cycle_number: c.cycle_number,
-                      status: isCompleted ? 'completed' : (isCurrent ? 'current' : 'upcoming')
-                    };
-                  })}
-                  currentCycle={(() => {
-                    const now = new Date();
-                    const currentCycleData = cycles.find((c: any) => {
-                      const start = new Date(c.start_date);
-                      const end = new Date(c.end_date);
-                      return now >= start && now <= end;
-                    });
-                    return currentCycleData?.cycle_number || 1;
-                  })()}
+                  cycles={cycles.map((c: any) => ({
+                    id: c.id,
+                    cycle_number: c.cycle_number,
+                    status:
+                      c.cycle_number <= latestCompletedCycle
+                        ? "completed"
+                        : c.cycle_number === currentCycle
+                        ? "current"
+                        : "upcoming",
+                  }))}
+                  currentCycle={Math.min(currentCycle, cycles.length)}
                   onCycleClick={(cycleNumber) => setSelectedCycle(cycleNumber)}
                 />
 
                 {/* Current or Selected Cycle Card */}
                 {(() => {
-                  const currentCycleNum = getCurrentCycleNumber(groupData.start_date, groupData.frequency, members.length);
-                  const displayCycle = selectedCycle || currentCycleNum;
+                  const displayCycle = selectedCycle || Math.min(currentCycle, cycles.length);
                   const cycleData = cycles.find((c: any) => c.cycle_number === displayCycle);
                   
                   if (!cycleData) return null;

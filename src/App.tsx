@@ -29,6 +29,9 @@ import NotFound from "./pages/NotFound";
 import AdminDashboard from "./pages/admin/AdminDashboard";
 import { AdminBadge } from "./components/admin/AdminBadge";
 import { useAdmin } from "./hooks/useAdmin";
+import { MobileNav } from "./components/MobileNav";
+import { InstallPrompt } from "./components/InstallPrompt";
+import { NotificationPrompt } from "./components/NotificationPrompt";
 
 const queryClient = new QueryClient();
 
@@ -36,8 +39,10 @@ const AppContent = () => {
   const { isAdmin } = useAdmin();
   
   return (
-    <>
+    <div className="min-h-screen pb-16 md:pb-0">
       {isAdmin && <AdminBadge />}
+      <InstallPrompt />
+      <NotificationPrompt />
       <Routes>
         <Route path="/" element={<Index />} />
         <Route path="/auth" element={<Auth />} />
@@ -65,7 +70,8 @@ const AppContent = () => {
         {/* ADD ALL CUSTOM ROUTES ABOVE THE CATCH-ALL "*" ROUTE */}
         <Route path="*" element={<NotFound />} />
       </Routes>
-    </>
+      <MobileNav />
+    </div>
   );
 };
 

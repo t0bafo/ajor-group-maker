@@ -1082,9 +1082,16 @@ const GroupDashboard = () => {
               <div className="flex-1">
                 <CardTitle className="text-lg sm:text-xl">Cycle Tracking</CardTitle>
                 <CardDescription className="text-sm">
-                  {cycles.length > 0 && groupData.start_date && (
-                    <span>Cycle {getCurrentCycleNumber(groupData.start_date, groupData.frequency, members.length)} of {members.length}</span>
-                  )}
+                  {cycles.length > 0 && (() => {
+                    const now = new Date();
+                    const currentCycleData = cycles.find((c: any) => {
+                      const start = new Date(c.start_date);
+                      const end = new Date(c.end_date);
+                      return now >= start && now <= end;
+                    });
+                    const currentCycleNum = currentCycleData?.cycle_number || 1;
+                    return <span>Cycle {currentCycleNum} of {cycles.length}</span>;
+                  })()}
                 </CardDescription>
               </div>
               {isHost && !groupData.archived && (
@@ -1125,17 +1132,28 @@ const GroupDashboard = () => {
               <>
                 {/* Cycle Timeline */}
                 <CycleTimeline
-                  cycles={cycles.map((c: any) => ({
-                    id: c.id,
-                    cycle_number: c.cycle_number,
-                    status: (() => {
-                      const currentCycle = getCurrentCycleNumber(groupData.start_date, groupData.frequency, members.length);
-                      if (c.cycle_number < currentCycle) return 'completed';
-                      if (c.cycle_number === currentCycle) return 'current';
-                      return 'upcoming';
-                    })(),
-                  }))}
-                  currentCycle={getCurrentCycleNumber(groupData.start_date, groupData.frequency, members.length)}
+                  cycles={cycles.map((c: any) => {
+                    const now = new Date();
+                    const start = new Date(c.start_date);
+                    const end = new Date(c.end_date);
+                    const isCurrent = now >= start && now <= end;
+                    const isCompleted = now > end || c.payout_status === 'completed';
+                    
+                    return {
+                      id: c.id,
+                      cycle_number: c.cycle_number,
+                      status: isCompleted ? 'completed' : (isCurrent ? 'current' : 'upcoming')
+                    };
+                  })}
+                  currentCycle={(() => {
+                    const now = new Date();
+                    const currentCycleData = cycles.find((c: any) => {
+                      const start = new Date(c.start_date);
+                      const end = new Date(c.end_date);
+                      return now >= start && now <= end;
+                    });
+                    return currentCycleData?.cycle_number || 1;
+                  })()}
                   onCycleClick={(cycleNumber) => setSelectedCycle(cycleNumber)}
                 />
 

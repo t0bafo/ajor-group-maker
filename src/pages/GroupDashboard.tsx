@@ -1148,6 +1148,9 @@ const GroupDashboard = () => {
                   
                   if (!cycleData) return null;
 
+                  // Get payout recipient for this cycle from frozen rotation order
+                  const payoutRecipient = members.find((m: any) => m.id === cycleData.payout_recipient_id);
+                  
                   // Get contributions for this cycle
                   const cycleContributions = contributions
                     .filter((c) => c.cycle === displayCycle)
@@ -1159,9 +1162,12 @@ const GroupDashboard = () => {
                       payment_date: c.date,
                     }));
 
-                  // Add missing members as pending
+                  // Add missing members as pending (excluding payout recipient who doesn't contribute)
                   const contributedMemberIds = new Set(cycleContributions.map((c) => c.member_id));
                   members.forEach((member) => {
+                    // Skip payout recipient - they don't contribute in their own cycle
+                    if (member.id === cycleData.payout_recipient_id) return;
+                    
                     if (!contributedMemberIds.has(member.id)) {
                       cycleContributions.push({
                         member_id: member.id,
@@ -1184,9 +1190,9 @@ const GroupDashboard = () => {
                         payout_status: cycleData.payout_status,
                         group_name: groupData.groupName,
                         payout_recipient: {
-                          id: cycleData.members?.id || '',
-                          name: cycleData.members?.name || 'Unknown',
-                          email: members.find((m: any) => m.id === cycleData.payout_recipient_id)?.email || '',
+                          id: payoutRecipient?.id || '',
+                          name: payoutRecipient?.name || 'Unknown',
+                          email: payoutRecipient?.email || '',
                         },
                       }}
                       contributions={cycleContributions}

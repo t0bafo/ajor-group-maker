@@ -34,6 +34,7 @@ const RecordContribution = () => {
   const [loading, setLoading] = useState(true);
   const [currentCycleNum, setCurrentCycleNum] = useState<number | null>(null);
   const [payoutRecipient, setPayoutRecipient] = useState<any>(null);
+  const [cycles, setCycles] = useState<any[]>([]);
 
   useEffect(() => {
     const loadData = async () => {
@@ -98,6 +99,15 @@ const RecordContribution = () => {
 
         if (membersError) throw membersError;
 
+        // Fetch cycles from database
+        const { data: cyclesData, error: cyclesError } = await supabase
+          .from('cycles')
+          .select('*')
+          .eq('group_id', groupId)
+          .order('cycle_number');
+
+        if (cyclesError) throw cyclesError;
+
         setGroupData({
           id: group.id,
           groupName: group.group_name,
@@ -107,6 +117,7 @@ const RecordContribution = () => {
         });
         setMembers(membersData || []);
         setAmount(group.contribution_amount.toString());
+        setCycles(cyclesData || []);
         
         // Get current cycle and payout recipient
         const cycleNum = getCurrentCycle(group.start_date, group.frequency);
@@ -133,28 +144,19 @@ const RecordContribution = () => {
     loadData();
   }, [navigate, toast]);
 
-  const generateCycles = () => {
-    if (!groupData) return [];
-    const cycles = [];
-    const today = new Date();
+  const getCycleOptions = () => {
+    if (!cycles || cycles.length === 0) return [];
     
-    for (let i = 1; i <= 12; i++) {
-      const cycleDate = new Date(today);
-      if (groupData.frequency === "weekly") {
-        cycleDate.setDate(today.getDate() + (i - 1) * 7);
-      } else if (groupData.frequency === "biweekly") {
-        cycleDate.setDate(today.getDate() + (i - 1) * 14);
-      } else {
-        cycleDate.setMonth(today.getMonth() + (i - 1));
-      }
+    return cycles.map(cycle => {
+      const startDate = new Date(cycle.start_date);
+      const cycleDate = format(startDate, "MMM d, yyyy");
       
-      cycles.push({
-        id: i,
-        label: `Cycle ${i} - ${cycleDate.toLocaleDateString("en-US", { month: "short", day: "numeric", year: "numeric" })}`,
-        date: cycleDate.toISOString()
-      });
-    }
-    return cycles;
+      return {
+        id: cycle.cycle_number,
+        label: `Cycle ${cycle.cycle_number} - ${cycleDate}`,
+        date: cycle.start_date
+      };
+    });
   };
 
   const validateForm = async () => {
@@ -242,7 +244,8 @@ const RecordContribution = () => {
 
   const confirmContribution = async () => {
     try {
-      const selectedCycle = generateCycles().find(c => c.id.toString() === cycle);
+      const cycleOptions = getCycleOptions();
+      const selectedCycle = cycleOptions.find(c => c.id.toString() === cycle);
       const selectedMember = members.find(m => m.id === selectedMemberId);
       
       // Fetch full group data including start_date and grace_period_days
@@ -320,8 +323,8 @@ const RecordContribution = () => {
     );
   }
 
-  const cycles = generateCycles();
-  const selectedCycle = cycles.find(c => c.id.toString() === cycle);
+  const cycleOptions = getCycleOptions();
+  const selectedCycle = cycleOptions.find(c => c.id.toString() === cycle);
   const selectedMember = members.find(m => m.id === selectedMemberId);
 
   return (
@@ -410,7 +413,7 @@ const RecordContribution = () => {
                     <SelectValue placeholder="Select a cycle" />
                   </SelectTrigger>
                   <SelectContent>
-                    {cycles.map((c) => (
+                    {cycleOptions.map((c) => (
                       <SelectItem key={c.id} value={c.id.toString()}>
                         {c.label}
                       </SelectItem>

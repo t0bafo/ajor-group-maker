@@ -231,17 +231,17 @@ const PayoutManagement = () => {
         }
         
         if (notifyGroup) {
-          // Send to all members except the recipient
+          // Send payout notification to all members except the recipient
           const otherMembers = members.filter(m => m.id !== selectedMember.id && m.email);
           await Promise.all(otherMembers.map(member => 
             sendNotification({
-              type: "member_activity",
+              type: "payout_notification",
               recipientEmail: member.email,
               recipientName: member.name,
               data: {
                 groupName: groupData.group_name,
-                memberName: selectedMember.name,
-                activityType: "joined" as const,
+                amount: totalAmount,
+                cycleLabel: `Cycle ${currentCycle}`,
               },
             })
           ));

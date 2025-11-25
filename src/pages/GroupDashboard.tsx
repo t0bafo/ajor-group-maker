@@ -307,9 +307,10 @@ const GroupDashboard = () => {
   const contributionProgress = expectedPerCycle > 0 ? (totalCollected / expectedPerCycle) * 100 : 0;
 
   // Calculate payout stats - each payout is one cycle
+  // Calculate current cycle: if payouts exist, we're in the cycle after the latest payout
   const totalPayouts = payouts.length;
-  const currentCycle = totalPayouts + 1; // Next cycle to be paid
-  const latestCompletedCycle = totalPayouts; // Last cycle that was paid
+  const latestCompletedCycle = totalPayouts; // Last cycle that was paid out
+  const currentCycle = totalPayouts > 0 ? totalPayouts + 1 : 1; // Current active cycle
   
   // Calculate unpaid members for current cycle (if Ajor has started)
   const unpaidMembers = groupData.start_date ? (() => {
@@ -327,8 +328,7 @@ const GroupDashboard = () => {
   const rotationProgress = members.length > 0 ? (payoutsInCurrentRotation / members.length) * 100 : 0;
   
   // Next member to receive payout (based on frozen payout order in cycles)
-  const nextPayoutCycleNumber = Math.min(currentCycle, cycles.length);
-  const nextPayoutCycle = cycles.find((c: any) => c.cycle_number === nextPayoutCycleNumber);
+  const nextPayoutCycle = cycles.find((c: any) => c.cycle_number === currentCycle);
   const nextPayoutMember = nextPayoutCycle
     ? members.find((m: any) => m.id === nextPayoutCycle.payout_recipient_id) || null
     : null;
@@ -1085,7 +1085,7 @@ const GroupDashboard = () => {
                 <CardTitle className="text-lg sm:text-xl">Cycle Tracking</CardTitle>
                 <CardDescription className="text-sm">
                   {cycles.length > 0 && (
-                    <span>Cycle {Math.min(currentCycle, cycles.length)} of {cycles.length}</span>
+                    <span>Cycle {currentCycle} of {cycles.length}</span>
                   )}
                 </CardDescription>
               </div>
@@ -1131,19 +1131,19 @@ const GroupDashboard = () => {
                     id: c.id,
                     cycle_number: c.cycle_number,
                     status:
-                      c.cycle_number <= latestCompletedCycle
+                      c.cycle_number < currentCycle
                         ? "completed"
                         : c.cycle_number === currentCycle
                         ? "current"
                         : "upcoming",
                   }))}
-                  currentCycle={Math.min(currentCycle, cycles.length)}
+                  currentCycle={currentCycle}
                   onCycleClick={(cycleNumber) => setSelectedCycle(cycleNumber)}
                 />
 
                 {/* Current or Selected Cycle Card */}
                 {(() => {
-                  const displayCycle = selectedCycle || Math.min(currentCycle, cycles.length);
+                  const displayCycle = selectedCycle || currentCycle;
                   const cycleData = cycles.find((c: any) => c.cycle_number === displayCycle);
                   
                   if (!cycleData) return null;

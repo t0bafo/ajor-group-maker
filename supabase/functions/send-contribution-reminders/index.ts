@@ -32,19 +32,21 @@ interface Contribution {
   member_id: string;
 }
 
-function getNextCycleDate(startDate: string, frequency: string, currentCycle: number): Date {
+function getCycleDueDate(startDate: string, frequency: string, cycleNumber: number): Date {
   const start = new Date(startDate);
   const cycleDate = new Date(start);
   
+  // Due date for cycle N is start_date + (N-1) * frequency
+  // Cycle 1: start_date + 0, Cycle 2: start_date + 1 week, etc.
   switch (frequency) {
     case "weekly":
-      cycleDate.setDate(start.getDate() + (currentCycle * 7));
+      cycleDate.setDate(start.getDate() + ((cycleNumber - 1) * 7));
       break;
     case "biweekly":
-      cycleDate.setDate(start.getDate() + (currentCycle * 14));
+      cycleDate.setDate(start.getDate() + ((cycleNumber - 1) * 14));
       break;
     case "monthly":
-      cycleDate.setMonth(start.getMonth() + currentCycle);
+      cycleDate.setMonth(start.getMonth() + (cycleNumber - 1));
       break;
   }
   
@@ -112,10 +114,10 @@ const handler = async (req: Request): Promise<Response> => {
 
     for (const group of groups as Group[]) {
       const currentCycle = getCurrentCycle(group.start_date, group.frequency);
-      const nextCycleDate = getNextCycleDate(group.start_date, group.frequency, currentCycle);
+      const cycleDueDate = getCycleDueDate(group.start_date, group.frequency, currentCycle);
       
-      // Calculate days until next cycle
-      const daysUntilDue = Math.ceil((nextCycleDate.getTime() - now.getTime()) / (1000 * 60 * 60 * 24));
+      // Calculate days until due date
+      const daysUntilDue = Math.ceil((cycleDueDate.getTime() - now.getTime()) / (1000 * 60 * 60 * 24));
       
       // Send reminders if 2-3 days before due date
       if (daysUntilDue >= 2 && daysUntilDue <= 3) {
@@ -186,7 +188,7 @@ const handler = async (req: Request): Promise<Response> => {
                     groupName: group.group_name,
                     amount: group.contribution_amount,
                     cycleLabel: `Cycle ${currentCycle}`,
-                    dueDate: nextCycleDate.toLocaleDateString("en-US", {
+                    dueDate: cycleDueDate.toLocaleDateString("en-US", {
                       weekday: "long",
                       year: "numeric",
                       month: "long",

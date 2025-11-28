@@ -313,6 +313,7 @@ const GroupDashboard = () => {
   const currentCycle = totalPayouts > 0 ? totalPayouts + 1 : 1; // Current active cycle
   
   // Calculate unpaid members for current cycle (if Ajor has started)
+  // Exclude the payout recipient as they don't contribute this cycle
   const unpaidMembers = groupData.start_date ? (() => {
     const actualCurrentCycle = getCurrentCycle(groupData.start_date, groupData.frequency);
     const contributedMemberIds = new Set(
@@ -320,7 +321,11 @@ const GroupDashboard = () => {
         .filter(c => c.cycle === actualCurrentCycle)
         .map(c => c.memberId)
     );
-    return members.filter(m => !contributedMemberIds.has(m.id));
+    // Get payout recipient for this cycle to exclude them
+    const currentCycleData = cycles.find((c: any) => c.cycle_number === actualCurrentCycle);
+    const payoutRecipientId = currentCycleData?.payout_recipient_id;
+    
+    return members.filter(m => !contributedMemberIds.has(m.id) && m.id !== payoutRecipientId);
   })() : [];
   
   // Progress in current rotation (0 to members.length)
@@ -472,7 +477,7 @@ const GroupDashboard = () => {
     }
   };
 
-  const handleSendReminders = async () => {
+  const handleSendReminders = async (selectedMembers?: Array<{ name: string; email: string }>) => {
     if (!groupData.start_date) {
       toast({
         title: "Cannot Send Reminders",
@@ -490,44 +495,39 @@ const GroupDashboard = () => {
       const diffTime = Math.abs(now.getTime() - startDate.getTime());
       const diffDays = Math.ceil(diffTime / (1000 * 60 * 60 * 24));
       
-      let currentCycle = 1;
+      let currentCycleNum = 1;
       if (groupData.frequency === "weekly") {
-        currentCycle = Math.floor(diffDays / 7) + 1;
+        currentCycleNum = Math.floor(diffDays / 7) + 1;
       } else if (groupData.frequency === "biweekly") {
-        currentCycle = Math.floor(diffDays / 14) + 1;
+        currentCycleNum = Math.floor(diffDays / 14) + 1;
       } else {
-        currentCycle = Math.floor(diffDays / 30) + 1;
+        currentCycleNum = Math.floor(diffDays / 30) + 1;
       }
 
-      // Get members who haven't contributed this cycle
-      const contributedMemberIds = new Set(
-        contributions
-          .filter(c => c.cycle === currentCycle)
-          .map(c => c.memberId)
-      );
-
-      const membersToRemind = members.filter(m => !contributedMemberIds.has(m.id));
+      // Use selected members if provided, otherwise calculate from unpaid members
+      const membersToRemind = selectedMembers || unpaidMembers.map(m => ({ name: m.name, email: m.email }));
 
       if (membersToRemind.length === 0) {
         toast({
-          title: "All Members Contributed",
-          description: "All members have already contributed for this cycle",
+          title: "No Members Selected",
+          description: "Please select at least one member to send a reminder",
         });
         setSendingReminders(false);
+        setShowReminderDialog(false);
         return;
       }
 
-      // Calculate next cycle due date
-      let nextCycleDate = new Date(startDate);
+      // Calculate current cycle due date (start_date + (cycle-1) * frequency)
+      let cycleDueDate = new Date(startDate);
       if (groupData.frequency === "weekly") {
-        nextCycleDate.setDate(startDate.getDate() + (currentCycle * 7));
+        cycleDueDate.setDate(startDate.getDate() + ((currentCycleNum - 1) * 7));
       } else if (groupData.frequency === "biweekly") {
-        nextCycleDate.setDate(startDate.getDate() + (currentCycle * 14));
+        cycleDueDate.setDate(startDate.getDate() + ((currentCycleNum - 1) * 14));
       } else {
-        nextCycleDate.setMonth(startDate.getMonth() + currentCycle);
+        cycleDueDate.setMonth(startDate.getMonth() + (currentCycleNum - 1));
       }
 
-      // Send reminders to each member
+      // Send reminders to each selected member
       let successCount = 0;
       for (const member of membersToRemind) {
         try {
@@ -538,8 +538,8 @@ const GroupDashboard = () => {
             data: {
               groupName: groupData.groupName,
               amount: parseFloat(groupData.contributionAmount),
-              cycleLabel: `Cycle ${currentCycle}`,
-              dueDate: nextCycleDate.toLocaleDateString("en-US", {
+              cycleLabel: `Cycle ${currentCycleNum}`,
+              dueDate: cycleDueDate.toLocaleDateString("en-US", {
                 weekday: "long",
                 year: "numeric",
                 month: "long",
@@ -558,19 +558,20 @@ const GroupDashboard = () => {
       if (groupId) {
         await supabase.from('notification_history').insert({
           type: 'contribution_reminder',
-          recipient_email: 'group',
-          recipient_name: 'Group Reminder',
+          recipient_email: membersToRemind.length === 1 ? membersToRemind[0].email : 'group',
+          recipient_name: membersToRemind.length === 1 ? membersToRemind[0].name : 'Group Reminder',
           subject: 'Contribution Reminder',
           status: 'sent',
-          metadata: { groupId, cycleNumber: currentCycle, recipientCount: successCount }
+          metadata: { groupId, cycleNumber: currentCycleNum, recipientCount: successCount }
         });
       }
 
       toast({
         title: "Reminders Sent",
-        description: `Successfully sent ${successCount} reminder${successCount !== 1 ? 's' : ''} to members who haven't contributed`,
+        description: `Successfully sent ${successCount} reminder${successCount !== 1 ? 's' : ''}`,
       });
 
+      setShowReminderDialog(false);
     } catch (error: any) {
       console.error('Error sending reminders:', error);
       toast({
@@ -1092,14 +1093,14 @@ const GroupDashboard = () => {
               {isHost && !groupData.archived && (
                 <div className="flex gap-2 w-full sm:w-auto">
                   <Button 
-                    onClick={handleSendReminders} 
+                    onClick={() => setShowReminderDialog(true)} 
                     variant="outline" 
                     size="sm" 
-                    disabled={sendingReminders}
+                    disabled={sendingReminders || unpaidMembers.length === 0}
                     className="flex-1 sm:flex-none"
                   >
                     <Bell className="mr-2 h-4 w-4" />
-                    {sendingReminders ? "Sending..." : "Send Reminder"}
+                    {sendingReminders ? "Sending..." : `Send Reminder${unpaidMembers.length > 0 ? ` (${unpaidMembers.length})` : ''}`}
                   </Button>
                   <Button 
                     onClick={() => setShowBatchModal(true)} 

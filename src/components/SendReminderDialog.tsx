@@ -1,12 +1,20 @@
+import { useState, useEffect } from "react";
 import { Dialog, DialogContent, DialogDescription, DialogFooter, DialogHeader, DialogTitle } from "@/components/ui/dialog";
 import { Button } from "@/components/ui/button";
+import { Checkbox } from "@/components/ui/checkbox";
 import { Bell } from "lucide-react";
+
+interface UnpaidMember {
+  id?: string;
+  name: string;
+  email: string;
+}
 
 interface SendReminderDialogProps {
   open: boolean;
   onOpenChange: (open: boolean) => void;
-  unpaidMembers: Array<{ name: string; email: string }>;
-  onConfirm: () => void;
+  unpaidMembers: UnpaidMember[];
+  onConfirm: (selectedMembers: UnpaidMember[]) => void;
   sending: boolean;
 }
 
@@ -17,6 +25,40 @@ export const SendReminderDialog = ({
   onConfirm,
   sending,
 }: SendReminderDialogProps) => {
+  const [selectedMembers, setSelectedMembers] = useState<Set<string>>(new Set());
+
+  // Initialize all members as selected when dialog opens
+  useEffect(() => {
+    if (open) {
+      setSelectedMembers(new Set(unpaidMembers.map(m => m.email)));
+    }
+  }, [open, unpaidMembers]);
+
+  const toggleMember = (email: string) => {
+    const newSelected = new Set(selectedMembers);
+    if (newSelected.has(email)) {
+      newSelected.delete(email);
+    } else {
+      newSelected.add(email);
+    }
+    setSelectedMembers(newSelected);
+  };
+
+  const toggleAll = () => {
+    if (selectedMembers.size === unpaidMembers.length) {
+      setSelectedMembers(new Set());
+    } else {
+      setSelectedMembers(new Set(unpaidMembers.map(m => m.email)));
+    }
+  };
+
+  const handleConfirm = () => {
+    const membersToNotify = unpaidMembers.filter(m => selectedMembers.has(m.email));
+    onConfirm(membersToNotify);
+  };
+
+  const selectedCount = selectedMembers.size;
+
   return (
     <Dialog open={open} onOpenChange={onOpenChange}>
       <DialogContent className="sm:max-w-md">
@@ -26,26 +68,48 @@ export const SendReminderDialog = ({
             <DialogTitle>Send Contribution Reminder</DialogTitle>
           </div>
           <DialogDescription>
-            Send a reminder to members who haven't paid for the current cycle
+            Select members to send a payment reminder
           </DialogDescription>
         </DialogHeader>
 
         <div className="space-y-4 py-4">
           <div className="p-4 bg-secondary/50 rounded-lg">
-            <p className="text-sm font-medium mb-2">
-              Send reminder to {unpaidMembers.length} {unpaidMembers.length === 1 ? 'member' : 'members'}:
-            </p>
-            <div className="space-y-1">
-              {unpaidMembers.map((member, index) => (
-                <p key={index} className="text-sm text-muted-foreground">
-                  • {member.name}
-                </p>
+            <div className="flex items-center justify-between mb-3">
+              <p className="text-sm font-medium">
+                {selectedCount} of {unpaidMembers.length} {unpaidMembers.length === 1 ? 'member' : 'members'} selected
+              </p>
+              <Button
+                variant="ghost"
+                size="sm"
+                onClick={toggleAll}
+                className="text-xs h-7 px-2"
+              >
+                {selectedMembers.size === unpaidMembers.length ? 'Deselect All' : 'Select All'}
+              </Button>
+            </div>
+            <div className="space-y-2">
+              {unpaidMembers.map((member) => (
+                <div 
+                  key={member.email} 
+                  className="flex items-center gap-3 py-1.5 px-2 rounded hover:bg-secondary/50 cursor-pointer"
+                  onClick={() => toggleMember(member.email)}
+                >
+                  <Checkbox
+                    checked={selectedMembers.has(member.email)}
+                    onCheckedChange={() => toggleMember(member.email)}
+                    onClick={(e) => e.stopPropagation()}
+                  />
+                  <div className="flex-1 min-w-0">
+                    <p className="text-sm font-medium truncate">{member.name}</p>
+                    <p className="text-xs text-muted-foreground truncate">{member.email}</p>
+                  </div>
+                </div>
               ))}
             </div>
           </div>
 
           <p className="text-sm text-muted-foreground">
-            Members will receive a reminder via their preferred notification method (SMS/Email).
+            Selected members will receive a reminder via their preferred notification method (SMS/Email).
           </p>
         </div>
 
@@ -59,11 +123,11 @@ export const SendReminderDialog = ({
             Cancel
           </Button>
           <Button 
-            onClick={onConfirm} 
-            disabled={sending}
+            onClick={handleConfirm} 
+            disabled={sending || selectedCount === 0}
             className="w-full sm:w-auto"
           >
-            {sending ? "Sending..." : "Send Reminder"}
+            {sending ? "Sending..." : `Send to ${selectedCount} ${selectedCount === 1 ? 'Member' : 'Members'}`}
           </Button>
         </DialogFooter>
       </DialogContent>

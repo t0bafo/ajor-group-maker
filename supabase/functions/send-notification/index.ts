@@ -106,6 +106,13 @@ const handler = async (req: Request): Promise<Response> => {
     return new Response(null, { headers: corsHeaders });
   }
 
+  // TEMPORARY: All notifications disabled
+  console.log('Notifications are temporarily disabled');
+  return new Response(
+    JSON.stringify({ success: true, message: "Notifications temporarily disabled", channels: { email: false, sms: false } }),
+    { status: 200, headers: { ...corsHeaders, "Content-Type": "application/json" } }
+  );
+
   try {
     const requestBody = await req.json();
     
